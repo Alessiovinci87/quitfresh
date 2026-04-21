@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String       @id @default(cuid())
+  email            String       @unique
+  passwordHash     String
+  createdAt        DateTime     @default(now())
+  cigarettesPerDay Int?
+  criticalMoments  String[]
+  dependencyLevel  Int?
+  quitDate         DateTime?
+  cravingLogs      CravingLog[]
+}
+
+model CravingLog {
+  id        String   @id @default(cuid())
+  userId    String
+  timestamp DateTime @default(now())
+  context   String   @default("")
+  resolved  Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
