@@ -8,16 +8,19 @@ datasource db {
 }
 
 model User {
-  id               String         @id @default(cuid())
-  email            String         @unique
-  passwordHash     String
-  createdAt        DateTime       @default(now())
-  cigarettesPerDay Int?
-  criticalMoments  String[]
-  dependencyLevel  Int?
-  quitDate         DateTime?
-  cravingLogs      CravingLog[]
-  quitAttempts     QuitAttempt[]
+  id                String             @id @default(cuid())
+  email             String             @unique
+  passwordHash      String
+  createdAt         DateTime           @default(now())
+  cigarettesPerDay  Int?
+  criticalMoments   String[]
+  dependencyLevel   Int?
+  quitDate          DateTime?
+  notificationTimes String[]
+  cravingLogs       CravingLog[]
+  quitAttempts      QuitAttempt[]
+  diaryEntries      DiaryEntry[]
+  pushSubscriptions PushSubscription[]
 }
 
 model CravingLog {
@@ -35,4 +38,27 @@ model QuitAttempt {
   startDate DateTime
   endDate   DateTime?
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model DiaryEntry {
+  id              String   @id @default(cuid())
+  userId          String
+  date            DateTime
+  pillsTaken      Int      @default(0)
+  cigarettesToday Int      @default(0)
+  sideEffects     String[]
+  notes           String   @default("")
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model PushSubscription {
+  id       String @id @default(cuid())
+  userId   String
+  endpoint String @unique
+  p256dh   String
+  auth     String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

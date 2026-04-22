@@ -9,6 +9,8 @@ import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Craving from './pages/Craving';
 import Profile from './pages/Profile';
+import Tools from './pages/Tools';
+import Diary from './pages/Diary';
 
 export default function App() {
   return (
@@ -18,44 +20,12 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route
-              path="/onboarding"
-              element={
-                <PrivateRoute>
-                  <Onboarding />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/home"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Home />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/craving"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Craving />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <PrivateRoute>
-                  <Layout>
-                    <Profile />
-                  </Layout>
-                </PrivateRoute>
-              }
-            />
+            <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
+            <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
+            <Route path="/craving" element={<PrivateRoute><Layout><Craving /></Layout></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><Layout><Profile /></Layout></PrivateRoute>} />
+            <Route path="/tools" element={<PrivateRoute><Layout><Tools /></Layout></PrivateRoute>} />
+            <Route path="/diary" element={<PrivateRoute><Layout><Diary /></Layout></PrivateRoute>} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>

@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = window.atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
 
 const CRITICAL_MOMENTS_OPTIONS = [
   'Caffè', 'Stress', 'Pausa lavoro', 'Dopo i pasti', 'Guida',
@@ -16,11 +24,73 @@ const DEPENDENCY_LABELS = {
 };
 
 export default function Profile() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Notifications state
+  const [notifTimes, setNotifTimes] = useState(user.notificationTimes || []);
+  const [newTime, setNewTime] = useState('');
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifSupported, setNotifSupported] = useState(false);
+  const [notifSaving, setNotifSaving] = useState(false);
+
+  useEffect(() => {
+    setNotifSupported('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window);
+    setNotifEnabled(Notification.permission === 'granted');
+  }, []);
+
+  async function enableNotifications() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+      setNotifEnabled(true);
+
+      const { enabled, publicKey } = await api.notifications.vapidKey();
+      if (!enabled || !publicKey) return;
+
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+      await api.notifications.subscribe({ endpoint: sub.endpoint, keys: { p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))), auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))) } });
+    } catch (err) {
+      console.error('Push subscribe error:', err);
+    }
+  }
+
+  async function saveNotifTimes(times) {
+    setNotifSaving(true);
+    try {
+      const { user: updated } = await api.notifications.saveTimes(times);
+      updateUser(updated);
+      setNotifTimes(times);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setNotifSaving(false);
+    }
+  }
+
+  function addTime() {
+    if (!newTime || notifTimes.includes(newTime)) return;
+    const updated = [...notifTimes, newTime].sort();
+    setNewTime('');
+    saveNotifTimes(updated);
+  }
+
+  function removeTime(t) {
+    saveNotifTimes(notifTimes.filter(x => x !== t));
+  }
+
+  function handleLogout() {
+    logout();
+    navigate('/login');
+  }
 
   const [cigarettesPerDay, setCigarettesPerDay] = useState(String(user.cigarettesPerDay || ''));
   const [selectedMoments, setSelectedMoments] = useState(user.criticalMoments || []);
@@ -220,22 +290,58 @@ export default function Profile() {
       )}
 
       {editing && (
-        <div className="flex gap-3">
-          <button
-            onClick={handleCancel}
-            className="flex-1 py-3.5 border border-gray-200 text-gray-600 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors"
-          >
+        <div className="flex gap-3 mb-8">
+          <button onClick={handleCancel} className="flex-1 py-3.5 border border-gray-200 text-gray-600 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors">
             Annulla
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 py-3.5 bg-sage-500 text-white rounded-xl font-semibold text-sm hover:bg-sage-600 disabled:opacity-60 transition-colors"
-          >
+          <button onClick={handleSave} disabled={saving} className="flex-1 py-3.5 bg-sage-500 text-white rounded-xl font-semibold text-sm hover:bg-sage-600 disabled:opacity-60 transition-colors">
             {saving ? 'Salvataggio…' : 'Salva'}
           </button>
         </div>
       )}
+
+      {/* Promemoria notifiche */}
+      <div className="mb-8 border-t border-gray-100 pt-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-1">Promemoria</h2>
+        <p className="text-xs text-gray-400 mb-4">
+          Ricevi una notifica push nei tuoi momenti critici.
+        </p>
+
+        {!notifSupported ? (
+          <p className="text-xs text-gray-400">Le notifiche non sono supportate su questo dispositivo/browser.</p>
+        ) : !notifEnabled ? (
+          <button onClick={enableNotifications} className="w-full py-3 border border-sage-300 text-sage-600 rounded-xl text-sm font-medium hover:bg-sage-50 transition-colors">
+            Attiva notifiche
+          </button>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {notifTimes.map(t => (
+                <span key={t} className="flex items-center gap-1.5 px-3 py-1.5 bg-sage-50 border border-sage-200 rounded-full text-xs font-medium text-sage-700">
+                  {t}
+                  <button onClick={() => removeTime(t)} className="text-sage-400 hover:text-sage-600 leading-none">✕</button>
+                </span>
+              ))}
+              {notifTimes.length === 0 && <p className="text-xs text-gray-400">Nessun orario impostato</p>}
+            </div>
+            <div className="flex gap-2">
+              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+              <button onClick={addTime} disabled={!newTime || notifSaving}
+                className="px-4 py-2 bg-sage-500 text-white rounded-xl text-sm font-medium hover:bg-sage-600 disabled:opacity-50 transition-colors">
+                {notifSaving ? '…' : 'Aggiungi'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Logout */}
+      <div className="border-t border-gray-100 pt-6">
+        <button onClick={handleLogout} className="w-full py-3 text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
+          Esci dall'account
+        </button>
+      </div>
     </div>
   );
 }

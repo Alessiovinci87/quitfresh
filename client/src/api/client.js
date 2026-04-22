@@ -44,4 +44,14 @@ export const api = {
     log: () => request('/api/relapse', { method: 'POST' }),
     restart: () => request('/api/relapse/restart', { method: 'POST' }),
   },
+  diary: {
+    list: () => request('/api/diary'),
+    save: (body) => request('/api/diary', { method: 'POST', body: JSON.stringify(body) }),
+  },
+  notifications: {
+    vapidKey: () => request('/api/notifications/vapid-key'),
+    subscribe: (sub) => request('/api/notifications/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
+    unsubscribe: (endpoint) => request('/api/notifications/subscribe', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
+    saveTimes: (times) => request('/api/notifications/times', { method: 'PUT', body: JSON.stringify({ times }) }),
+  },
 };
