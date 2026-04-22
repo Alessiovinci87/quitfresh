@@ -28,6 +28,17 @@ router.get('/', requireAuth, async (req, res) => {
       where: { userId: user.id, resolved: true },
     });
 
+    const pastAttempts = await prisma.quitAttempt.findMany({
+      where: { userId: user.id },
+      orderBy: { startDate: 'desc' },
+    });
+
+    const bestDays = pastAttempts.reduce((max, a) => {
+      if (!a.endDate) return max;
+      const d = Math.floor((new Date(a.endDate) - new Date(a.startDate)) / (1000 * 60 * 60 * 24));
+      return d > max ? d : max;
+    }, 0);
+
     res.json({
       daysSinceQuit,
       cigarettesAvoided,
@@ -36,6 +47,14 @@ router.get('/', requireAuth, async (req, res) => {
       cravingCount,
       resolvedCount,
       quitDate: user.quitDate,
+      pastAttempts: pastAttempts.map(a => ({
+        startDate: a.startDate,
+        endDate: a.endDate,
+        days: a.endDate
+          ? Math.floor((new Date(a.endDate) - new Date(a.startDate)) / (1000 * 60 * 60 * 24))
+          : null,
+      })),
+      bestDays,
     });
   } catch (err) {
     console.error(err);

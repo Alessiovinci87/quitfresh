@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id               String       @id @default(cuid())
-  email            String       @unique
+  id               String         @id @default(cuid())
+  email            String         @unique
   passwordHash     String
-  createdAt        DateTime     @default(now())
+  createdAt        DateTime       @default(now())
   cigarettesPerDay Int?
   criticalMoments  String[]
   dependencyLevel  Int?
   quitDate         DateTime?
   cravingLogs      CravingLog[]
+  quitAttempts     QuitAttempt[]
 }
 
 model CravingLog {
@@ -26,4 +27,12 @@ model CravingLog {
   context   String   @default("")
   resolved  Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model QuitAttempt {
+  id        String    @id @default(cuid())
+  userId    String
+  startDate DateTime
+  endDate   DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

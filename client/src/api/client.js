@@ -40,4 +40,8 @@ export const api = {
   chat: {
     send: (messages) => request('/api/chat', { method: 'POST', body: JSON.stringify({ messages }) }),
   },
+  relapse: {
+    log: () => request('/api/relapse', { method: 'POST' }),
+    restart: () => request('/api/relapse/restart', { method: 'POST' }),
+  },
 };
