@@ -12,7 +12,7 @@ import Profile from './pages/Profile';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AuthProvider>
         <div className="min-h-screen bg-gray-100 flex items-start justify-center">
           <Routes>
