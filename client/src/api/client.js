@@ -37,4 +37,7 @@ export const api = {
     resolve: (id) => request(`/api/craving/${id}/resolve`, { method: 'PATCH' }),
     history: () => request('/api/craving/history'),
   },
+  chat: {
+    send: (messages) => request('/api/chat', { method: 'POST', body: JSON.stringify({ messages }) }),
+  },
 };
