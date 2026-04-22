@@ -13,8 +13,12 @@ function init() {
     return;
   }
 
-  webpush.setVapidDetails(email, pub, priv);
-  initialized = true;
+  try {
+    webpush.setVapidDetails(email, pub, priv);
+    initialized = true;
+  } catch (err) {
+    console.warn('[push] Chiave VAPID non valida — notifiche push disabilitate:', err.message);
+  }
 }
 
 function isEnabled() {
