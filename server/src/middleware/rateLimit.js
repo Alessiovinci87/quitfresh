@@ -2,7 +2,7 @@ const rateLimit = require('express-rate-limit');
 
 const cravingLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 ora
-  max: 10,
+  max: 100,
   keyGenerator: (req) => req.user?.id || req.ip,
   handler: (_req, res) => {
     res.status(429).json({

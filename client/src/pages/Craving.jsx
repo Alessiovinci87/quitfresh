@@ -74,13 +74,13 @@ export default function Craving() {
       {state === STATE.IDLE && (
         <div className="animate-slide-up">
           <h2 className="text-2xl font-bold text-gray-900 mb-1">Cosa sta succedendo?</h2>
-          <p className="text-gray-500 text-sm mb-6">Opzionale — aiuta l'AI a darti una risposta più precisa.</p>
+          <p className="text-gray-500 text-sm mb-6">Scrivi liberamente — craving, domanda, dubbio, pensiero. Più contesto dai, meglio rispondo.</p>
           <textarea
             value={context}
             onChange={(e) => setContext(e.target.value)}
-            rows={3}
+            rows={5}
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition"
-            placeholder="Es. sono al bar con amici, ho appena finito di mangiare…"
+            placeholder="Es. sto iniziando la citisina e ho paura di non farcela… oppure sono al bar con amici e non so come gestirla…"
           />
           <button
             onClick={handleRequest}
