@@ -53,5 +53,7 @@ export const api = {
     subscribe: (sub) => request('/api/notifications/subscribe', { method: 'POST', body: JSON.stringify(sub) }),
     unsubscribe: (endpoint) => request('/api/notifications/subscribe', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
     saveTimes: (times) => request('/api/notifications/times', { method: 'PUT', body: JSON.stringify({ times }) }),
+    debug: () => request('/api/notifications/debug'),
+    test: () => request('/api/notifications/test', { method: 'POST' }),
   },
 };

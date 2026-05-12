@@ -63,6 +63,7 @@ export default function Profile() {
   const [notifSupported, setNotifSupported] = useState(false);
   const [notifSaving, setNotifSaving] = useState(false);
   const [notifRegistered, setNotifRegistered] = useState(false);
+  const [testResult, setTestResult] = useState('');
 
   useEffect(() => {
     const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
@@ -106,6 +107,18 @@ export default function Profile() {
     } catch (err) {
       console.error('Push subscribe error:', err);
     }
+  }
+
+  async function sendTestNotification() {
+    setTestResult('Invio…');
+    try {
+      const res = await api.notifications.test();
+      const ok = res.results?.some(r => r.status === 'ok');
+      setTestResult(ok ? '✓ Notifica inviata! Controllare il telefono.' : '✗ Errore: ' + JSON.stringify(res));
+    } catch (err) {
+      setTestResult('✗ ' + err.message);
+    }
+    setTimeout(() => setTestResult(''), 6000);
   }
 
   async function saveNotifTimes(times) {
@@ -358,6 +371,13 @@ export default function Profile() {
                 {notifSaving ? '…' : 'Aggiungi'}
               </button>
             </div>
+            <button onClick={sendTestNotification}
+              className="mt-3 w-full py-2.5 border border-sage-300 text-sage-600 rounded-xl text-sm font-medium hover:bg-sage-50 transition-colors">
+              Invia notifica di test
+            </button>
+            {testResult && (
+              <p className={`mt-2 text-xs text-center ${testResult.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>{testResult}</p>
+            )}
           </>
         )}
       </div>
