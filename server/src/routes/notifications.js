@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('../middleware/auth');
-const { isEnabled } = require('../lib/push');
+const { isEnabled, sendPush } = require('../lib/push');
+const webpush = require('web-push');
 
 const prisma = new PrismaClient();
 
@@ -69,6 +70,65 @@ router.put('/times', requireAuth, async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Errore nel salvataggio degli orari' });
   }
+});
+
+// GET /api/notifications/debug — diagnostica (solo autenticati)
+router.get('/debug', requireAuth, async (req, res) => {
+  const pub = process.env.VAPID_PUBLIC_KEY;
+  const priv = process.env.VAPID_PRIVATE_KEY;
+  const email = process.env.VAPID_EMAIL;
+
+  let vapidOk = false;
+  let vapidError = null;
+  try {
+    webpush.setVapidDetails(email || 'mailto:test@test.it', pub, priv);
+    vapidOk = true;
+  } catch (e) {
+    vapidError = e.message;
+  }
+
+  const subs = await prisma.pushSubscription.findMany({ where: { userId: req.user.id } });
+
+  res.json({
+    vapidKeysSet: !!(pub && priv),
+    vapidValid: vapidOk,
+    vapidError,
+    subscriptionsCount: subs.length,
+    subscriptionEndpoints: subs.map(s => s.endpoint.slice(0, 60) + '…'),
+  });
+});
+
+// POST /api/notifications/test — invia push di test immediata
+router.post('/test', requireAuth, async (req, res) => {
+  const pub = process.env.VAPID_PUBLIC_KEY;
+  const priv = process.env.VAPID_PRIVATE_KEY;
+  const email = process.env.VAPID_EMAIL || 'mailto:admin@quitfresh.app';
+
+  if (!pub || !priv) return res.status(500).json({ error: 'VAPID non configurato' });
+
+  try {
+    webpush.setVapidDetails(email, pub, priv);
+  } catch (e) {
+    return res.status(500).json({ error: 'Chiave VAPID non valida: ' + e.message });
+  }
+
+  const subs = await prisma.pushSubscription.findMany({ where: { userId: req.user.id } });
+  if (subs.length === 0) return res.status(404).json({ error: 'Nessuna subscription trovata per questo utente' });
+
+  const results = [];
+  for (const sub of subs) {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        JSON.stringify({ title: 'QuitFresh · Test', body: 'Notifiche push funzionanti!' })
+      );
+      results.push({ endpoint: sub.endpoint.slice(0, 50), status: 'ok' });
+    } catch (err) {
+      results.push({ endpoint: sub.endpoint.slice(0, 50), status: 'errore', detail: err.message, code: err.statusCode });
+    }
+  }
+
+  res.json({ results });
 });
 
 module.exports = router;
