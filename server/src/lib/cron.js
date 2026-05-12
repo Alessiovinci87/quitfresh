@@ -12,8 +12,18 @@ const CYTISINE_PHASES = [
   { maxDay: 25, label: 'Fase 5 (gg 21–25)', pills: 1, intervalMin: 0   },
 ];
 
+function getRomeTime() {
+  const romeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+  return {
+    timeStr: `${String(romeDate.getHours()).padStart(2, '0')}:${String(romeDate.getMinutes()).padStart(2, '0')}`,
+    date: romeDate,
+  };
+}
+
 function getPhase(startDate) {
-  const day = Math.floor((Date.now() - new Date(startDate)) / 86400000) + 1;
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+  const start = new Date(new Date(startDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+  const day = Math.floor((now - start) / 86400000) + 1;
   if (day < 1 || day > 25) return null;
   const phase = CYTISINE_PHASES.find(p => day <= p.maxDay);
   return phase ? { day, ...phase } : null;
@@ -56,10 +66,7 @@ function startCron() {
   if (!isEnabled()) return;
 
   cron.schedule('* * * * *', async () => {
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    const timeStr = `${hh}:${mm}`;
+    const { timeStr } = getRomeTime();
 
     try {
       // 1. Promemoria citisina automatici
