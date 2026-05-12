@@ -71,7 +71,7 @@ export default function Home() {
     setAdjusting(true);
     try {
       const newQuitDate = new Date(Date.now() - (next - 1) * 86400000).toISOString();
-      const { user: updated } = await api.quiz.save({ quitDate: newQuitDate });
+      const { user: updated } = await api.quiz.setQuitDate(newQuitDate);
       updateUser(updated);
       setProgress(p => ({ ...p, daysSinceQuit: next }));
     } catch (err) {

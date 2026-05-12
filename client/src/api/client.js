@@ -28,6 +28,7 @@ export const api = {
   },
   quiz: {
     save: (body) => request('/api/quiz', { method: 'POST', body: JSON.stringify(body) }),
+    setQuitDate: (quitDate) => request('/api/quiz/quit-date', { method: 'PATCH', body: JSON.stringify({ quitDate }) }),
   },
   progress: {
     get: () => request('/api/progress'),
