@@ -100,16 +100,16 @@ router.get('/debug', requireAuth, async (req, res) => {
 
 // POST /api/notifications/test — invia push di test immediata
 router.post('/test', requireAuth, async (req, res) => {
-  const pub = process.env.VAPID_PUBLIC_KEY;
-  const priv = process.env.VAPID_PRIVATE_KEY;
-  const email = process.env.VAPID_EMAIL || 'mailto:admin@quitfresh.app';
+  const pub = (process.env.VAPID_PUBLIC_KEY || '').trim().replace(/[^A-Za-z0-9\-_]/g, '');
+  const priv = (process.env.VAPID_PRIVATE_KEY || '').trim().replace(/[^A-Za-z0-9\-_]/g, '');
+  const email = (process.env.VAPID_EMAIL || 'mailto:admin@quitfresh.app').trim();
 
   if (!pub || !priv) return res.status(500).json({ error: 'VAPID non configurato' });
 
   try {
     webpush.setVapidDetails(email, pub, priv);
   } catch (e) {
-    return res.status(500).json({ error: 'Chiave VAPID non valida: ' + e.message });
+    return res.status(500).json({ error: 'Chiave VAPID non valida: ' + e.message + ' | lunghezza chiave: ' + pub.length });
   }
 
   const subs = await prisma.pushSubscription.findMany({ where: { userId: req.user.id } });

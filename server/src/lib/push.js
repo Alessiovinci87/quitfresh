@@ -4,9 +4,9 @@ let initialized = false;
 
 function init() {
   if (initialized) return;
-  const pub = process.env.VAPID_PUBLIC_KEY;
-  const priv = process.env.VAPID_PRIVATE_KEY;
-  const email = process.env.VAPID_EMAIL || 'mailto:admin@quitfresh.app';
+  const pub = (process.env.VAPID_PUBLIC_KEY || '').trim().replace(/[^A-Za-z0-9\-_]/g, '');
+  const priv = (process.env.VAPID_PRIVATE_KEY || '').trim().replace(/[^A-Za-z0-9\-_]/g, '');
+  const email = (process.env.VAPID_EMAIL || 'mailto:admin@quitfresh.app').trim();
 
   if (!pub || !priv) {
     console.warn('[push] VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY non impostati — notifiche push disabilitate');
