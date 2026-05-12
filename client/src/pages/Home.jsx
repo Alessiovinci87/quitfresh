@@ -53,6 +53,8 @@ export default function Home() {
   const [relapseLoading, setRelapseLoading] = useState(false);
   const [restartLoading, setRestartLoading] = useState(false);
 
+  const [adjusting, setAdjusting] = useState(false);
+
   useEffect(() => {
     if (!user.quitDate) { setLoading(false); return; }
     api.progress.get()
@@ -60,6 +62,24 @@ export default function Home() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [user.quitDate]);
+
+  async function adjustDays(delta) {
+    if (adjusting) return;
+    const current = progress?.daysSinceQuit ?? 0;
+    const next = current + delta;
+    if (next < 0) return;
+    setAdjusting(true);
+    try {
+      const newQuitDate = new Date(Date.now() - (next - 1) * 86400000).toISOString();
+      const { user: updated } = await api.quiz.save({ quitDate: newQuitDate });
+      updateUser(updated);
+      setProgress(p => ({ ...p, daysSinceQuit: next }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAdjusting(false);
+    }
+  }
 
   async function handleRelapse() {
     setRelapseLoading(true);
@@ -142,9 +162,21 @@ export default function Home() {
           <div className="w-8 h-8 border-2 border-sage-400 border-t-transparent rounded-full animate-spin mx-auto" />
         ) : (
           <>
-            <p className="text-8xl font-bold text-sage-600 tabular-nums leading-none">
-              {progress?.daysSinceQuit ?? 0}
-            </p>
+            <div className="flex items-center justify-center gap-5">
+              <button
+                onClick={() => adjustDays(-1)}
+                disabled={adjusting || (progress?.daysSinceQuit ?? 0) <= 0}
+                className="w-10 h-10 rounded-full bg-white border border-sage-200 text-sage-600 text-xl font-bold disabled:opacity-30 hover:bg-sage-100 transition-colors flex items-center justify-center shadow-sm"
+              >−</button>
+              <p className="text-8xl font-bold text-sage-600 tabular-nums leading-none">
+                {progress?.daysSinceQuit ?? 0}
+              </p>
+              <button
+                onClick={() => adjustDays(+1)}
+                disabled={adjusting}
+                className="w-10 h-10 rounded-full bg-white border border-sage-200 text-sage-600 text-xl font-bold disabled:opacity-30 hover:bg-sage-100 transition-colors flex items-center justify-center shadow-sm"
+              >+</button>
+            </div>
             <p className="mt-3 text-sm font-medium text-sage-700">
               {(progress?.daysSinceQuit ?? 0) === 1 ? 'giorno senza fumo' : 'giorni senza fumo'}
             </p>
