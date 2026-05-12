@@ -159,6 +159,13 @@ export default function Profile() {
   );
   const [firstDoseTime, setFirstDoseTime] = useState(user.firstDoseTime || '');
 
+  function daysFromQuitDate(quitDate) {
+    if (!quitDate) return '';
+    const d = Math.floor((Date.now() - new Date(quitDate)) / 86400000) + 1;
+    return d > 0 ? String(d) : '';
+  }
+  const [smokeFreeDays, setSmokeFreeDays] = useState(daysFromQuitDate(user.quitDate));
+
   function toggleMoment(m) {
     setSelectedMoments(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
   }
@@ -178,12 +185,18 @@ export default function Profile() {
     setError('');
     setSuccess('');
     try {
+      const days = parseInt(smokeFreeDays);
+      const quitDate = smokeFreeDays && days > 0
+        ? new Date(Date.now() - (days - 1) * 86400000).toISOString()
+        : undefined;
+
       const { user: updated } = await api.quiz.save({
         cigarettesPerDay: parseInt(cigarettesPerDay),
         criticalMoments: selectedMoments,
         dependencyLevel,
         cytisineStartDate: cytisineStartDate || null,
         firstDoseTime: firstDoseTime || null,
+        ...(quitDate !== undefined && { quitDate }),
       });
       updateUser(updated);
       setEditing(false);
@@ -198,6 +211,7 @@ export default function Profile() {
 
   function handleCancel() {
     setCigarettesPerDay(String(user.cigarettesPerDay || ''));
+    setSmokeFreeDays(daysFromQuitDate(user.quitDate));
     setSelectedMoments(user.criticalMoments || []);
     setDependencyLevel(user.dependencyLevel || null);
     setCytisineStartDate(user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : '');
@@ -226,6 +240,31 @@ export default function Profile() {
         <p className="text-xs text-gray-500 mb-0.5">Account</p>
         <p className="text-sm font-medium text-gray-800">{user.email}</p>
         <p className="text-xs text-gray-400 mt-0.5">Registrato il {new Date(user.createdAt).toLocaleDateString('it-IT')}</p>
+      </div>
+
+      {/* Giorni senza fumo */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Giorni senza fumo</label>
+        {editing ? (
+          <div>
+            <input
+              type="number" min="0" max="3650"
+              value={smokeFreeDays}
+              onChange={e => setSmokeFreeDays(e.target.value)}
+              placeholder="Es. 5"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Inserisci il numero di giorni e l'app calcolerà la data di inizio.
+            </p>
+          </div>
+        ) : (
+          <p className="text-gray-800 text-sm">
+            {daysFromQuitDate(user.quitDate)
+              ? `${daysFromQuitDate(user.quitDate)} giorni`
+              : '—'}
+          </p>
+        )}
       </div>
 
       {/* Citisina */}
