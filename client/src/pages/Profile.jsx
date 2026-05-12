@@ -395,6 +395,8 @@ export default function Profile() {
 function CytisineSchedule({ startDate, firstDoseTime, currentPhase }) {
   if (!firstDoseTime) return null;
 
+  const endDate = startDate ? new Date(new Date(startDate).getTime() + 24 * 86400000) : null;
+
   return (
     <div className="rounded-xl border border-gray-200 overflow-hidden">
       {/* Intestazione fase corrente */}
@@ -402,6 +404,14 @@ function CytisineSchedule({ startDate, firstDoseTime, currentPhase }) {
         <div className="bg-sage-500 px-4 py-3">
           <p className="text-white text-sm font-semibold">Giorno {currentPhase.day} · {currentPhase.label}</p>
           <p className="text-sage-100 text-xs mt-0.5">{currentPhase.pills} capsule al dì · 1 ogni {currentPhase.intervalLabel}</p>
+        </div>
+      )}
+
+      {/* Date inizio / fine */}
+      {startDate && endDate && (
+        <div className="flex justify-between px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
+          <span>Inizio: <span className="font-medium text-gray-700">{new Date(startDate).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</span></span>
+          <span>Fine: <span className="font-medium text-gray-700">{endDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</span></span>
         </div>
       )}
 
