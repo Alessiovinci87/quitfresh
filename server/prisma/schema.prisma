@@ -17,6 +17,7 @@ model User {
   dependencyLevel   Int?
   quitDate           DateTime?
   cytisineStartDate  DateTime?
+  firstDoseTime      String?
   notificationTimes  String[]
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]

@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 // POST /api/quiz
 router.post('/', requireAuth, async (req, res) => {
-  const { cigarettesPerDay, criticalMoments, dependencyLevel, quitDate, cytisineStartDate } = req.body;
+  const { cigarettesPerDay, criticalMoments, dependencyLevel, quitDate, cytisineStartDate, firstDoseTime } = req.body;
 
   if (cigarettesPerDay === undefined || !dependencyLevel) {
     return res.status(400).json({ error: 'Dati del quiz incompleti' });
@@ -26,6 +26,9 @@ router.post('/', requireAuth, async (req, res) => {
         quitDate: quitDate ? new Date(quitDate) : new Date(),
         ...(cytisineStartDate !== undefined && {
           cytisineStartDate: cytisineStartDate ? new Date(cytisineStartDate) : null,
+        }),
+        ...(firstDoseTime !== undefined && {
+          firstDoseTime: firstDoseTime || null,
         }),
       },
     });
