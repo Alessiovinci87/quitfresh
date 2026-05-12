@@ -11,6 +11,7 @@ import Craving from './pages/Craving';
 import Profile from './pages/Profile';
 import Tools from './pages/Tools';
 import Diary from './pages/Diary';
+import Stats from './pages/Stats';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
             <Route path="/profile" element={<PrivateRoute><Layout><Profile /></Layout></PrivateRoute>} />
             <Route path="/tools" element={<PrivateRoute><Layout><Tools /></Layout></PrivateRoute>} />
             <Route path="/diary" element={<PrivateRoute><Layout><Diary /></Layout></PrivateRoute>} />
+            <Route path="/stats" element={<PrivateRoute><Layout><Stats /></Layout></PrivateRoute>} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>

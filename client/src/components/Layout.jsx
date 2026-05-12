@@ -4,8 +4,9 @@ export default function Layout({ children }) {
   return (
     <div className="mobile-container bg-white">
       <main className="flex-1 overflow-y-auto pb-20">{children}</main>
-      <nav className="border-t border-gray-100 bg-white px-2 py-3 flex items-center justify-around fixed bottom-0 left-0 right-0 max-w-mobile mx-auto z-10">
+      <nav className="border-t border-gray-100 bg-white px-1 py-3 flex items-center justify-around fixed bottom-0 left-0 right-0 max-w-mobile mx-auto z-10">
         <NavItem to="/home" label="Home" icon={<HomeIcon />} />
+        <NavItem to="/stats" label="Progressi" icon={<StatsIcon />} />
         <NavItem to="/tools" label="Strumenti" icon={<ToolsIcon />} />
         <NavItem to="/diary" label="Diario" icon={<DiaryIcon />} />
         <NavItem to="/profile" label="Profilo" icon={<ProfileIcon />} />
@@ -19,7 +20,7 @@ function NavItem({ to, label, icon }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex flex-col items-center gap-0.5 text-xs font-medium transition-colors px-3 ${
+        `flex flex-col items-center gap-0.5 text-xs font-medium transition-colors px-1.5 ${
           isActive ? 'text-sage-600' : 'text-gray-400'
         }`
       }
@@ -41,4 +42,7 @@ function DiaryIcon() {
 }
 function ProfileIcon() {
   return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>;
+}
+function StatsIcon() {
+  return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
 }
