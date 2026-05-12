@@ -7,7 +7,8 @@ const prisma = new PrismaClient();
 // GET /api/progress
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const user = req.user;
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return res.status(404).json({ error: 'Utente non trovato' });
     const now = new Date();
 
     const daysSinceQuit = user.quitDate
