@@ -58,4 +58,20 @@ router.patch('/quit-date', requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/quiz/smoke-free-since — imposta il momento di inizio astinenza
+router.patch('/smoke-free-since', requireAuth, async (req, res) => {
+  const { smokeFreeSince } = req.body;
+  try {
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { smokeFreeSince: smokeFreeSince ? new Date(smokeFreeSince) : null },
+    });
+    const { passwordHash, ...safe } = user;
+    res.json({ user: safe });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore aggiornamento' });
+  }
+});
+
 module.exports = router;

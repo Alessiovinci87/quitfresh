@@ -48,6 +48,7 @@ router.get('/', requireAuth, async (req, res) => {
       cravingCount,
       resolvedCount,
       quitDate: user.quitDate,
+      smokeFreeSince: user.smokeFreeSince,
       pastAttempts: pastAttempts.map(a => ({
         startDate: a.startDate,
         endDate: a.endDate,

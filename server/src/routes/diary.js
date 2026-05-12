@@ -60,4 +60,30 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/diary/cigs — aggiorna solo le sigarette del giorno
+router.patch('/cigs', requireAuth, async (req, res) => {
+  const { date, cigarettes } = req.body;
+  if (cigarettes === undefined) return res.status(400).json({ error: 'cigarettes obbligatorio' });
+
+  const entryDate = dayStart(date || new Date());
+  try {
+    const entry = await prisma.diaryEntry.upsert({
+      where: { userId_date: { userId: req.user.id, date: entryDate } },
+      update: { cigarettesToday: Math.max(0, parseInt(cigarettes)) },
+      create: {
+        userId: req.user.id,
+        date: entryDate,
+        cigarettesToday: Math.max(0, parseInt(cigarettes)),
+        pillsTaken: 0,
+        sideEffects: [],
+        notes: '',
+      },
+    });
+    res.json(entry);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore aggiornamento sigarette' });
+  }
+});
+
 module.exports = router;

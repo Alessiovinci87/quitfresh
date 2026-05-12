@@ -29,6 +29,7 @@ export const api = {
   quiz: {
     save: (body) => request('/api/quiz', { method: 'POST', body: JSON.stringify(body) }),
     setQuitDate: (quitDate) => request('/api/quiz/quit-date', { method: 'PATCH', body: JSON.stringify({ quitDate }) }),
+    setSmokeFreeeSince: (smokeFreeSince) => request('/api/quiz/smoke-free-since', { method: 'PATCH', body: JSON.stringify({ smokeFreeSince }) }),
   },
   progress: {
     get: () => request('/api/progress'),
@@ -48,6 +49,7 @@ export const api = {
   diary: {
     list: () => request('/api/diary'),
     save: (body) => request('/api/diary', { method: 'POST', body: JSON.stringify(body) }),
+    logCigs: (date, cigarettes) => request('/api/diary/cigs', { method: 'PATCH', body: JSON.stringify({ date, cigarettes }) }),
   },
   notifications: {
     vapidKey: () => request('/api/notifications/vapid-key'),

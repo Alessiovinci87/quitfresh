@@ -18,6 +18,7 @@ model User {
   quitDate           DateTime?
   cytisineStartDate  DateTime?
   firstDoseTime      String?
+  smokeFreeSince     DateTime?
   notificationTimes  String[]
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]
