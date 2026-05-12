@@ -62,24 +62,28 @@ export default function Profile() {
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [notifSupported, setNotifSupported] = useState(false);
   const [notifSaving, setNotifSaving] = useState(false);
+  const [notifRegistered, setNotifRegistered] = useState(false);
 
   useEffect(() => {
-    setNotifSupported('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window);
-    setNotifEnabled(Notification.permission === 'granted');
+    const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+    setNotifSupported(supported);
+    const granted = Notification.permission === 'granted';
+    setNotifEnabled(granted);
+    if (supported && granted) registerSubscription();
   }, []);
 
-  async function enableNotifications() {
+  async function registerSubscription() {
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return;
-      setNotifEnabled(true);
       const { enabled, publicKey } = await api.notifications.vapidKey();
       if (!enabled || !publicKey) return;
       const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
+        });
+      }
       await api.notifications.subscribe({
         endpoint: sub.endpoint,
         keys: {
@@ -87,6 +91,18 @@ export default function Profile() {
           auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))),
         },
       });
+      setNotifRegistered(true);
+    } catch (err) {
+      console.error('Push register error:', err);
+    }
+  }
+
+  async function enableNotifications() {
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+      setNotifEnabled(true);
+      await registerSubscription();
     } catch (err) {
       console.error('Push subscribe error:', err);
     }
@@ -307,7 +323,14 @@ export default function Profile() {
 
       {/* Promemoria anti-craving */}
       <div className="mb-8 border-t border-gray-100 pt-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-1">Promemoria anti-craving</h2>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-sm font-semibold text-gray-700">Promemoria anti-craving</h2>
+          {notifEnabled && (
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${notifRegistered ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+              {notifRegistered ? 'Dispositivo registrato ✓' : 'Registrazione…'}
+            </span>
+          )}
+        </div>
         <p className="text-xs text-gray-400 mb-4">Notifiche di supporto nei tuoi momenti critici.</p>
 
         {!notifSupported ? (
