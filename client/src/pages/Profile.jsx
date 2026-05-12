@@ -23,6 +23,21 @@ const DEPENDENCY_LABELS = {
   5: 'Molto alta',
 };
 
+const CYTISINE_PHASES = [
+  { maxDay: 3,  label: 'Fase 1 (gg 1–3)',   pills: 6, interval: '2 ore' },
+  { maxDay: 12, label: 'Fase 2 (gg 4–12)',  pills: 5, interval: '2,5 ore' },
+  { maxDay: 16, label: 'Fase 3 (gg 13–16)', pills: 4, interval: '3 ore' },
+  { maxDay: 20, label: 'Fase 4 (gg 17–20)', pills: 3, interval: '5 ore' },
+  { maxDay: 25, label: 'Fase 5 (gg 21–25)', pills: '1–2', interval: 'al giorno' },
+];
+
+function getCytisinePhase(startDate) {
+  if (!startDate) return null;
+  const day = Math.floor((Date.now() - new Date(startDate)) / 86400000) + 1;
+  if (day < 1 || day > 25) return null;
+  return { day, ...CYTISINE_PHASES.find(p => day <= p.maxDay) };
+}
+
 export default function Profile() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
@@ -96,6 +111,9 @@ export default function Profile() {
   const [selectedMoments, setSelectedMoments] = useState(user.criticalMoments || []);
   const [customMoment, setCustomMoment] = useState('');
   const [dependencyLevel, setDependencyLevel] = useState(user.dependencyLevel || null);
+  const [cytisineStartDate, setCytisineStartDate] = useState(
+    user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : ''
+  );
 
   function toggleMoment(m) {
     setSelectedMoments((prev) =>
@@ -124,6 +142,7 @@ export default function Profile() {
         cigarettesPerDay: parseInt(cigarettesPerDay),
         criticalMoments: selectedMoments,
         dependencyLevel,
+        cytisineStartDate: cytisineStartDate || null,
       });
       updateUser(updated);
       setEditing(false);
@@ -140,9 +159,14 @@ export default function Profile() {
     setCigarettesPerDay(String(user.cigarettesPerDay || ''));
     setSelectedMoments(user.criticalMoments || []);
     setDependencyLevel(user.dependencyLevel || null);
+    setCytisineStartDate(
+      user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : ''
+    );
     setError('');
     setEditing(false);
   }
+
+  const currentPhase = getCytisinePhase(user.cytisineStartDate);
 
   return (
     <div className="px-6 py-8 animate-fade-in">
@@ -169,6 +193,28 @@ export default function Profile() {
         <p className="text-xs text-gray-400 mt-0.5">
           Registrato il {new Date(user.createdAt).toLocaleDateString('it-IT')}
         </p>
+      </div>
+
+      {/* Citisina start date */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Data inizio citisina
+        </label>
+        {editing ? (
+          <input
+            type="date"
+            value={cytisineStartDate}
+            onChange={(e) => setCytisineStartDate(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition"
+          />
+        ) : currentPhase ? (
+          <div className="bg-sage-50 border border-sage-200 rounded-xl px-4 py-3">
+            <p className="text-sm font-semibold text-sage-700">Giorno {currentPhase.day} · {currentPhase.label}</p>
+            <p className="text-xs text-sage-600 mt-0.5">{currentPhase.pills} capsule al dì · 1 ogni {currentPhase.interval}</p>
+          </div>
+        ) : (
+          <p className="text-gray-400 text-sm">Non impostata</p>
+        )}
       </div>
 
       {/* Sigarette */}
@@ -302,9 +348,9 @@ export default function Profile() {
 
       {/* Promemoria notifiche */}
       <div className="mb-8 border-t border-gray-100 pt-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-1">Promemoria</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-1">Promemoria citisina</h2>
         <p className="text-xs text-gray-400 mb-4">
-          Ricevi una notifica push nei tuoi momenti critici.
+          Ricevi una notifica push agli orari in cui devi prendere la capsula.
         </p>
 
         {!notifSupported ? (

@@ -15,8 +15,9 @@ model User {
   cigarettesPerDay  Int?
   criticalMoments   String[]
   dependencyLevel   Int?
-  quitDate          DateTime?
-  notificationTimes String[]
+  quitDate           DateTime?
+  cytisineStartDate  DateTime?
+  notificationTimes  String[]
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]
   diaryEntries      DiaryEntry[]
