@@ -7,6 +7,43 @@ const BADGE_EMOJI = {
   day1: '🌱', day3: '🌿', week1: '⭐', day14: '🌟', month1: '🏅', month3: '🏆',
 };
 
+const CYTISINE_PHASES = [
+  { maxDay: 3,  label: 'Fase 1', pills: 6, intervalMin: 120 },
+  { maxDay: 12, label: 'Fase 2', pills: 5, intervalMin: 150 },
+  { maxDay: 16, label: 'Fase 3', pills: 4, intervalMin: 180 },
+  { maxDay: 20, label: 'Fase 4', pills: 3, intervalMin: 300 },
+  { maxDay: 25, label: 'Fase 5', pills: 1, intervalMin: 0   },
+];
+
+function getCytisinePhase(startDate) {
+  if (!startDate) return null;
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+  const start = new Date(new Date(startDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+  const day = Math.floor((now - start) / 86400000) + 1;
+  if (day < 1 || day > 25) return null;
+  const phase = CYTISINE_PHASES.find(p => day <= p.maxDay);
+  return phase ? { day, ...phase } : null;
+}
+
+function getDoseTimes(firstDoseTime, phase) {
+  const [h, m] = firstDoseTime.split(':').map(Number);
+  const firstMin = h * 60 + m;
+  const times = [];
+  for (let i = 0; i < phase.pills; i++) {
+    const total = firstMin + i * phase.intervalMin;
+    if (total >= 1440) break;
+    const hh = String(Math.floor(total / 60)).padStart(2, '0');
+    const mm = String(total % 60).padStart(2, '0');
+    times.push(`${hh}:${mm}`);
+  }
+  return times;
+}
+
+function getTodayStr() {
+  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 export default function Home() {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -133,6 +170,9 @@ export default function Home() {
         </div>
       )}
 
+      {/* Capsule tracker */}
+      <CapsuleTracker user={user} />
+
       {/* CTA */}
       <button
         onClick={() => navigate('/craving')}
@@ -212,6 +252,89 @@ export default function Home() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function CapsuleTracker({ user }) {
+  const [pillsTaken, setPillsTaken] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const phase = getCytisinePhase(user.cytisineStartDate);
+  const doseTimes = phase && user.firstDoseTime ? getDoseTimes(user.firstDoseTime, phase) : null;
+
+  useEffect(() => {
+    if (!phase || !doseTimes) return;
+    const today = getTodayStr();
+    api.diary.list()
+      .then(entries => {
+        const entry = entries.find(e => e.date?.startsWith(today));
+        setPillsTaken(entry?.pillsTaken ?? 0);
+      })
+      .catch(() => setPillsTaken(0));
+  }, []);
+
+  async function updateCount(next) {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const today = getTodayStr();
+      await api.diary.save({ date: new Date(today).toISOString(), pillsTaken: next });
+      setPillsTaken(next);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!phase || !doseTimes) return null;
+  const taken = pillsTaken ?? 0;
+  const allTaken = taken >= phase.pills;
+
+  return (
+    <div className="mb-6 border border-sage-200 rounded-2xl px-4 py-4 bg-white">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-gray-700">Capsule di oggi</h2>
+        <span className="text-xs font-medium text-sage-600">Giorno {phase.day} · {phase.label}</span>
+      </div>
+
+      {/* Dosi visuali */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {doseTimes.map((t, i) => (
+          <div key={t} className="flex flex-col items-center gap-1 min-w-[2.5rem]">
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+              i < taken ? 'bg-sage-500 text-white' : 'bg-gray-100 text-gray-400'
+            }`}>
+              {i < taken ? '✓' : i + 1}
+            </div>
+            <span className="text-xs text-gray-400">{t}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Contatore +/− */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => taken > 0 && updateCount(taken - 1)}
+          disabled={taken <= 0 || saving}
+          className="w-10 h-10 rounded-full border border-gray-200 text-gray-500 text-xl font-bold disabled:opacity-30 hover:bg-gray-50 transition-colors flex items-center justify-center"
+        >−</button>
+        <div className="flex-1 text-center">
+          <p className="text-2xl font-bold text-sage-600">
+            {pillsTaken === null ? '…' : taken}
+            <span className="text-sm font-normal text-gray-400"> / {phase.pills}</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {allTaken ? 'Tutte le capsule prese ✓' : `ancora ${phase.pills - taken} da prendere`}
+          </p>
+        </div>
+        <button
+          onClick={() => !allTaken && updateCount(taken + 1)}
+          disabled={allTaken || saving}
+          className="w-10 h-10 rounded-full bg-sage-500 text-white text-xl font-bold disabled:opacity-30 hover:bg-sage-600 transition-colors flex items-center justify-center"
+        >+</button>
+      </div>
     </div>
   );
 }
