@@ -70,7 +70,7 @@ export default function Home() {
     if (next < 0) return;
     setAdjusting(true);
     try {
-      const newQuitDate = new Date(Date.now() - (next - 1) * 86400000).toISOString();
+      const newQuitDate = new Date(Date.now() - next * 86400000).toISOString();
       const { user: updated } = await api.quiz.setQuitDate(newQuitDate);
       updateUser(updated);
       setProgress(p => ({ ...p, daysSinceQuit: next }));

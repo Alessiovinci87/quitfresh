@@ -187,7 +187,7 @@ export default function Profile() {
     try {
       const days = parseInt(smokeFreeDays);
       const quitDate = smokeFreeDays && days > 0
-        ? new Date(Date.now() - (days - 1) * 86400000).toISOString()
+        ? new Date(Date.now() - days * 86400000).toISOString()
         : undefined;
 
       const { user: updated } = await api.quiz.save({
