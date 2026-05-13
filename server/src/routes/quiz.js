@@ -1,9 +1,7 @@
 const router = require('express').Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { normalizeSchedule } = require('../lib/cytisine');
-
-const prisma = new PrismaClient();
 
 // POST /api/quiz — partial update: aggiorna solo i campi forniti
 router.post('/', requireAuth, async (req, res) => {

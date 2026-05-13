@@ -1,10 +1,8 @@
 const router = require('express').Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { cravingLimiter } = require('../middleware/rateLimit');
 const { getCravingResponse } = require('../lib/openai');
-
-const prisma = new PrismaClient();
 
 // POST /api/craving
 router.post('/', requireAuth, cravingLimiter, async (req, res) => {

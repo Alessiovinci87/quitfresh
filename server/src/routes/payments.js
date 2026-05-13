@@ -1,9 +1,8 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { stripe, priceId, webhookSecret, isConfigured } = require('../lib/stripe');
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
 // GET /api/payments/status

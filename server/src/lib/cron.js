@@ -1,9 +1,7 @@
 const cron = require('node-cron');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('./prisma');
 const { sendPush, isEnabled } = require('./push');
 const { getActivePhase, getDoseTimes } = require('./cytisine');
-
-const prisma = new PrismaClient();
 
 function getRomeTime() {
   const romeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
@@ -39,9 +37,16 @@ function startCron() {
     const { timeStr, date: romeNow } = getRomeTime();
 
     try {
-      // 1. Promemoria citisina (schedule personalizzato con fallback al default)
+      // 1. Promemoria citisina (schedule personalizzato con fallback al default).
+      // Filtri:
+      //   - cytisineStartDate negli ultimi 60 giorni (oltre il protocollo finisce)
+      //   - almeno una pushSubscription attiva (senza, dispatch sarebbe no-op)
+      const sixtyDaysAgo = new Date(Date.now() - 60 * 86400000);
       const cytisineUsers = await prisma.user.findMany({
-        where: { cytisineStartDate: { not: null }, firstDoseTime: { not: null } },
+        where: {
+          cytisineStartDate: { not: null, gte: sixtyDaysAgo },
+          pushSubscriptions: { some: {} },
+        },
         include: { pushSubscriptions: true },
       });
 
@@ -60,9 +65,12 @@ function startCron() {
         });
       }
 
-      // 2. Promemoria anti-craving manuali
+      // 2. Promemoria anti-craving manuali — filtra per orario corrente + push attivi
       const cravingUsers = await prisma.user.findMany({
-        where: { notificationTimes: { has: timeStr } },
+        where: {
+          notificationTimes: { has: timeStr },
+          pushSubscriptions: { some: {} },
+        },
         include: { pushSubscriptions: true },
       });
 

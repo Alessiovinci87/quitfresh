@@ -1,10 +1,8 @@
 const router = require('express').Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { isEnabled, sendPush } = require('../lib/push');
 const webpush = require('web-push');
-
-const prisma = new PrismaClient();
 
 // GET /api/notifications/vapid-key
 router.get('/vapid-key', (_req, res) => {

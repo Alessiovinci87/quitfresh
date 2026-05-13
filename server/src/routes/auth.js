@@ -1,10 +1,8 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
-
-const prisma = new PrismaClient();
 
 function signToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -70,6 +68,19 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me
 router.get('/me', requireAuth, (req, res) => {
   res.json({ user: sanitize(req.user) });
+});
+
+// DELETE /api/auth/me — cancellazione account (GDPR).
+// Lo schema ha onDelete: Cascade su CravingLog, QuitAttempt, DiaryEntry,
+// PushSubscription — Prisma cancella in cascata in un'unica operazione.
+router.delete('/me', requireAuth, async (req, res) => {
+  try {
+    await prisma.user.delete({ where: { id: req.user.id } });
+    res.status(204).end();
+  } catch (err) {
+    console.error('Account deletion error:', err);
+    res.status(500).json({ error: 'Errore durante la cancellazione dell\'account' });
+  }
 });
 
 function sanitize(user) {

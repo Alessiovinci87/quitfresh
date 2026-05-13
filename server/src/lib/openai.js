@@ -72,7 +72,7 @@ async function getChatResponse({ user, messages }) {
   }
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini',
     messages: openaiMessages,
     max_tokens: 700,
     temperature: 0.8,
@@ -92,7 +92,7 @@ async function getCravingResponse({ user, context }) {
   const momenti = user.criticalMoments?.length ? user.criticalMoments.join(', ') : 'non specificati';
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-4o-mini',
     response_format: { type: 'json_object' },
     messages: [
       {

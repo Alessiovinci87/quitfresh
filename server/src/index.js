@@ -1,4 +1,16 @@
 require('dotenv').config();
+
+// Sentry deve essere inizializzato PRIMA di tutto il resto per intercettare gli errori
+// dei moduli caricati dopo. Se SENTRY_DSN non è configurato, no-op.
+const Sentry = require('@sentry/node');
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 0.1,
+    environment: process.env.NODE_ENV || 'development',
+  });
+}
+
 const express = require('express');
 const cors = require('cors');
 
@@ -38,6 +50,12 @@ app.use('/api/payments', paymentsRoutes);
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
 app.use((req, res) => res.status(404).json({ error: 'Endpoint non trovato' }));
+
+// Sentry express error handler — deve venire DOPO le route e PRIMA del nostro
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: 'Errore interno del server' });

@@ -1,10 +1,11 @@
 const router = require('express').Router();
 const { requireAuth } = require('../middleware/auth');
+const { chatLimiter } = require('../middleware/rateLimit');
 const { getChatResponse } = require('../lib/openai');
 const { isConfigured: stripeConfigured } = require('../lib/stripe');
 
 // POST /api/chat
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, chatLimiter, async (req, res) => {
   const { messages = [] } = req.body;
 
   if (stripeConfigured() && !req.user.isPremium) {
