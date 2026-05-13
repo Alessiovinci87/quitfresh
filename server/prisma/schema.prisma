@@ -20,10 +20,23 @@ model User {
   firstDoseTime      String?
   smokeFreeSince     DateTime?
   notificationTimes  String[]
+  isPremium          Boolean            @default(false)
+  premiumSince       DateTime?
+  stripeCustomerId   String?            @unique
+  promoCodeUsed      String?
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]
   diaryEntries      DiaryEntry[]
   pushSubscriptions PushSubscription[]
+}
+
+model PromoCode {
+  id           String   @id @default(cuid())
+  code         String   @unique
+  discountPct  Int
+  active       Boolean  @default(true)
+  usageCount   Int      @default(0)
+  createdAt    DateTime @default(now())
 }
 
 model CravingLog {

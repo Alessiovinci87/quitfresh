@@ -7,6 +7,7 @@ export default function Layout({ children }) {
       <nav className="border-t border-gray-100 bg-white px-1 py-3 flex items-center justify-around fixed bottom-0 left-0 right-0 max-w-mobile mx-auto z-10">
         <NavItem to="/home" label="Home" icon={<HomeIcon />} />
         <NavItem to="/stats" label="Progressi" icon={<StatsIcon />} />
+        <NavItem to="/craving" label="Chat" icon={<ChatIcon />} />
         <NavItem to="/tools" label="Strumenti" icon={<ToolsIcon />} />
         <NavItem to="/diary" label="Diario" icon={<DiaryIcon />} />
         <NavItem to="/profile" label="Profilo" icon={<ProfileIcon />} />
@@ -45,4 +46,7 @@ function ProfileIcon() {
 }
 function StatsIcon() {
   return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>;
+}
+function ChatIcon() {
+  return <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>;
 }

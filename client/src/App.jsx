@@ -12,6 +12,7 @@ import Profile from './pages/Profile';
 import Tools from './pages/Tools';
 import Diary from './pages/Diary';
 import Stats from './pages/Stats';
+import PremiumSuccess from './pages/PremiumSuccess';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/tools" element={<PrivateRoute><Layout><Tools /></Layout></PrivateRoute>} />
             <Route path="/diary" element={<PrivateRoute><Layout><Diary /></Layout></PrivateRoute>} />
             <Route path="/stats" element={<PrivateRoute><Layout><Stats /></Layout></PrivateRoute>} />
+            <Route path="/premium-success" element={<PrivateRoute><PremiumSuccess /></PrivateRoute>} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>

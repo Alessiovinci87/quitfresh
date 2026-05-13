@@ -59,4 +59,11 @@ export const api = {
     debug: () => request('/api/notifications/debug'),
     test: () => request('/api/notifications/test', { method: 'POST' }),
   },
+  payments: {
+    status: () => request('/api/payments/status'),
+    checkout: (promoCode) => request('/api/payments/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ promoCode: promoCode || '' }),
+    }),
+  },
 };

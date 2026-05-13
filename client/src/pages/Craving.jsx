@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import PremiumGate from '../components/PremiumGate';
+
+function isPremiumError(err) {
+  return err?.status === 402 || err?.message === 'PREMIUM_REQUIRED';
+}
 
 export default function Craving() {
   const navigate = useNavigate();
@@ -9,6 +14,7 @@ export default function Craving() {
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
+  const [paywall, setPaywall] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -25,8 +31,12 @@ export default function Craving() {
     try {
       const { reply } = await api.chat.send([]);
       setMessages([{ role: 'assistant', content: reply }]);
-    } catch {
-      setError('Impossibile avviare la chat. Controlla la connessione.');
+    } catch (err) {
+      if (isPremiumError(err)) {
+        setPaywall(true);
+      } else {
+        setError('Impossibile avviare la chat. Controlla la connessione.');
+      }
     } finally {
       setLoading(false);
     }
@@ -47,7 +57,11 @@ export default function Craving() {
       const { reply } = await api.chat.send(newMessages);
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch (err) {
-      setError(err.message || 'Errore nella risposta AI.');
+      if (isPremiumError(err)) {
+        setPaywall(true);
+      } else {
+        setError(err.message || 'Errore nella risposta AI.');
+      }
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -76,6 +90,28 @@ export default function Craving() {
       e.preventDefault();
       sendMessage();
     }
+  }
+
+  if (paywall) {
+    return (
+      <div className="flex flex-col min-h-screen max-w-mobile mx-auto bg-white">
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100 shrink-0">
+          <button
+            onClick={() => navigate('/home')}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Chat AI</p>
+            <p className="text-xs text-sage-600">premium</p>
+          </div>
+        </div>
+        <PremiumGate onCancel={() => navigate('/home')} />
+      </div>
+    );
   }
 
   return (

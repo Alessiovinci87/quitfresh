@@ -4,33 +4,38 @@ const { requireAuth } = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// POST /api/quiz
+// POST /api/quiz — partial update: aggiorna solo i campi forniti
 router.post('/', requireAuth, async (req, res) => {
   const { cigarettesPerDay, criticalMoments, dependencyLevel, quitDate, cytisineStartDate, firstDoseTime } = req.body;
 
-  if (cigarettesPerDay === undefined || !dependencyLevel) {
-    return res.status(400).json({ error: 'Dati del quiz incompleti' });
+  if (dependencyLevel != null && (dependencyLevel < 1 || dependencyLevel > 5)) {
+    return res.status(400).json({ error: 'Il livello di dipendenza deve essere tra 1 e 5' });
   }
 
-  if (dependencyLevel < 1 || dependencyLevel > 5) {
-    return res.status(400).json({ error: 'Il livello di dipendenza deve essere tra 1 e 5' });
+  const data = {};
+  if (cigarettesPerDay !== undefined) {
+    data.cigarettesPerDay = cigarettesPerDay == null ? null : parseInt(cigarettesPerDay);
+  }
+  if (Array.isArray(criticalMoments)) {
+    data.criticalMoments = criticalMoments;
+  }
+  if (dependencyLevel !== undefined) {
+    data.dependencyLevel = dependencyLevel == null ? null : parseInt(dependencyLevel);
+  }
+  if (quitDate !== undefined) {
+    data.quitDate = quitDate ? new Date(quitDate) : null;
+  }
+  if (cytisineStartDate !== undefined) {
+    data.cytisineStartDate = cytisineStartDate ? new Date(cytisineStartDate) : null;
+  }
+  if (firstDoseTime !== undefined) {
+    data.firstDoseTime = firstDoseTime || null;
   }
 
   try {
     const user = await prisma.user.update({
       where: { id: req.user.id },
-      data: {
-        cigarettesPerDay: parseInt(cigarettesPerDay),
-        criticalMoments: Array.isArray(criticalMoments) ? criticalMoments : [],
-        dependencyLevel: parseInt(dependencyLevel),
-        quitDate: quitDate ? new Date(quitDate) : new Date(),
-        ...(cytisineStartDate !== undefined && {
-          cytisineStartDate: cytisineStartDate ? new Date(cytisineStartDate) : null,
-        }),
-        ...(firstDoseTime !== undefined && {
-          firstDoseTime: firstDoseTime || null,
-        }),
-      },
+      data,
     });
 
     const { passwordHash, ...safe } = user;

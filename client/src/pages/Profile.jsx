@@ -177,10 +177,6 @@ export default function Profile() {
   }
 
   async function handleSave() {
-    if (!cigarettesPerDay || !dependencyLevel) {
-      setError('Compila tutti i campi obbligatori');
-      return;
-    }
     setSaving(true);
     setError('');
     setSuccess('');
@@ -191,9 +187,9 @@ export default function Profile() {
         : undefined;
 
       const { user: updated } = await api.quiz.save({
-        cigarettesPerDay: parseInt(cigarettesPerDay),
+        cigarettesPerDay: cigarettesPerDay ? parseInt(cigarettesPerDay) : null,
         criticalMoments: selectedMoments,
-        dependencyLevel,
+        dependencyLevel: dependencyLevel || null,
         cytisineStartDate: cytisineStartDate || null,
         firstDoseTime: firstDoseTime || null,
         ...(quitDate !== undefined && { quitDate }),
@@ -237,9 +233,21 @@ export default function Profile() {
 
       {/* Account */}
       <div className="bg-gray-50 rounded-xl px-4 py-4 mb-6">
-        <p className="text-xs text-gray-500 mb-0.5">Account</p>
+        <div className="flex items-center justify-between mb-0.5">
+          <p className="text-xs text-gray-500">Account</p>
+          {user.isPremium && (
+            <span className="px-2 py-0.5 bg-sage-500 text-white text-xs font-semibold rounded-full">
+              Premium
+            </span>
+          )}
+        </div>
         <p className="text-sm font-medium text-gray-800">{user.email}</p>
         <p className="text-xs text-gray-400 mt-0.5">Registrato il {new Date(user.createdAt).toLocaleDateString('it-IT')}</p>
+        {user.isPremium && user.premiumSince && (
+          <p className="text-xs text-sage-600 mt-1">
+            Premium dal {new Date(user.premiumSince).toLocaleDateString('it-IT')}
+          </p>
+        )}
       </div>
 
       {/* Giorni senza fumo */}
