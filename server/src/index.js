@@ -51,8 +51,17 @@ const PORT = process.env.PORT || 3001;
 // (rate limiter su IP e logging dipendono da questo).
 app.set('trust proxy', 1);
 
-// Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, ecc.)
-app.use(helmet());
+// Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, ecc.).
+// CSP allenta font-src e style-src per Google Fonts (Inter caricato da index.html).
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      'font-src': ["'self'", 'fonts.gstatic.com'],
+      'style-src': ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+    },
+  },
+}));
 
 // ─── CORS ristretto a origini whitelisted ───────────────────────────
 const allowedOrigins = [
