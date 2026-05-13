@@ -35,7 +35,8 @@ jobs:
         run: npm run build
         working-directory: client
         env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # Se il secret è settato lo usa, altrimenti fallback all'URL Railway pubblico.
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://quitfresh-production.up.railway.app' }}
           VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
 
       - name: Upload artifact
