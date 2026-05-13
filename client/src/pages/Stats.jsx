@@ -276,10 +276,11 @@ export default function Stats() {
       <section>
         <h2 className="text-lg font-semibold text-gray-800 mb-3">❤️ Salute nel tempo</h2>
 
+        {/* CTA quit / badge non-fumo */}
         {!smokeFreeSince ? (
-          <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3">
+          <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3 mb-3">
             <p className="text-sm text-gray-600">
-              Quando hai fumato l'ultima sigaretta? Confermalo per iniziare a monitorare i benefici sulla salute.
+              Pronto a iniziare? Premi il pulsante quando smetti — il conteggio parte da subito.
             </p>
             {!showQuitForm ? (
               <div className="flex flex-col gap-2">
@@ -294,7 +295,7 @@ export default function Stats() {
                   onClick={() => { setQuitInput(nowLocalStr); setShowQuitForm(true); }}
                   className="w-full border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm"
                 >
-                  Inserisci data e ora manualmente
+                  Ho smesso prima — inserisci data e ora
                 </button>
               </div>
             ) : (
@@ -323,64 +324,72 @@ export default function Stats() {
             )}
           </div>
         ) : (
-          <>
-            <div className="bg-sage-50 border border-sage-200 rounded-xl px-3 py-2.5 mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-sage-600 font-medium">Non fumo da</p>
-                <p className="text-sm font-semibold text-sage-700">
-                  {smokeFreeSince.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  {' '}ore {smokeFreeSince.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              </div>
-              <button
-                onClick={resetQuit}
-                disabled={settingQuit}
-                className="text-xs text-gray-400 underline ml-2"
-              >
-                Reimposta
-              </button>
+          <div className="bg-sage-50 border border-sage-200 rounded-xl px-3 py-2.5 mb-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-sage-600 font-medium">Non fumo da</p>
+              <p className="text-sm font-semibold text-sage-700">
+                {smokeFreeSince.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+                {' '}ore {smokeFreeSince.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+              </p>
             </div>
+            <button
+              onClick={resetQuit}
+              disabled={settingQuit}
+              className="text-xs text-gray-400 underline ml-2"
+            >
+              Reimposta
+            </button>
+          </div>
+        )}
 
-            {lastReachedMilestone && (
-              <div className="bg-gradient-to-br from-sage-500 to-sage-600 rounded-xl p-4 mb-3 shadow-sm">
-                <p className="text-xs font-medium text-sage-100 uppercase tracking-wide mb-1">Sta succedendo ora</p>
-                <p className="text-base font-bold text-white">{lastReachedMilestone.label} raggiunti</p>
-                <p className="text-sm text-sage-50 mt-1 leading-snug">{lastReachedMilestone.desc}</p>
-              </div>
-            )}
+        {/* Card 'sta succedendo ora' — solo se ha smesso e ha raggiunto qualcosa */}
+        {smokeFreeSince && lastReachedMilestone && (
+          <div className="bg-gradient-to-br from-sage-500 to-sage-600 rounded-xl p-4 mb-3 shadow-sm">
+            <p className="text-xs font-medium text-sage-100 uppercase tracking-wide mb-1">Sta succedendo ora</p>
+            <p className="text-base font-bold text-white">{lastReachedMilestone.label} raggiunti</p>
+            <p className="text-sm text-sage-50 mt-1 leading-snug">{lastReachedMilestone.desc}</p>
+          </div>
+        )}
 
-            {nextMilestone && (
-              <div className="bg-white border border-gray-100 rounded-xl p-3 mb-3 flex items-start gap-3 shadow-sm">
-                <span className="text-2xl mt-0.5">🎯</span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700">Prossimo: {nextMilestone.label}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{nextMilestone.desc}</p>
-                  <p className="text-xs text-sage-500 mt-1 font-medium">tra {formatHoursLeft(nextHoursLeft)}</p>
+        {/* Prossimo — solo se ha smesso */}
+        {smokeFreeSince && nextMilestone && (
+          <div className="bg-white border border-gray-100 rounded-xl p-3 mb-3 flex items-start gap-3 shadow-sm">
+            <span className="text-2xl mt-0.5">🎯</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Prossimo: {nextMilestone.label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{nextMilestone.desc}</p>
+              <p className="text-xs text-sage-500 mt-1 font-medium">tra {formatHoursLeft(nextHoursLeft)}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Hint anteprima quando non ha ancora smesso */}
+        {!smokeFreeSince && (
+          <p className="text-xs text-gray-500 mb-2 px-1">
+            Ecco cosa guadagneresti smettendo:
+          </p>
+        )}
+
+        {/* Timeline milestone — sempre visibile, earned solo se ha smesso */}
+        <div className="space-y-2">
+          {HEALTH_MILESTONES.map((m) => {
+            const earned = smokeFreeSince ? hoursFree >= m.hours : false;
+            return (
+              <div
+                key={m.hours}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${earned ? 'bg-sage-50' : 'bg-gray-50'}`}
+              >
+                <span className={`text-lg flex-shrink-0 ${earned ? '' : 'grayscale opacity-40'}`}>
+                  {earned ? '✅' : '⏳'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium ${earned ? 'text-sage-700' : 'text-gray-600'}`}>{m.label}</p>
+                  <p className={`text-xs ${earned ? 'text-sage-600' : 'text-gray-500'}`}>{m.desc}</p>
                 </div>
               </div>
-            )}
-
-            <div className="space-y-2">
-              {HEALTH_MILESTONES.map((m) => {
-                const earned = hoursFree >= m.hours;
-                return (
-                  <div
-                    key={m.hours}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${earned ? 'bg-sage-50' : 'bg-gray-50'}`}
-                  >
-                    <span className={`text-lg flex-shrink-0 ${earned ? '' : 'grayscale opacity-40'}`}>
-                      {earned ? '✅' : '⏳'}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${earned ? 'text-sage-700' : 'text-gray-400'}`}>{m.label}</p>
-                      <p className={`text-xs ${earned ? 'text-sage-600' : 'text-gray-400'}`}>{m.desc}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
+            );
+          })}
+        </div>
       </section>
 
       {/* ── RISPARMIO ── */}

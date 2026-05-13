@@ -7,6 +7,10 @@ const DEFAULT_SCHEDULE = [
   { days: 5, pills: 1, intervalMin: 0   },
 ];
 
+function isValidTime(s) {
+  return typeof s === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+}
+
 // Restituisce un array valido di fasi o null se l'input è inutilizzabile.
 function normalizeSchedule(raw) {
   if (!Array.isArray(raw) || raw.length === 0) return null;
@@ -17,11 +21,15 @@ function normalizeSchedule(raw) {
     const intervalMin = parseInt(p?.intervalMin ?? 0);
     if (!Number.isFinite(days) || days < 1) return null;
     if (!Number.isFinite(pills) || pills < 1) return null;
-    out.push({
+    const phase = {
       days,
       pills,
       intervalMin: Number.isFinite(intervalMin) && intervalMin >= 0 ? intervalMin : 0,
-    });
+    };
+    if (isValidTime(p?.firstDoseTime)) {
+      phase.firstDoseTime = p.firstDoseTime;
+    }
+    out.push(phase);
   }
   return out;
 }
@@ -51,8 +59,10 @@ function getActivePhase(schedule, startDate, now = new Date()) {
   return null;
 }
 
-function getDoseTimes(firstDoseTime, phase) {
-  if (!firstDoseTime || !phase) return [];
+function getDoseTimes(firstDoseTimeFallback, phase) {
+  if (!phase) return [];
+  const firstDoseTime = phase.firstDoseTime || firstDoseTimeFallback;
+  if (!firstDoseTime) return [];
   const [h, m] = firstDoseTime.split(':').map(Number);
   const firstMin = h * 60 + m;
   const times = [];

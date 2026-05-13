@@ -314,7 +314,7 @@ export default function Profile() {
                     <p className="text-xs font-semibold text-gray-600 mb-2">
                       Fase {idx + 1} · giorni {phaseDayRange(schedule, idx)}
                     </p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-2 mb-2">
                       <label className="text-xs">
                         <span className="block text-gray-500 mb-0.5">Giorni</span>
                         <input
@@ -343,6 +343,31 @@ export default function Profile() {
                         />
                       </label>
                     </div>
+                    <label className="text-xs block">
+                      <span className="block text-gray-500 mb-0.5">
+                        Orario prima capsula
+                        {!phase.firstDoseTime && firstDoseTime && (
+                          <span className="ml-1 text-gray-400">(usa {firstDoseTime})</span>
+                        )}
+                      </span>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="time"
+                          value={phase.firstDoseTime || ''}
+                          onChange={e => updatePhase(idx, 'firstDoseTime', e.target.value || undefined)}
+                          className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                        />
+                        {phase.firstDoseTime && (
+                          <button
+                            type="button"
+                            onClick={() => updatePhase(idx, 'firstDoseTime', undefined)}
+                            className="px-2 text-xs text-gray-400 hover:text-gray-600"
+                          >
+                            ↺
+                          </button>
+                        )}
+                      </div>
+                    </label>
                   </div>
                 ))}
               </div>
