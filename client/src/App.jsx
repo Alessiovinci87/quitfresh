@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -13,15 +14,18 @@ import Tools from './pages/Tools';
 import Diary from './pages/Diary';
 import Stats from './pages/Stats';
 import PremiumSuccess from './pages/PremiumSuccess';
+import Privacy from './pages/Privacy';
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AuthProvider>
         <div className="min-h-screen bg-gray-100 flex items-start justify-center">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
             <Route path="/craving" element={<PrivateRoute><Layout><Craving /></Layout></PrivateRoute>} />
@@ -35,5 +39,6 @@ export default function App() {
         </div>
       </AuthProvider>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }

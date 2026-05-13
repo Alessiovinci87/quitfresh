@@ -107,6 +107,12 @@ export default function Register() {
             Accedi
           </Link>
         </p>
+
+        <p className="mt-8 text-center">
+          <Link to="/privacy" className="text-xs text-gray-400 hover:text-gray-600 hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
       </div>
     </div>
   );

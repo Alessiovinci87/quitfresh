@@ -39,6 +39,28 @@ export default function Profile() {
   const [notifRegistered, setNotifRegistered] = useState(false);
   const [testResult, setTestResult] = useState('');
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
+      setDeleteError('L\'email digitata non corrisponde.');
+      return;
+    }
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await api.auth.deleteAccount();
+      logout();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      setDeleteError(err.message || 'Errore durante la cancellazione.');
+      setDeleting(false);
+    }
+  }
+
   useEffect(() => {
     const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
     setNotifSupported(supported);
@@ -541,6 +563,60 @@ export default function Profile() {
           Esci dall'account
         </button>
       </div>
+
+      {/* Zona pericolosa */}
+      <div className="mt-8 pt-6 border-t border-gray-100">
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Zona pericolosa</p>
+        <button
+          onClick={() => { setShowDeleteModal(true); setDeleteConfirmEmail(''); setDeleteError(''); }}
+          className="text-xs text-gray-500 hover:text-red-600 underline transition-colors"
+        >
+          Elimina account
+        </button>
+      </div>
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-6">
+          <div className="bg-white rounded-2xl max-w-mobile w-full p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Eliminare l'account?</h3>
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              Questa azione è <strong>irreversibile</strong>. Verranno cancellati:
+              il tuo profilo, lo storico craving, il diario, i promemoria e tutte le
+              statistiche. Non potrai recuperarli.
+            </p>
+            <label className="block text-xs text-gray-500 mb-1">
+              Per confermare, digita la tua email <span className="font-medium">{user.email}</span>:
+            </label>
+            <input
+              type="email"
+              value={deleteConfirmEmail}
+              onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+              placeholder={user.email}
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-red-400"
+              autoFocus
+            />
+            {deleteError && (
+              <p className="text-xs text-red-600 bg-red-50 rounded-lg px-2 py-1.5 mb-3">{deleteError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting || deleteConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()}
+                className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 disabled:opacity-40 transition-colors"
+              >
+                {deleting ? 'Cancellazione…' : 'Elimina definitivamente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

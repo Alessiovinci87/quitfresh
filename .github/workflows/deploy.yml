@@ -35,7 +35,8 @@ jobs:
         run: npm run build
         working-directory: client
         env:
-          VITE_API_URL: https://quitfresh-production.up.railway.app
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

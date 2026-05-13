@@ -25,6 +25,7 @@ export const api = {
     register: (body) => request('/api/auth/register', { method: 'POST', body: JSON.stringify(body) }),
     login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
     me: () => request('/api/auth/me'),
+    deleteAccount: () => request('/api/auth/me', { method: 'DELETE' }),
   },
   quiz: {
     save: (body) => request('/api/quiz', { method: 'POST', body: JSON.stringify(body) }),

@@ -27,4 +27,19 @@ const chatLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { cravingLimiter, chatLimiter };
+// Login / register: protezione anti brute-force basata su IP (richiede
+// app.set('trust proxy', 1) lato server per leggere l'IP reale).
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minuti
+  limit: 15,
+  keyGenerator: (req) => req.ip,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: 'Troppi tentativi. Riprova tra qualche minuto.',
+    });
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+module.exports = { cravingLimiter, chatLimiter, loginLimiter };

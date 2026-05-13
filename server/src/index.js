@@ -31,6 +31,10 @@ const { ensurePromoCodes } = require('./lib/promoCodes');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Railway sta dietro un reverse proxy: serve trust proxy per leggere req.ip reale
+// (rate limiter su IP e logging dipendono da questo).
+app.set('trust proxy', 1);
+
 app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));
 
 // Stripe webhook deve ricevere il body raw per verificare la firma — montato PRIMA di express.json
