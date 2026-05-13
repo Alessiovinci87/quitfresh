@@ -23,6 +23,39 @@ export default function Home() {
   const [restartLoading, setRestartLoading] = useState(false);
 
   const [adjusting, setAdjusting] = useState(false);
+  const [resendStatus, setResendStatus] = useState('idle'); // idle | sending | sent | error
+
+  async function handleResendVerify() {
+    setResendStatus('sending');
+    try {
+      await api.auth.resendVerify();
+      setResendStatus('sent');
+    } catch {
+      setResendStatus('error');
+    }
+  }
+
+  const verifyBanner = !user.emailVerified ? (
+    <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-xl px-3 py-2.5 flex items-start gap-2">
+      <span className="text-yellow-500 text-sm mt-0.5">⚠</span>
+      <div className="flex-1 text-xs text-yellow-800">
+        <p className="font-medium">Verifica la tua email per non perdere l'accesso.</p>
+        {resendStatus === 'sent' ? (
+          <p className="mt-0.5 text-yellow-700">Link inviato. Controlla la casella.</p>
+        ) : resendStatus === 'error' ? (
+          <p className="mt-0.5 text-red-600">Errore. Riprova tra qualche minuto.</p>
+        ) : (
+          <button
+            onClick={handleResendVerify}
+            disabled={resendStatus === 'sending'}
+            className="mt-0.5 underline text-yellow-700 hover:text-yellow-900 disabled:opacity-50"
+          >
+            {resendStatus === 'sending' ? 'Invio…' : 'Reinvia link'}
+          </button>
+        )}
+      </div>
+    </div>
+  ) : null;
 
   useEffect(() => {
     if (!user.quitDate) { setLoading(false); return; }
@@ -84,6 +117,7 @@ export default function Home() {
   if (!user.quitDate && !loading) {
     return (
       <div className="px-6 py-8 animate-fade-in">
+        {verifyBanner}
         <div className="mb-8">
           <p className="text-sm text-gray-500">Ciao,</p>
           <h1 className="text-xl font-bold text-gray-900 truncate">{user.email.split('@')[0]}</h1>
@@ -118,6 +152,7 @@ export default function Home() {
 
   return (
     <div className="px-6 py-8 animate-fade-in">
+      {verifyBanner}
       <div className="mb-8 flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-500">Ciao,</p>

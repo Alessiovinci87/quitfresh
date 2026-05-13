@@ -42,4 +42,18 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { cravingLimiter, chatLimiter, loginLimiter };
+// Forgot-password: previene email bombing e enumerazione account.
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minuti
+  limit: 3,
+  keyGenerator: (req) => req.ip,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: 'Troppe richieste di reset. Riprova tra qualche minuto.',
+    });
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+module.exports = { cravingLimiter, chatLimiter, loginLimiter, forgotPasswordLimiter };

@@ -26,6 +26,10 @@ export const api = {
     login: (body) => request('/api/auth/login', { method: 'POST', body: JSON.stringify(body) }),
     me: () => request('/api/auth/me'),
     deleteAccount: () => request('/api/auth/me', { method: 'DELETE' }),
+    forgotPassword: (email) => request('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+    resetPassword: (token, newPassword) => request('/api/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
+    verifyEmail: (token) => request(`/api/auth/verify-email?token=${encodeURIComponent(token)}`),
+    resendVerify: () => request('/api/auth/resend-verify', { method: 'POST' }),
   },
   quiz: {
     save: (body) => request('/api/quiz', { method: 'POST', body: JSON.stringify(body) }),

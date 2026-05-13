@@ -1,5 +1,8 @@
 const OpenAI = require('openai');
 
+// GDPR: assicurarsi di aver disabilitato "Improve model for everyone" su
+// platform.openai.com → Settings → Data Controls, altrimenti i messaggi
+// degli utenti (dati sanitari ex art.9 GDPR) finiscono nel training set OpenAI.
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 function getTimeOfDay(hour) {

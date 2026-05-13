@@ -7,7 +7,7 @@ import './index.css';
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
-    tracesSampleRate: 0.1,
+    tracesSampleRate: 0,
     environment: import.meta.env.MODE,
     beforeSend(event, hint) {
       const err = hint?.originalException;

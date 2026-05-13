@@ -1,20 +1,36 @@
 require('dotenv').config();
 
+// ─── Validazione env vars critiche ────────────────────────────────
+// Railway/dev devono crashare visibilmente se l'ambiente è mal configurato,
+// invece di girare con segreti deboli o servizi mancanti.
+const REQUIRED_ENV = ['DATABASE_URL', 'JWT_SECRET', 'OPENAI_API_KEY'];
+const missing = REQUIRED_ENV.filter(k => !process.env[k]);
+if (missing.length) {
+  console.error('FATAL: variabili d\'ambiente mancanti:', missing.join(', '));
+  process.exit(1);
+}
+if (process.env.JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET mancante o troppo corto (minimo 32 caratteri)');
+  process.exit(1);
+}
+
 // Sentry deve essere inizializzato PRIMA di tutto il resto per intercettare gli errori
 // dei moduli caricati dopo. Se SENTRY_DSN non è configurato, no-op.
 const Sentry = require('@sentry/node');
 if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    tracesSampleRate: 0.1,
+    tracesSampleRate: 0,
     environment: process.env.NODE_ENV || 'development',
   });
 }
 
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 
 const authRoutes = require('./routes/auth');
+const passwordResetRoutes = require('./routes/passwordReset');
 const quizRoutes = require('./routes/quiz');
 const progressRoutes = require('./routes/progress');
 const cravingRoutes = require('./routes/craving');
@@ -35,13 +51,30 @@ const PORT = process.env.PORT || 3001;
 // (rate limiter su IP e logging dipendono da questo).
 app.set('trust proxy', 1);
 
-app.use(cors({ origin: process.env.CLIENT_URL || '*', credentials: true }));
+// Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, ecc.)
+app.use(helmet());
+
+// ─── CORS ristretto a origini whitelisted ───────────────────────────
+const allowedOrigins = [
+  'https://alessiovinci87.github.io',
+  process.env.CORS_ORIGIN, // override da env per staging/dev (es. http://localhost:5173)
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Permetti richieste senza origin (es. app mobile, curl in dev)
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('CORS not allowed'));
+  },
+  credentials: true,
+}));
 
 // Stripe webhook deve ricevere il body raw per verificare la firma — montato PRIMA di express.json
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', passwordResetRoutes);
 app.use('/api/quiz', quizRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/craving', cravingRoutes);

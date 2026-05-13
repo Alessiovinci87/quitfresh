@@ -85,6 +85,40 @@ function startCron() {
     }
   });
 
+  // Data retention: ogni 1° del mese alle 03:00 Europe/Rome cancella i dati
+  // degli utenti inattivi da 12+ mesi (account creato 12+ mesi fa E nessun
+  // DiaryEntry/CravingLog negli ultimi 12 mesi). L'account utente NON viene
+  // cancellato — quella è azione esplicita dell'utente.
+  cron.schedule('0 3 1 * *', async () => {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+    try {
+      const candidates = await prisma.user.findMany({
+        where: {
+          createdAt: { lt: twelveMonthsAgo },
+          diaryEntries: { none: { date: { gte: twelveMonthsAgo } } },
+          cravingLogs: { none: { timestamp: { gte: twelveMonthsAgo } } },
+        },
+        select: { id: true },
+      });
+
+      let cleaned = 0;
+      for (const { id } of candidates) {
+        await prisma.$transaction([
+          prisma.cravingLog.deleteMany({ where: { userId: id } }),
+          prisma.diaryEntry.deleteMany({ where: { userId: id } }),
+          prisma.quitAttempt.deleteMany({ where: { userId: id } }),
+          prisma.pushSubscription.deleteMany({ where: { userId: id } }),
+        ]);
+        cleaned++;
+      }
+      console.log(`[retention] dati ripuliti per ${cleaned} utenti inattivi`);
+    } catch (err) {
+      console.error('[retention] errore:', err.message);
+    }
+  }, { timezone: 'Europe/Rome' });
+
   console.log('[cron] scheduler notifiche avviato');
 }
 

@@ -15,6 +15,9 @@ import Diary from './pages/Diary';
 import Stats from './pages/Stats';
 import PremiumSuccess from './pages/PremiumSuccess';
 import Privacy from './pages/Privacy';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
 
 export default function App() {
   return (
@@ -25,6 +28,9 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />

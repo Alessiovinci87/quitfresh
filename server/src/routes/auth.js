@@ -1,12 +1,29 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
 
 function signToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
+}
+
+function buildVerifyLink(token) {
+  const base = (process.env.CLIENT_BASE_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return `${base}/verify-email?token=${token}`;
+}
+
+async function generateAndLogVerifyToken(user) {
+  const token = crypto.randomUUID();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { verifyToken: token },
+  });
+  // TODO: invio email — per ora log a console.
+  console.log(`[verify-email] link per ${user.email}: ${buildVerifyLink(token)}`);
+  return token;
 }
 
 // POST /api/auth/register
@@ -27,9 +44,12 @@ router.post('/register', loginLimiter, async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const verifyToken = crypto.randomUUID();
     const user = await prisma.user.create({
-      data: { email, passwordHash },
+      data: { email, passwordHash, verifyToken },
     });
+
+    console.log(`[verify-email] link per ${user.email}: ${buildVerifyLink(verifyToken)}`);
 
     const token = signToken(user.id);
     res.status(201).json({ token, user: sanitize(user) });
@@ -69,6 +89,40 @@ router.post('/login', loginLimiter, async (req, res) => {
 // GET /api/auth/me
 router.get('/me', requireAuth, (req, res) => {
   res.json({ user: sanitize(req.user) });
+});
+
+// GET /api/auth/verify-email?token=...
+router.get('/verify-email', async (req, res) => {
+  const { token } = req.query || {};
+  if (!token) return res.status(400).json({ error: 'Token mancante' });
+
+  try {
+    const user = await prisma.user.findUnique({ where: { verifyToken: String(token) } });
+    if (!user) return res.status(400).json({ error: 'Token non valido' });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true, verifyToken: null },
+    });
+    res.json({ message: 'Email verificata' });
+  } catch (err) {
+    console.error('verify-email error:', err);
+    res.status(500).json({ error: 'Errore durante la verifica email' });
+  }
+});
+
+// POST /api/auth/resend-verify — rigenera un nuovo token e logga il link.
+router.post('/resend-verify', requireAuth, async (req, res) => {
+  if (req.user.emailVerified) {
+    return res.json({ message: 'Email già verificata' });
+  }
+  try {
+    await generateAndLogVerifyToken(req.user);
+    res.json({ message: 'Link di verifica inviato (controlla i log in dev).' });
+  } catch (err) {
+    console.error('resend-verify error:', err);
+    res.status(500).json({ error: 'Errore durante l\'invio del link' });
+  }
 });
 
 // DELETE /api/auth/me — cancellazione account (GDPR).

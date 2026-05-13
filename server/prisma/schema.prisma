@@ -26,6 +26,10 @@ model User {
   premiumSince       DateTime?
   stripeCustomerId   String?            @unique
   promoCodeUsed      String?
+  resetToken         String?            @unique
+  resetTokenExp      DateTime?
+  emailVerified      Boolean            @default(false)
+  verifyToken        String?            @unique
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]
   diaryEntries      DiaryEntry[]
