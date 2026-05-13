@@ -1,16 +1,9 @@
 const cron = require('node-cron');
 const { PrismaClient } = require('@prisma/client');
 const { sendPush, isEnabled } = require('./push');
+const { getActivePhase, getDoseTimes } = require('./cytisine');
 
 const prisma = new PrismaClient();
-
-const CYTISINE_PHASES = [
-  { maxDay: 3,  label: 'Fase 1 (gg 1–3)',   pills: 6, intervalMin: 120 },
-  { maxDay: 12, label: 'Fase 2 (gg 4–12)',  pills: 5, intervalMin: 150 },
-  { maxDay: 16, label: 'Fase 3 (gg 13–16)', pills: 4, intervalMin: 180 },
-  { maxDay: 20, label: 'Fase 4 (gg 17–20)', pills: 3, intervalMin: 300 },
-  { maxDay: 25, label: 'Fase 5 (gg 21–25)', pills: 1, intervalMin: 0   },
-];
 
 function getRomeTime() {
   const romeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
@@ -18,29 +11,6 @@ function getRomeTime() {
     timeStr: `${String(romeDate.getHours()).padStart(2, '0')}:${String(romeDate.getMinutes()).padStart(2, '0')}`,
     date: romeDate,
   };
-}
-
-function getPhase(startDate) {
-  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
-  const start = new Date(new Date(startDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
-  const day = Math.floor((now - start) / 86400000) + 1;
-  if (day < 1 || day > 25) return null;
-  const phase = CYTISINE_PHASES.find(p => day <= p.maxDay);
-  return phase ? { day, ...phase } : null;
-}
-
-function getDoseTimes(firstDoseTime, phase) {
-  const [h, m] = firstDoseTime.split(':').map(Number);
-  const firstMin = h * 60 + m;
-  const times = [];
-  for (let i = 0; i < phase.pills; i++) {
-    const total = firstMin + i * phase.intervalMin;
-    if (total >= 1440) break;
-    const hh = String(Math.floor(total / 60)).padStart(2, '0');
-    const mm = String(total % 60).padStart(2, '0');
-    times.push(`${hh}:${mm}`);
-  }
-  return times;
 }
 
 const CRAVING_MESSAGES = [
@@ -66,25 +36,27 @@ function startCron() {
   if (!isEnabled()) return;
 
   cron.schedule('* * * * *', async () => {
-    const { timeStr } = getRomeTime();
+    const { timeStr, date: romeNow } = getRomeTime();
 
     try {
-      // 1. Promemoria citisina automatici
+      // 1. Promemoria citisina (schedule personalizzato con fallback al default)
       const cytisineUsers = await prisma.user.findMany({
         where: { cytisineStartDate: { not: null }, firstDoseTime: { not: null } },
         include: { pushSubscriptions: true },
       });
 
       for (const user of cytisineUsers) {
-        const phase = getPhase(user.cytisineStartDate);
+        const start = new Date(new Date(user.cytisineStartDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+        const phase = getActivePhase(user.cytisineSchedule, start, romeNow);
         if (!phase) continue;
+
         const doseTimes = getDoseTimes(user.firstDoseTime, phase);
         const doseIndex = doseTimes.indexOf(timeStr);
         if (doseIndex === -1) continue;
 
         await dispatchToUser(user, {
           title: `QuitFresh · Giorno ${phase.day}`,
-          body: `Capsula ${doseIndex + 1} di ${phase.pills} · ${phase.label}. Prendila ora!`,
+          body: `Capsula ${doseIndex + 1} di ${phase.pills} · Fase ${phase.index + 1}. Prendila ora!`,
         });
       }
 

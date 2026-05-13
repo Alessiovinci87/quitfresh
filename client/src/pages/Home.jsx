@@ -2,42 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { getActivePhase, getDoseTimes } from '../lib/cytisine';
 
 const BADGE_EMOJI = {
   day1: '🌱', day3: '🌿', week1: '⭐', day14: '🌟', month1: '🏅', month3: '🏆',
 };
-
-const CYTISINE_PHASES = [
-  { maxDay: 3,  label: 'Fase 1', pills: 6, intervalMin: 120 },
-  { maxDay: 12, label: 'Fase 2', pills: 5, intervalMin: 150 },
-  { maxDay: 16, label: 'Fase 3', pills: 4, intervalMin: 180 },
-  { maxDay: 20, label: 'Fase 4', pills: 3, intervalMin: 300 },
-  { maxDay: 25, label: 'Fase 5', pills: 1, intervalMin: 0   },
-];
-
-function getCytisinePhase(startDate) {
-  if (!startDate) return null;
-  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
-  const start = new Date(new Date(startDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
-  const day = Math.floor((now - start) / 86400000) + 1;
-  if (day < 1 || day > 25) return null;
-  const phase = CYTISINE_PHASES.find(p => day <= p.maxDay);
-  return phase ? { day, ...phase } : null;
-}
-
-function getDoseTimes(firstDoseTime, phase) {
-  const [h, m] = firstDoseTime.split(':').map(Number);
-  const firstMin = h * 60 + m;
-  const times = [];
-  for (let i = 0; i < phase.pills; i++) {
-    const total = firstMin + i * phase.intervalMin;
-    if (total >= 1440) break;
-    const hh = String(Math.floor(total / 60)).padStart(2, '0');
-    const mm = String(total % 60).padStart(2, '0');
-    times.push(`${hh}:${mm}`);
-  }
-  return times;
-}
 
 function getTodayStr() {
   const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
@@ -292,7 +261,9 @@ function CapsuleTracker({ user }) {
   const [pillsTaken, setPillsTaken] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  const phase = getCytisinePhase(user.cytisineStartDate);
+  const phase = user.cytisineStartDate
+    ? getActivePhase(user.cytisineSchedule, user.cytisineStartDate)
+    : null;
   const doseTimes = phase && user.firstDoseTime ? getDoseTimes(user.firstDoseTime, phase) : null;
 
   useEffect(() => {
@@ -328,7 +299,7 @@ function CapsuleTracker({ user }) {
     <div className="mb-6 border border-sage-200 rounded-2xl px-4 py-4 bg-white">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold text-gray-700">Capsule di oggi</h2>
-        <span className="text-xs font-medium text-sage-600">Giorno {phase.day} · {phase.label}</span>
+        <span className="text-xs font-medium text-sage-600">Giorno {phase.day} · Fase {phase.index + 1}</span>
       </div>
 
       {/* Dosi visuali */}

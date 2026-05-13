@@ -1,15 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 
-const PACK_PRICE = 5.80;
+const DEFAULT_PACK_PRICE = 5.80;
 
 const HEALTH_MILESTONES = [
   { hours: 0.33,  label: '20 minuti',   desc: 'Pressione e battito cardiaco si normalizzano' },
   { hours: 8,     label: '8 ore',        desc: 'CO nel sangue dimezzato, ossigeno ai livelli normali' },
   { hours: 24,    label: '1 giorno',     desc: 'Il rischio di infarto inizia a diminuire' },
   { hours: 48,    label: '2 giorni',     desc: 'Le terminazioni nervose iniziano a rigenerarsi' },
+  { hours: 72,    label: '3 giorni',     desc: 'Nicotina eliminata dal corpo, respirare diventa più facile' },
+  { hours: 120,   label: '5 giorni',     desc: 'Energia in crescita, i neurotrasmettitori si normalizzano' },
   { hours: 168,   label: '1 settimana',  desc: 'Gusto e olfatto migliorano notevolmente' },
+  { hours: 240,   label: '10 giorni',    desc: 'I tessuti dei polmoni iniziano a rigenerarsi, tosse in calo' },
   { hours: 336,   label: '2 settimane',  desc: 'Circolazione migliora, la tosse diminuisce' },
+  { hours: 504,   label: '3 settimane',  desc: 'I recettori della dopamina tornano normali: meno craving' },
   { hours: 720,   label: '1 mese',       desc: 'Funzione polmonare migliora del 30%' },
   { hours: 2160,  label: '3 mesi',       desc: 'Ciglia nei polmoni si ripristinano' },
   { hours: 8760,  label: '1 anno',       desc: 'Rischio malattie cardiache dimezzato' },
@@ -107,6 +111,10 @@ export default function Stats() {
   const hoursFree = smokeFreeSince ? (Date.now() - smokeFreeSince.getTime()) / (1000 * 60 * 60) : 0;
   const nextMilestone = HEALTH_MILESTONES.find(m => m.hours > hoursFree);
   const nextHoursLeft = nextMilestone ? nextMilestone.hours - hoursFree : 0;
+  const lastReachedMilestone = [...HEALTH_MILESTONES].reverse().find(m => m.hours <= hoursFree);
+
+  // Prezzo pacchetto personalizzato (default 5.80)
+  const packPrice = progress?.cigarettePackPrice ?? DEFAULT_PACK_PRICE;
 
   async function confirmQuit() {
     if (!quitInput) return;
@@ -141,9 +149,9 @@ export default function Stats() {
 
   // ── Risparmio ─────────────────────────────────────────────────
   const smokeFreeCount = diaryEntries.filter(e => e.cigarettesToday === 0).length;
-  const totalSaved = smokeFreeCount * PACK_PRICE;
+  const totalSaved = smokeFreeCount * packPrice;
   const goalPct = goal > 0 ? Math.min(100, (totalSaved / goal) * 100) : 0;
-  const ratePerDay = smokeFreeCount > 0 ? totalSaved / smokeFreeCount : PACK_PRICE;
+  const ratePerDay = smokeFreeCount > 0 ? totalSaved / smokeFreeCount : packPrice;
   const daysToGoal = goal > totalSaved ? Math.ceil((goal - totalSaved) / ratePerDay) : 0;
 
   function saveGoal() {
@@ -333,6 +341,14 @@ export default function Stats() {
               </button>
             </div>
 
+            {lastReachedMilestone && (
+              <div className="bg-gradient-to-br from-sage-500 to-sage-600 rounded-xl p-4 mb-3 shadow-sm">
+                <p className="text-xs font-medium text-sage-100 uppercase tracking-wide mb-1">Sta succedendo ora</p>
+                <p className="text-base font-bold text-white">{lastReachedMilestone.label} raggiunti</p>
+                <p className="text-sm text-sage-50 mt-1 leading-snug">{lastReachedMilestone.desc}</p>
+              </div>
+            )}
+
             {nextMilestone && (
               <div className="bg-white border border-gray-100 rounded-xl p-3 mb-3 flex items-start gap-3 shadow-sm">
                 <span className="text-2xl mt-0.5">🎯</span>
@@ -382,7 +398,7 @@ export default function Stats() {
             </div>
           </div>
           <p className="text-xs text-gray-400">
-            Basato su {smokeFreeCount} {smokeFreeCount === 1 ? 'giornata' : 'giornate'} senza fumo × €{PACK_PRICE.toFixed(2)}/pacchetto
+            Basato su {smokeFreeCount} {smokeFreeCount === 1 ? 'giornata' : 'giornate'} senza fumo × €{packPrice.toFixed(2)}/pacchetto
           </p>
 
           {smokeFreeCount === 0 && (

@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "cytisineSchedule" JSONB;
+ALTER TABLE "User" ADD COLUMN "cigarettePackPrice" DOUBLE PRECISION NOT NULL DEFAULT 5.80;

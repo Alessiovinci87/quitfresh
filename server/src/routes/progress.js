@@ -17,7 +17,9 @@ router.get('/', requireAuth, async (req, res) => {
 
     const cigarettesAvoided = daysSinceQuit * (user.cigarettesPerDay || 0);
 
-    const moneySaved = cigarettesAvoided * 0.35; // stima ~35 cent a sigaretta
+    // €/pacchetto da 20 sigarette personalizzabile (default 5.80)
+    const packPrice = user.cigarettePackPrice ?? 5.80;
+    const moneySaved = (cigarettesAvoided / 20) * packPrice;
 
     const badges = computeBadges(daysSinceQuit);
 
@@ -49,6 +51,7 @@ router.get('/', requireAuth, async (req, res) => {
       resolvedCount,
       quitDate: user.quitDate,
       smokeFreeSince: user.smokeFreeSince,
+      cigarettePackPrice: packPrice,
       pastAttempts: pastAttempts.map(a => ({
         startDate: a.startDate,
         endDate: a.endDate,

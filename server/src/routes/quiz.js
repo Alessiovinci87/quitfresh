@@ -1,12 +1,16 @@
 const router = require('express').Router();
 const { PrismaClient } = require('@prisma/client');
 const { requireAuth } = require('../middleware/auth');
+const { normalizeSchedule } = require('../lib/cytisine');
 
 const prisma = new PrismaClient();
 
 // POST /api/quiz — partial update: aggiorna solo i campi forniti
 router.post('/', requireAuth, async (req, res) => {
-  const { cigarettesPerDay, criticalMoments, dependencyLevel, quitDate, cytisineStartDate, firstDoseTime } = req.body;
+  const {
+    cigarettesPerDay, criticalMoments, dependencyLevel, quitDate,
+    cytisineStartDate, firstDoseTime, cytisineSchedule, cigarettePackPrice,
+  } = req.body;
 
   if (dependencyLevel != null && (dependencyLevel < 1 || dependencyLevel > 5)) {
     return res.status(400).json({ error: 'Il livello di dipendenza deve essere tra 1 e 5' });
@@ -30,6 +34,16 @@ router.post('/', requireAuth, async (req, res) => {
   }
   if (firstDoseTime !== undefined) {
     data.firstDoseTime = firstDoseTime || null;
+  }
+  if (cytisineSchedule !== undefined) {
+    // null/array invalido → null (cron usa il protocollo standard di default)
+    data.cytisineSchedule = cytisineSchedule === null ? null : normalizeSchedule(cytisineSchedule);
+  }
+  if (cigarettePackPrice !== undefined) {
+    const price = parseFloat(cigarettePackPrice);
+    if (Number.isFinite(price) && price > 0 && price < 100) {
+      data.cigarettePackPrice = price;
+    }
   }
 
   try {

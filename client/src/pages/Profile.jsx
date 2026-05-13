@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import {
+  DEFAULT_SCHEDULE, getActivePhase, getDoseTimes,
+  formatInterval, phaseDayRange, totalDays,
+} from '../lib/cytisine';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -18,36 +22,6 @@ const CRITICAL_MOMENTS_OPTIONS = [
 const DEPENDENCY_LABELS = {
   1: 'Leggera', 2: 'Moderata', 3: 'Media', 4: 'Alta', 5: 'Molto alta',
 };
-
-const CYTISINE_PHASES = [
-  { maxDay: 3,  days: '1–3',   label: 'Fase 1', pills: 6, intervalMin: 120, intervalLabel: '2 ore' },
-  { maxDay: 12, days: '4–12',  label: 'Fase 2', pills: 5, intervalMin: 150, intervalLabel: '2,5 ore' },
-  { maxDay: 16, days: '13–16', label: 'Fase 3', pills: 4, intervalMin: 180, intervalLabel: '3 ore' },
-  { maxDay: 20, days: '17–20', label: 'Fase 4', pills: 3, intervalMin: 300, intervalLabel: '5 ore' },
-  { maxDay: 25, days: '21–25', label: 'Fase 5', pills: 1, intervalMin: 0,   intervalLabel: 'al giorno' },
-];
-
-function getDoseTimes(firstDoseTime, phase) {
-  const [h, m] = firstDoseTime.split(':').map(Number);
-  const firstMin = h * 60 + m;
-  const times = [];
-  for (let i = 0; i < phase.pills; i++) {
-    const total = firstMin + i * phase.intervalMin;
-    if (total >= 1440) break;
-    const hh = String(Math.floor(total / 60)).padStart(2, '0');
-    const mm = String(total % 60).padStart(2, '0');
-    times.push(`${hh}:${mm}`);
-  }
-  return times;
-}
-
-function getCurrentPhase(startDate) {
-  if (!startDate) return null;
-  const day = Math.floor((Date.now() - new Date(startDate)) / 86400000) + 1;
-  if (day < 1 || day > 25) return null;
-  const phase = CYTISINE_PHASES.find(p => day <= p.maxDay);
-  return phase ? { day, ...phase } : null;
-}
 
 export default function Profile() {
   const { user, updateUser, logout } = useAuth();
@@ -158,6 +132,24 @@ export default function Profile() {
     user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : ''
   );
   const [firstDoseTime, setFirstDoseTime] = useState(user.firstDoseTime || '');
+  const [schedule, setSchedule] = useState(
+    Array.isArray(user.cytisineSchedule) && user.cytisineSchedule.length > 0
+      ? user.cytisineSchedule.map(p => ({ ...p }))
+      : DEFAULT_SCHEDULE.map(p => ({ ...p }))
+  );
+  const [packPrice, setPackPrice] = useState(
+    user.cigarettePackPrice != null ? String(user.cigarettePackPrice) : '5.80'
+  );
+
+  const isCustomSchedule = JSON.stringify(schedule) !== JSON.stringify(DEFAULT_SCHEDULE);
+
+  function updatePhase(idx, field, value) {
+    setSchedule(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
+  }
+
+  function resetScheduleToDefault() {
+    setSchedule(DEFAULT_SCHEDULE.map(p => ({ ...p })));
+  }
 
   function daysFromQuitDate(quitDate) {
     if (!quitDate) return '';
@@ -186,12 +178,17 @@ export default function Profile() {
         ? new Date(Date.now() - days * 86400000).toISOString()
         : undefined;
 
+      const priceValue = parseFloat(packPrice);
+      const validPrice = Number.isFinite(priceValue) && priceValue > 0;
+
       const { user: updated } = await api.quiz.save({
         cigarettesPerDay: cigarettesPerDay ? parseInt(cigarettesPerDay) : null,
         criticalMoments: selectedMoments,
         dependencyLevel: dependencyLevel || null,
         cytisineStartDate: cytisineStartDate || null,
         firstDoseTime: firstDoseTime || null,
+        cytisineSchedule: isCustomSchedule ? schedule : null,
+        ...(validPrice && { cigarettePackPrice: priceValue }),
         ...(quitDate !== undefined && { quitDate }),
       });
       updateUser(updated);
@@ -212,11 +209,22 @@ export default function Profile() {
     setDependencyLevel(user.dependencyLevel || null);
     setCytisineStartDate(user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : '');
     setFirstDoseTime(user.firstDoseTime || '');
+    setSchedule(
+      Array.isArray(user.cytisineSchedule) && user.cytisineSchedule.length > 0
+        ? user.cytisineSchedule.map(p => ({ ...p }))
+        : DEFAULT_SCHEDULE.map(p => ({ ...p }))
+    );
+    setPackPrice(user.cigarettePackPrice != null ? String(user.cigarettePackPrice) : '5.80');
     setError('');
     setEditing(false);
   }
 
-  const currentPhase = getCurrentPhase(user.cytisineStartDate);
+  const activeSchedule = Array.isArray(user.cytisineSchedule) && user.cytisineSchedule.length > 0
+    ? user.cytisineSchedule
+    : DEFAULT_SCHEDULE;
+  const currentPhase = user.cytisineStartDate
+    ? getActivePhase(activeSchedule, user.cytisineStartDate)
+    : null;
 
   return (
     <div className="px-6 py-8 animate-fade-in">
@@ -279,7 +287,7 @@ export default function Profile() {
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Protocollo citisina</label>
         {editing ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <p className="text-xs text-gray-500 mb-1">Data inizio</p>
               <input type="date" value={cytisineStartDate} onChange={e => setCytisineStartDate(e.target.value)}
@@ -290,11 +298,64 @@ export default function Profile() {
               <input type="time" value={firstDoseTime} onChange={e => setFirstDoseTime(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition" />
             </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs text-gray-500">Fasi del protocollo ({totalDays(schedule)} giorni totali)</p>
+                {isCustomSchedule && (
+                  <button onClick={resetScheduleToDefault} className="text-xs text-sage-600 underline">
+                    Ripristina standard
+                  </button>
+                )}
+              </div>
+              <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
+                {schedule.map((phase, idx) => (
+                  <div key={idx} className="px-3 py-3">
+                    <p className="text-xs font-semibold text-gray-600 mb-2">
+                      Fase {idx + 1} · giorni {phaseDayRange(schedule, idx)}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <label className="text-xs">
+                        <span className="block text-gray-500 mb-0.5">Giorni</span>
+                        <input
+                          type="number" min="1" max="60"
+                          value={phase.days}
+                          onChange={e => updatePhase(idx, 'days', Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                        />
+                      </label>
+                      <label className="text-xs">
+                        <span className="block text-gray-500 mb-0.5">Capsule/dì</span>
+                        <input
+                          type="number" min="1" max="12"
+                          value={phase.pills}
+                          onChange={e => updatePhase(idx, 'pills', Math.max(1, parseInt(e.target.value) || 1))}
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                        />
+                      </label>
+                      <label className="text-xs">
+                        <span className="block text-gray-500 mb-0.5">Intervallo (min)</span>
+                        <input
+                          type="number" min="0" max="1440" step="15"
+                          value={phase.intervalMin}
+                          onChange={e => updatePhase(idx, 'intervalMin', Math.max(0, parseInt(e.target.value) || 0))}
+                          className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                Il default è il protocollo Tabex standard. Modifica solo se il tuo medico ti ha prescritto qualcosa di diverso.
+              </p>
+            </div>
           </div>
         ) : (cytisineStartDate || user.cytisineStartDate) && (user.firstDoseTime || firstDoseTime) ? (
           <CytisineSchedule
             startDate={user.cytisineStartDate}
             firstDoseTime={user.firstDoseTime}
+            schedule={activeSchedule}
             currentPhase={currentPhase}
           />
         ) : (
@@ -310,6 +371,26 @@ export default function Profile() {
             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition" />
         ) : (
           <p className="text-gray-800 text-sm">{user.cigarettesPerDay ?? '—'}</p>
+        )}
+      </div>
+
+      {/* Prezzo pacchetto */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Prezzo pacchetto (€)</label>
+        {editing ? (
+          <>
+            <input
+              type="number" min="0.5" max="50" step="0.10"
+              value={packPrice}
+              onChange={e => setPackPrice(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition"
+            />
+            <p className="text-xs text-gray-400 mt-1">Usato per calcolare il risparmio reale (default €5.80, pacchetto da 20).</p>
+          </>
+        ) : (
+          <p className="text-gray-800 text-sm">
+            €{(user.cigarettePackPrice ?? 5.80).toFixed(2)}
+          </p>
         )}
       </div>
 
@@ -439,18 +520,25 @@ export default function Profile() {
   );
 }
 
-function CytisineSchedule({ startDate, firstDoseTime, currentPhase }) {
-  if (!firstDoseTime) return null;
+function CytisineSchedule({ startDate, firstDoseTime, schedule, currentPhase }) {
+  if (!firstDoseTime || !schedule) return null;
 
-  const endDate = startDate ? new Date(new Date(startDate).getTime() + 24 * 86400000) : null;
+  const totalProtocolDays = totalDays(schedule);
+  const endDate = startDate
+    ? new Date(new Date(startDate).getTime() + (totalProtocolDays - 1) * 86400000)
+    : null;
 
   return (
     <div className="rounded-xl border border-gray-200 overflow-hidden">
       {/* Intestazione fase corrente */}
       {currentPhase && (
         <div className="bg-sage-500 px-4 py-3">
-          <p className="text-white text-sm font-semibold">Giorno {currentPhase.day} · {currentPhase.label}</p>
-          <p className="text-sage-100 text-xs mt-0.5">{currentPhase.pills} capsule al dì · 1 ogni {currentPhase.intervalLabel}</p>
+          <p className="text-white text-sm font-semibold">
+            Giorno {currentPhase.day} · Fase {currentPhase.index + 1}
+          </p>
+          <p className="text-sage-100 text-xs mt-0.5">
+            {currentPhase.pills} capsule al dì · 1 ogni {formatInterval(currentPhase.intervalMin)}
+          </p>
         </div>
       )}
 
@@ -464,16 +552,18 @@ function CytisineSchedule({ startDate, firstDoseTime, currentPhase }) {
 
       {/* Prospetto fasi */}
       <div className="divide-y divide-gray-100">
-        {CYTISINE_PHASES.map(phase => {
+        {schedule.map((phase, idx) => {
           const times = getDoseTimes(firstDoseTime, phase);
-          const isCurrent = currentPhase?.maxDay === phase.maxDay;
+          const isCurrent = currentPhase?.index === idx;
           return (
-            <div key={phase.maxDay} className={`px-4 py-3 ${isCurrent ? 'bg-sage-50' : 'bg-white'}`}>
+            <div key={idx} className={`px-4 py-3 ${isCurrent ? 'bg-sage-50' : 'bg-white'}`}>
               <div className="flex items-baseline justify-between mb-1.5">
                 <span className={`text-xs font-semibold ${isCurrent ? 'text-sage-700' : 'text-gray-500'}`}>
-                  Gg {phase.days}
+                  Gg {phaseDayRange(schedule, idx)}
                 </span>
-                <span className="text-xs text-gray-400">{phase.pills} cps · ogni {phase.intervalLabel}</span>
+                <span className="text-xs text-gray-400">
+                  {phase.pills} cps · ogni {formatInterval(phase.intervalMin)}
+                </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {times.map(t => (
