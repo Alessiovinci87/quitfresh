@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import InstallApp from '../components/InstallApp';
+import SubPage from '../components/SubPage';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -27,22 +28,9 @@ const DEPENDENCY_LABELS = {
 export default function Profile() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [subPage, setSubPage] = useState(null); // 'edit' | 'notifications' | null
 
-  const [notifTimes, setNotifTimes] = useState(user.notificationTimes || []);
-  const [newTime, setNewTime] = useState('');
-  const [notifEnabled, setNotifEnabled] = useState(false);
-  const [notifSupported, setNotifSupported] = useState(false);
-  const [notifSaving, setNotifSaving] = useState(false);
-  const [notifRegistered, setNotifRegistered] = useState(false);
-  const [testResult, setTestResult] = useState('');
-
-  const [encouragementTime, setEncouragementTime] = useState(user.encouragementTime || '');
-  const [encouragementSaving, setEncouragementSaving] = useState(false);
-
+  // Modali
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -83,6 +71,569 @@ export default function Profile() {
     }
   }
 
+  function handleLogout() {
+    logout();
+    navigate('/login');
+  }
+
+  // Stato premium quick summary
+  const activeSchedule = Array.isArray(user.cytisineSchedule) && user.cytisineSchedule.length > 0
+    ? user.cytisineSchedule
+    : DEFAULT_SCHEDULE;
+  const currentPhase = user.cytisineStartDate
+    ? getActivePhase(activeSchedule, user.cytisineStartDate)
+    : null;
+
+  return (
+    <div className="min-h-[calc(100dvh-7rem)] flex flex-col px-6 pt-6 animate-fade-in">
+      <header className="mb-4">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Account</p>
+        <h1 className="font-display text-3xl font-semibold text-sage-900 leading-tight truncate mt-0.5">
+          {user.email.split('@')[0]}
+        </h1>
+      </header>
+
+      {/* Email + premium status */}
+      <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4 mb-4">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold">Email</p>
+          {user.isPremium ? (
+            <span className="px-2 py-0.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white text-[10px] font-semibold rounded-full shadow-sage">
+              ✓ Premium
+            </span>
+          ) : (
+            <button
+              onClick={() => navigate('/paywall')}
+              className="px-2 py-0.5 bg-terracotta-100 text-terracotta-700 text-[10px] font-semibold rounded-full hover:bg-terracotta-200 transition-colors"
+            >
+              Sblocca →
+            </button>
+          )}
+        </div>
+        <p className="text-sm text-sage-900 truncate">{user.email}</p>
+        <p className="text-[11px] text-sage-600/70 mt-0.5">
+          Registrato il {new Date(user.createdAt).toLocaleDateString('it-IT')}
+        </p>
+      </div>
+
+      {!user.isPremium ? (
+        <button
+          onClick={() => navigate('/paywall')}
+          className="w-full mb-4 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-2xl-soft px-4 py-3.5 flex items-center justify-between shadow-sage active:scale-[0.98] transition-all"
+        >
+          <div className="text-left">
+            <p className="text-sm font-semibold">Sblocca QuitFresh</p>
+            <p className="text-xs text-sage-100">€2.99 una tantum — accesso completo</p>
+          </div>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      ) : (
+        <>
+          {/* Lista nav settings */}
+          <div className="space-y-2 mb-4">
+            <NavRow
+              icon="👤"
+              title="Profilo e abitudini"
+              value={`${user.cigarettesPerDay || '—'} sig/die · €${(user.cigarettePackPrice ?? 5.80).toFixed(2)}/pacc`}
+              onClick={() => setSubPage('edit')}
+            />
+            <NavRow
+              icon="💊"
+              title="Protocollo citisina"
+              value={currentPhase ? `Giorno ${currentPhase.day} · Fase ${currentPhase.index + 1}` : 'Non impostato'}
+              onClick={() => setSubPage('edit')}
+            />
+            <NavRow
+              icon="🔔"
+              title="Notifiche"
+              value={
+                (user.notificationTimes?.length || user.encouragementTime)
+                  ? [
+                      user.notificationTimes?.length && `${user.notificationTimes.length} anti-craving`,
+                      user.encouragementTime && `incoraggiamento ${user.encouragementTime}`,
+                    ].filter(Boolean).join(' · ')
+                  : 'Nessuna attiva'
+              }
+              onClick={() => setSubPage('notifications')}
+            />
+            <NavRow
+              icon="📜"
+              title="Cronologia tentativi"
+              value="Azzera Record e tentativi"
+              onClick={() => setShowResetHistoryModal(true)}
+            />
+            <NavRow
+              icon="📱"
+              title="Installa sul telefono"
+              value="iOS · Android · PWA"
+              onClick={() => setSubPage('install')}
+            />
+          </div>
+        </>
+      )}
+
+      {resetHistoryResult && (
+        <p className={`text-xs mb-3 px-3 py-2 rounded-lg ${resetHistoryResult.startsWith('Errore') ? 'text-terracotta-700 bg-terracotta-50' : 'text-sage-700 bg-sage-50'}`}>
+          {resetHistoryResult}
+        </p>
+      )}
+
+      {/* Footer azioni: privacy/terms + logout */}
+      <div className="mt-auto space-y-2 pb-3">
+        <div className="flex items-center justify-center gap-4 text-[11px] text-sage-600/70">
+          <Link to="/privacy" className="hover:text-sage-800 transition-colors underline-offset-2 hover:underline">Privacy</Link>
+          <span>·</span>
+          <Link to="/terms" className="hover:text-sage-800 transition-colors underline-offset-2 hover:underline">Termini</Link>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full py-3 text-sm text-sage-700 font-medium hover:bg-sage-50 rounded-xl-soft transition-colors"
+        >
+          Esci dall'account
+        </button>
+        <button
+          onClick={() => { setShowDeleteModal(true); setDeleteConfirmEmail(''); setDeleteError(''); }}
+          className="w-full py-2 text-[11px] text-sage-500/70 hover:text-terracotta-600 transition-colors underline underline-offset-2"
+        >
+          Elimina account
+        </button>
+      </div>
+
+      {/* Sub-pages */}
+      {subPage === 'edit' && (
+        <ProfileEditSubPage
+          user={user}
+          updateUser={updateUser}
+          onClose={() => setSubPage(null)}
+        />
+      )}
+      {subPage === 'notifications' && (
+        <NotificationsSubPage
+          user={user}
+          updateUser={updateUser}
+          onClose={() => setSubPage(null)}
+        />
+      )}
+      {subPage === 'install' && (
+        <SubPage eyebrow="Account" title="Installa sul telefono" onClose={() => setSubPage(null)}>
+          <InstallApp mode="section" />
+        </SubPage>
+      )}
+
+      {/* Modali */}
+      {showResetHistoryModal && (
+        <div className="fixed inset-0 z-50 bg-sage-900/40 backdrop-blur-sm flex items-end justify-center px-4 pb-8 animate-fade-in">
+          <div className="bg-white rounded-2xl-soft max-w-mobile w-full p-6 shadow-lift animate-slide-up">
+            <h3 className="font-display text-xl font-semibold text-sage-900 mb-2">Azzerare la cronologia?</h3>
+            <p className="text-sm text-sage-700/80 mb-6 leading-relaxed">
+              Tutti i tentativi precedenti vengono cancellati definitivamente. Il Record verrà azzerato.
+              <span className="block mt-2 text-[11px] text-sage-600/70">
+                Lo streak attuale (giorni senza fumo) NON viene toccato.
+              </span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowResetHistoryModal(false)}
+                disabled={resettingHistory}
+                className="flex-1 py-3 border border-sage-200 text-sage-700 rounded-xl-soft font-medium text-sm hover:bg-sage-50 transition-colors active:scale-[0.98]"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleResetHistory}
+                disabled={resettingHistory}
+                className="flex-1 py-3 bg-terracotta-500 text-white rounded-xl-soft font-semibold text-sm hover:bg-terracotta-600 disabled:opacity-60 transition-colors active:scale-[0.98]"
+              >
+                {resettingHistory ? 'Azzero…' : 'Sì, azzera'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-sage-900/40 backdrop-blur-sm flex items-center justify-center px-6">
+          <div className="bg-white rounded-2xl-soft max-w-mobile w-full p-6 shadow-lift">
+            <h3 className="font-display text-xl font-semibold text-sage-900 mb-2">Eliminare l'account?</h3>
+            <p className="text-sm text-sage-700/80 mb-4 leading-relaxed">
+              Questa azione è <strong>irreversibile</strong>. Verranno cancellati: il tuo profilo, lo storico craving, il diario, i promemoria e tutte le statistiche.
+            </p>
+            <label className="block text-xs text-sage-600/70 mb-1">
+              Per confermare, digita: <span className="font-medium text-sage-800">{user.email}</span>
+            </label>
+            <input
+              type="email"
+              value={deleteConfirmEmail}
+              onChange={(e) => setDeleteConfirmEmail(e.target.value)}
+              placeholder={user.email}
+              className="w-full px-3 py-2.5 border border-sage-200 rounded-xl-soft text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-terracotta-400"
+              autoFocus
+            />
+            {deleteError && (
+              <p className="text-xs text-terracotta-700 bg-terracotta-50 rounded-lg px-2 py-1.5 mb-3">{deleteError}</p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 py-2.5 border border-sage-200 text-sage-700 rounded-xl-soft text-sm font-medium hover:bg-sage-50 disabled:opacity-50"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting || deleteConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()}
+                className="flex-1 py-2.5 bg-terracotta-500 text-white rounded-xl-soft text-sm font-semibold hover:bg-terracotta-600 disabled:opacity-40 transition-colors"
+              >
+                {deleting ? 'Cancellazione…' : 'Elimina'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── NavRow: riga settings stile iOS ──────────────────────────
+function NavRow({ icon, title, value, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full bg-white rounded-2xl-soft border border-sage-100/60 shadow-soft px-4 py-3.5 flex items-center gap-3 active:bg-sage-50/40 transition-colors"
+    >
+      <span className="w-10 h-10 rounded-xl bg-sage-50 flex items-center justify-center text-xl shrink-0">
+        {icon}
+      </span>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="font-display text-base font-semibold text-sage-900 leading-tight">{title}</p>
+        <p className="text-[11px] text-sage-600/70 mt-0.5 truncate">{value}</p>
+      </div>
+      <svg className="w-5 h-5 text-sage-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  );
+}
+
+// ── ProfileEditSubPage: tutti i campi profilo + citisina ─────
+function ProfileEditSubPage({ user, updateUser, onClose }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const [cigarettesPerDay, setCigarettesPerDay] = useState(String(user.cigarettesPerDay || ''));
+  const [packPrice, setPackPrice] = useState(user.cigarettePackPrice != null ? String(user.cigarettePackPrice) : '5.80');
+  const [selectedMoments, setSelectedMoments] = useState(user.criticalMoments || []);
+  const [customMoment, setCustomMoment] = useState('');
+  const [dependencyLevel, setDependencyLevel] = useState(user.dependencyLevel || null);
+  const [cytisineStartDate, setCytisineStartDate] = useState(
+    user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : ''
+  );
+  const [firstDoseTime, setFirstDoseTime] = useState(user.firstDoseTime || '');
+  const [schedule, setSchedule] = useState(
+    Array.isArray(user.cytisineSchedule) && user.cytisineSchedule.length > 0
+      ? user.cytisineSchedule.map(p => ({ ...p }))
+      : DEFAULT_SCHEDULE.map(p => ({ ...p }))
+  );
+
+  function daysFromQuitDate(quitDate) {
+    if (!quitDate) return '';
+    const d = Math.floor((Date.now() - new Date(quitDate)) / 86400000) + 1;
+    return d > 0 ? String(d) : '';
+  }
+  const [smokeFreeDays, setSmokeFreeDays] = useState(daysFromQuitDate(user.quitDate));
+
+  const isCustomSchedule = JSON.stringify(schedule) !== JSON.stringify(DEFAULT_SCHEDULE);
+
+  function updatePhase(idx, field, value) {
+    setSchedule(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
+  }
+  function resetScheduleToDefault() {
+    setSchedule(DEFAULT_SCHEDULE.map(p => ({ ...p })));
+  }
+  function toggleMoment(m) {
+    setSelectedMoments(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
+  }
+  function addCustomMoment() {
+    const val = customMoment.trim();
+    if (val && !selectedMoments.includes(val)) setSelectedMoments(prev => [...prev, val]);
+    setCustomMoment('');
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError('');
+    try {
+      const days = parseInt(smokeFreeDays);
+      const quitDate = smokeFreeDays && days > 0
+        ? new Date(Date.now() - days * 86400000).toISOString()
+        : undefined;
+      const priceValue = parseFloat(packPrice);
+      const validPrice = Number.isFinite(priceValue) && priceValue > 0;
+
+      const { user: updated } = await api.quiz.save({
+        cigarettesPerDay: cigarettesPerDay ? parseInt(cigarettesPerDay) : null,
+        criticalMoments: selectedMoments,
+        dependencyLevel: dependencyLevel || null,
+        cytisineStartDate: cytisineStartDate || null,
+        firstDoseTime: firstDoseTime || null,
+        cytisineSchedule: isCustomSchedule ? schedule : null,
+        ...(validPrice && { cigarettePackPrice: priceValue }),
+        ...(quitDate !== undefined && { quitDate }),
+      });
+      updateUser(updated);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <SubPage eyebrow="Account" title="Profilo e abitudini" onClose={onClose}>
+      <div className="space-y-5">
+        <Field label="Sigarette al giorno">
+          <input
+            type="number" min="1" max="100"
+            value={cigarettesPerDay}
+            onChange={e => setCigarettesPerDay(e.target.value)}
+            className="w-full px-4 py-3 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+          />
+        </Field>
+
+        <Field label="Prezzo pacchetto (€)" hint="Default €5.80 — pacchetto da 20 sigarette. Usato per calcolare il risparmio.">
+          <input
+            type="number" min="0.5" max="50" step="0.10"
+            value={packPrice}
+            onChange={e => setPackPrice(e.target.value)}
+            className="w-full px-4 py-3 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+          />
+        </Field>
+
+        <Field label="Giorni senza fumo" hint="Inserisci i giorni e l'app calcolerà la data di inizio.">
+          <input
+            type="number" min="0" max="3650"
+            value={smokeFreeDays}
+            onChange={e => setSmokeFreeDays(e.target.value)}
+            placeholder="Es. 5"
+            className="w-full px-4 py-3 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+          />
+        </Field>
+
+        <Field label="Momenti critici">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {CRITICAL_MOMENTS_OPTIONS.map(m => (
+              <button
+                key={m}
+                onClick={() => toggleMoment(m)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 ${
+                  selectedMoments.includes(m)
+                    ? 'bg-gradient-to-br from-sage-500 to-sage-700 border-transparent text-white shadow-sage'
+                    : 'border-sage-200 text-sage-700 bg-white hover:bg-sage-50'
+                }`}
+              >
+                {m}
+              </button>
+            ))}
+            {selectedMoments.filter(s => !CRITICAL_MOMENTS_OPTIONS.includes(s)).map(m => (
+              <button
+                key={m}
+                onClick={() => toggleMoment(m)}
+                className="px-3 py-1.5 rounded-full text-sm font-medium border border-transparent bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage"
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customMoment}
+              onChange={e => setCustomMoment(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomMoment())}
+              className="flex-1 min-w-0 px-3 py-2 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+              placeholder="Altro…"
+            />
+            <button
+              onClick={addCustomMoment}
+              className="px-4 py-2 bg-white border border-sage-200 text-sage-700 rounded-xl-soft text-sm font-medium hover:bg-sage-50 transition-colors"
+            >
+              Aggiungi
+            </button>
+          </div>
+        </Field>
+
+        <Field label="Livello di dipendenza">
+          <div className="grid grid-cols-5 gap-2">
+            {[1, 2, 3, 4, 5].map(level => (
+              <button
+                key={level}
+                onClick={() => setDependencyLevel(level)}
+                className={`py-2.5 rounded-xl-soft text-sm font-bold border transition-all active:scale-95 ${
+                  dependencyLevel === level
+                    ? 'bg-gradient-to-br from-sage-500 to-sage-700 border-transparent text-white shadow-sage'
+                    : 'border-sage-200 text-sage-700 bg-white hover:bg-sage-50'
+                }`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+          {dependencyLevel && (
+            <p className="text-[11px] text-sage-600/70 mt-2">{dependencyLevel} — {DEPENDENCY_LABELS[dependencyLevel]}</p>
+          )}
+        </Field>
+
+        {/* Protocollo citisina */}
+        <div className="pt-2 border-t border-sage-100/60">
+          <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold mb-3">Protocollo citisina</p>
+
+          <Field label="Data inizio">
+            <input
+              type="date"
+              value={cytisineStartDate}
+              onChange={e => setCytisineStartDate(e.target.value)}
+              className="w-full px-4 py-3 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+            />
+          </Field>
+
+          <Field label="Orario prima capsula del giorno">
+            <input
+              type="time"
+              value={firstDoseTime}
+              onChange={e => setFirstDoseTime(e.target.value)}
+              className="w-full px-4 py-3 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+            />
+          </Field>
+
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold">
+                Fasi ({totalDays(schedule)} giorni totali)
+              </p>
+              {isCustomSchedule && (
+                <button onClick={resetScheduleToDefault} className="text-[11px] text-sage-600 hover:text-sage-800 underline underline-offset-2">
+                  Ripristina default
+                </button>
+              )}
+            </div>
+            <div className="rounded-xl-soft border border-sage-100 divide-y divide-sage-100/60 bg-white shadow-soft">
+              {schedule.map((phase, idx) => (
+                <div key={idx} className="px-3 py-3">
+                  <p className="text-[11px] font-semibold text-sage-700 mb-2">
+                    Fase {idx + 1} · giorni {phaseDayRange(schedule, idx)}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    <label className="text-xs">
+                      <span className="block text-sage-600/70 mb-0.5">Giorni</span>
+                      <input
+                        type="number" min="1" max="60"
+                        value={phase.days}
+                        onChange={e => updatePhase(idx, 'days', Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-full px-2 py-1.5 border border-sage-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                      />
+                    </label>
+                    <label className="text-xs">
+                      <span className="block text-sage-600/70 mb-0.5">Capsule/dì</span>
+                      <input
+                        type="number" min="1" max="12"
+                        value={phase.pills}
+                        onChange={e => updatePhase(idx, 'pills', Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-full px-2 py-1.5 border border-sage-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                      />
+                    </label>
+                    <label className="text-xs">
+                      <span className="block text-sage-600/70 mb-0.5">Intervallo (min)</span>
+                      <input
+                        type="number" min="0" max="1440" step="15"
+                        value={phase.intervalMin}
+                        onChange={e => updatePhase(idx, 'intervalMin', Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-full px-2 py-1.5 border border-sage-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                      />
+                    </label>
+                  </div>
+                  <label className="text-xs block">
+                    <span className="block text-sage-600/70 mb-1">Orario prima capsula di questa fase</span>
+                    {phase.firstDoseTime ? (
+                      <div className="flex gap-1.5">
+                        <input
+                          type="time"
+                          value={phase.firstDoseTime}
+                          onChange={e => updatePhase(idx, 'firstDoseTime', e.target.value || undefined)}
+                          className="flex-1 px-2 py-1.5 border border-sage-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updatePhase(idx, 'firstDoseTime', undefined)}
+                          className="px-3 py-1.5 rounded-lg bg-sage-50 border border-sage-200 text-sage-700 text-xs font-medium hover:bg-sage-100 transition-colors flex items-center gap-1"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Default
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => updatePhase(idx, 'firstDoseTime', firstDoseTime || '08:00')}
+                        className="w-full px-3 py-2 rounded-lg bg-white border border-sage-200 text-sage-700 text-xs font-medium hover:bg-sage-50 transition-colors text-left flex items-center justify-between"
+                      >
+                        <span>Usa <strong className="font-semibold">{firstDoseTime || '08:00'}</strong> (default)</span>
+                        <span className="text-sage-500">Personalizza →</span>
+                      </button>
+                    )}
+                  </label>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-sage-600/60 mt-2 leading-snug">
+              Il default è il protocollo Tabex standard. Modifica solo se il tuo medico ti ha prescritto qualcosa di diverso.
+            </p>
+          </div>
+        </div>
+
+        {error && (
+          <p className="text-sm text-terracotta-700 bg-terracotta-50 rounded-xl-soft px-3 py-2 border border-terracotta-200">
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-3 pt-2 sticky bottom-0 bg-cream-50 pb-2 -mx-6 px-6 border-t border-sage-100/60">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3.5 border border-sage-200 text-sage-700 rounded-xl-soft font-medium text-sm hover:bg-sage-50 transition-colors active:scale-[0.98]"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage disabled:opacity-60 active:scale-[0.98] transition-all"
+          >
+            {saving ? 'Salvataggio…' : 'Salva'}
+          </button>
+        </div>
+      </div>
+    </SubPage>
+  );
+}
+
+// ── NotificationsSubPage ─────────────────────────────────────
+function NotificationsSubPage({ user, updateUser, onClose }) {
+  const [notifSupported, setNotifSupported] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifRegistered, setNotifRegistered] = useState(false);
+  const [notifTimes, setNotifTimes] = useState(user.notificationTimes || []);
+  const [newTime, setNewTime] = useState('');
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [testResult, setTestResult] = useState('');
+  const [encouragementTime, setEncouragementTime] = useState(user.encouragementTime || '');
+  const [encouragementSaving, setEncouragementSaving] = useState(false);
+
   useEffect(() => {
     const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
     setNotifSupported(supported);
@@ -117,14 +668,10 @@ export default function Profile() {
   }
 
   async function enableNotifications() {
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return;
-      setNotifEnabled(true);
-      await registerSubscription();
-    } catch (err) {
-      console.error('Push subscribe error:', err);
-    }
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return;
+    setNotifEnabled(true);
+    await registerSubscription();
   }
 
   async function sendTestNotification() {
@@ -132,7 +679,7 @@ export default function Profile() {
     try {
       const res = await api.notifications.test();
       const ok = res.results?.some(r => r.status === 'ok');
-      setTestResult(ok ? '✓ Notifica inviata! Controllare il telefono.' : '✗ Errore: ' + JSON.stringify(res));
+      setTestResult(ok ? '✓ Notifica inviata!' : '✗ Errore: ' + JSON.stringify(res));
     } catch (err) {
       setTestResult('✗ ' + err.message);
     }
@@ -158,6 +705,9 @@ export default function Profile() {
     setNewTime('');
     saveNotifTimes(updated);
   }
+  function removeTime(t) {
+    saveNotifTimes(notifTimes.filter(x => x !== t));
+  }
 
   async function saveEncouragement(time) {
     setEncouragementSaving(true);
@@ -172,703 +722,146 @@ export default function Profile() {
     }
   }
 
-  function removeTime(t) {
-    saveNotifTimes(notifTimes.filter(x => x !== t));
-  }
-
-  function handleLogout() {
-    logout();
-    navigate('/login');
-  }
-
-  const [cigarettesPerDay, setCigarettesPerDay] = useState(String(user.cigarettesPerDay || ''));
-  const [selectedMoments, setSelectedMoments] = useState(user.criticalMoments || []);
-  const [customMoment, setCustomMoment] = useState('');
-  const [dependencyLevel, setDependencyLevel] = useState(user.dependencyLevel || null);
-  const [cytisineStartDate, setCytisineStartDate] = useState(
-    user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : ''
-  );
-  const [firstDoseTime, setFirstDoseTime] = useState(user.firstDoseTime || '');
-  const [schedule, setSchedule] = useState(
-    Array.isArray(user.cytisineSchedule) && user.cytisineSchedule.length > 0
-      ? user.cytisineSchedule.map(p => ({ ...p }))
-      : DEFAULT_SCHEDULE.map(p => ({ ...p }))
-  );
-  const [packPrice, setPackPrice] = useState(
-    user.cigarettePackPrice != null ? String(user.cigarettePackPrice) : '5.80'
-  );
-
-  const isCustomSchedule = JSON.stringify(schedule) !== JSON.stringify(DEFAULT_SCHEDULE);
-
-  function updatePhase(idx, field, value) {
-    setSchedule(prev => prev.map((p, i) => i === idx ? { ...p, [field]: value } : p));
-  }
-
-  function resetScheduleToDefault() {
-    setSchedule(DEFAULT_SCHEDULE.map(p => ({ ...p })));
-  }
-
-  function daysFromQuitDate(quitDate) {
-    if (!quitDate) return '';
-    const d = Math.floor((Date.now() - new Date(quitDate)) / 86400000) + 1;
-    return d > 0 ? String(d) : '';
-  }
-  const [smokeFreeDays, setSmokeFreeDays] = useState(daysFromQuitDate(user.quitDate));
-
-  function toggleMoment(m) {
-    setSelectedMoments(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
-  }
-
-  function addCustomMoment() {
-    const val = customMoment.trim();
-    if (val && !selectedMoments.includes(val)) setSelectedMoments(prev => [...prev, val]);
-    setCustomMoment('');
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    setError('');
-    setSuccess('');
-    try {
-      const days = parseInt(smokeFreeDays);
-      const quitDate = smokeFreeDays && days > 0
-        ? new Date(Date.now() - days * 86400000).toISOString()
-        : undefined;
-
-      const priceValue = parseFloat(packPrice);
-      const validPrice = Number.isFinite(priceValue) && priceValue > 0;
-
-      const { user: updated } = await api.quiz.save({
-        cigarettesPerDay: cigarettesPerDay ? parseInt(cigarettesPerDay) : null,
-        criticalMoments: selectedMoments,
-        dependencyLevel: dependencyLevel || null,
-        cytisineStartDate: cytisineStartDate || null,
-        firstDoseTime: firstDoseTime || null,
-        cytisineSchedule: isCustomSchedule ? schedule : null,
-        ...(validPrice && { cigarettePackPrice: priceValue }),
-        ...(quitDate !== undefined && { quitDate }),
-      });
-      updateUser(updated);
-      setEditing(false);
-      setSuccess('Profilo aggiornato');
-      setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function handleCancel() {
-    setCigarettesPerDay(String(user.cigarettesPerDay || ''));
-    setSmokeFreeDays(daysFromQuitDate(user.quitDate));
-    setSelectedMoments(user.criticalMoments || []);
-    setDependencyLevel(user.dependencyLevel || null);
-    setCytisineStartDate(user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : '');
-    setFirstDoseTime(user.firstDoseTime || '');
-    setSchedule(
-      Array.isArray(user.cytisineSchedule) && user.cytisineSchedule.length > 0
-        ? user.cytisineSchedule.map(p => ({ ...p }))
-        : DEFAULT_SCHEDULE.map(p => ({ ...p }))
-    );
-    setPackPrice(user.cigarettePackPrice != null ? String(user.cigarettePackPrice) : '5.80');
-    setError('');
-    setEditing(false);
-  }
-
-  const activeSchedule = Array.isArray(user.cytisineSchedule) && user.cytisineSchedule.length > 0
-    ? user.cytisineSchedule
-    : DEFAULT_SCHEDULE;
-  const currentPhase = user.cytisineStartDate
-    ? getActivePhase(activeSchedule, user.cytisineStartDate)
-    : null;
-
   return (
-    <div className="px-6 py-8 animate-fade-in">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-bold text-gray-900">Il tuo profilo</h1>
-        {!editing && user.isPremium && (
-          <button onClick={() => setEditing(true)} className="text-sm text-sage-600 font-medium hover:text-sage-700 transition-colors">
-            Modifica
-          </button>
-        )}
-      </div>
-
-      {!user.isPremium && (
-        <button
-          onClick={() => navigate('/paywall')}
-          className="w-full mb-6 bg-sage-500 hover:bg-sage-600 text-white rounded-xl px-4 py-3.5 flex items-center justify-between transition-colors"
-        >
-          <div className="text-left">
-            <p className="text-sm font-semibold">Sblocca QuitFresh</p>
-            <p className="text-xs text-sage-100">€2.99 una tantum — accesso completo</p>
-          </div>
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      )}
-
-      {success && <p className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2 mb-4">{success}</p>}
-
-      {/* Account */}
-      <div className="bg-gray-50 rounded-xl px-4 py-4 mb-6">
-        <div className="flex items-center justify-between mb-0.5">
-          <p className="text-xs text-gray-500">Account</p>
-          {user.isPremium && (
-            <span className="px-2 py-0.5 bg-sage-500 text-white text-xs font-semibold rounded-full">
-              Premium
-            </span>
-          )}
-        </div>
-        <p className="text-sm font-medium text-gray-800">{user.email}</p>
-        <p className="text-xs text-gray-400 mt-0.5">Registrato il {new Date(user.createdAt).toLocaleDateString('it-IT')}</p>
-        {user.isPremium && user.premiumSince && (
-          <p className="text-xs text-sage-600 mt-1">
-            Premium dal {new Date(user.premiumSince).toLocaleDateString('it-IT')}
+    <SubPage eyebrow="Account" title="Notifiche" onClose={onClose}>
+      {!notifSupported ? (
+        <p className="text-sm text-sage-600/70 bg-cream-100 border border-sage-100 rounded-xl-soft p-4">
+          Notifiche non supportate su questo dispositivo. Installa l'app come PWA per attivarle.
+        </p>
+      ) : !notifEnabled ? (
+        <div className="bg-white rounded-2xl-soft border border-sage-100 shadow-soft p-4 space-y-3">
+          <p className="text-sm text-sage-700/80 leading-relaxed">
+            Attiva le notifiche per ricevere promemoria nei tuoi momenti critici e incoraggiamento giornaliero.
           </p>
-        )}
-      </div>
-
-      {user.isPremium && (
-        <>
-      {/* Giorni senza fumo */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Giorni senza fumo</label>
-        {editing ? (
-          <div>
-            <input
-              type="number" min="0" max="3650"
-              value={smokeFreeDays}
-              onChange={e => setSmokeFreeDays(e.target.value)}
-              placeholder="Es. 5"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition"
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Inserisci il numero di giorni e l'app calcolerà la data di inizio.
-            </p>
-          </div>
-        ) : (
-          <p className="text-gray-800 text-sm">
-            {daysFromQuitDate(user.quitDate)
-              ? `${daysFromQuitDate(user.quitDate)} giorni`
-              : '—'}
-          </p>
-        )}
-      </div>
-
-      {/* Citisina */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Protocollo citisina</label>
-        {editing ? (
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Data inizio</p>
-              <input type="date" value={cytisineStartDate} onChange={e => setCytisineStartDate(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 mb-1">Orario prima capsula del giorno</p>
-              <input type="time" value={firstDoseTime} onChange={e => setFirstDoseTime(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition" />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-gray-500">Fasi del protocollo ({totalDays(schedule)} giorni totali)</p>
-                {isCustomSchedule && (
-                  <button onClick={resetScheduleToDefault} className="text-xs text-sage-600 underline">
-                    Ripristina standard
-                  </button>
-                )}
-              </div>
-              <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
-                {schedule.map((phase, idx) => (
-                  <div key={idx} className="px-3 py-3">
-                    <p className="text-xs font-semibold text-gray-600 mb-2">
-                      Fase {idx + 1} · giorni {phaseDayRange(schedule, idx)}
-                    </p>
-                    <div className="grid grid-cols-3 gap-2 mb-2">
-                      <label className="text-xs">
-                        <span className="block text-gray-500 mb-0.5">Giorni</span>
-                        <input
-                          type="number" min="1" max="60"
-                          value={phase.days}
-                          onChange={e => updatePhase(idx, 'days', Math.max(1, parseInt(e.target.value) || 1))}
-                          className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-                        />
-                      </label>
-                      <label className="text-xs">
-                        <span className="block text-gray-500 mb-0.5">Capsule/dì</span>
-                        <input
-                          type="number" min="1" max="12"
-                          value={phase.pills}
-                          onChange={e => updatePhase(idx, 'pills', Math.max(1, parseInt(e.target.value) || 1))}
-                          className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-                        />
-                      </label>
-                      <label className="text-xs">
-                        <span className="block text-gray-500 mb-0.5">Intervallo (min)</span>
-                        <input
-                          type="number" min="0" max="1440" step="15"
-                          value={phase.intervalMin}
-                          onChange={e => updatePhase(idx, 'intervalMin', Math.max(0, parseInt(e.target.value) || 0))}
-                          className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-                        />
-                      </label>
-                    </div>
-                    <label className="text-xs block">
-                      <span className="block text-gray-500 mb-1">Orario prima capsula di questa fase</span>
-                      {phase.firstDoseTime ? (
-                        <div className="flex gap-1.5">
-                          <input
-                            type="time"
-                            value={phase.firstDoseTime}
-                            onChange={e => updatePhase(idx, 'firstDoseTime', e.target.value || undefined)}
-                            className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => updatePhase(idx, 'firstDoseTime', undefined)}
-                            aria-label="Ripristina orario default"
-                            className="px-3 py-1.5 rounded-lg bg-sage-50 border border-sage-200 text-sage-700 text-xs font-medium hover:bg-sage-100 transition-colors flex items-center gap-1"
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Default
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => updatePhase(idx, 'firstDoseTime', firstDoseTime || '08:00')}
-                          className="w-full px-3 py-2 rounded-lg bg-white border border-sage-200 text-sage-700 text-xs font-medium hover:bg-sage-50 transition-colors text-left flex items-center justify-between"
-                        >
-                          <span>
-                            Usa <strong className="font-semibold">{firstDoseTime || '08:00'}</strong> (default)
-                          </span>
-                          <span className="text-sage-500">Personalizza →</span>
-                        </button>
-                      )}
-                    </label>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Il default è il protocollo Tabex standard. Modifica solo se il tuo medico ti ha prescritto qualcosa di diverso.
-              </p>
-            </div>
-          </div>
-        ) : (cytisineStartDate || user.cytisineStartDate) && (user.firstDoseTime || firstDoseTime) ? (
-          <CytisineSchedule
-            startDate={user.cytisineStartDate}
-            firstDoseTime={user.firstDoseTime}
-            schedule={activeSchedule}
-            currentPhase={currentPhase}
-          />
-        ) : (
-          <p className="text-gray-400 text-sm">Non impostato — clicca Modifica</p>
-        )}
-      </div>
-
-      {/* Sigarette */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Sigarette al giorno</label>
-        {editing ? (
-          <input type="number" min="1" max="100" value={cigarettesPerDay} onChange={e => setCigarettesPerDay(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition" />
-        ) : (
-          <p className="text-gray-800 text-sm">{user.cigarettesPerDay ?? '—'}</p>
-        )}
-      </div>
-
-      {/* Prezzo pacchetto */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Prezzo pacchetto (€)</label>
-        {editing ? (
-          <>
-            <input
-              type="number" min="0.5" max="50" step="0.10"
-              value={packPrice}
-              onChange={e => setPackPrice(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 transition"
-            />
-            <p className="text-xs text-gray-400 mt-1">Usato per calcolare il risparmio reale (default €5.80, pacchetto da 20).</p>
-          </>
-        ) : (
-          <p className="text-gray-800 text-sm">
-            €{(user.cigarettePackPrice ?? 5.80).toFixed(2)}
-          </p>
-        )}
-      </div>
-
-      {/* Momenti critici */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Momenti critici</label>
-        {editing ? (
-          <>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {CRITICAL_MOMENTS_OPTIONS.map(m => (
-                <button key={m} onClick={() => toggleMoment(m)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${selectedMoments.includes(m) ? 'bg-sage-500 border-sage-500 text-white' : 'border-gray-200 text-gray-600 hover:border-sage-300'}`}>
-                  {m}
-                </button>
-              ))}
-              {selectedMoments.filter(s => !CRITICAL_MOMENTS_OPTIONS.includes(s)).map(m => (
-                <button key={m} onClick={() => toggleMoment(m)}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium border bg-sage-500 border-sage-500 text-white">
-                  {m}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <input type="text" value={customMoment} onChange={e => setCustomMoment(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomMoment())}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-                placeholder="Altro…" />
-              <button onClick={addCustomMoment} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors">+</button>
-            </div>
-          </>
-        ) : (
-          <div className="flex flex-wrap gap-1.5">
-            {(user.criticalMoments || []).length === 0 ? (
-              <p className="text-gray-400 text-sm">Nessuno impostato</p>
-            ) : (
-              user.criticalMoments.map(m => (
-                <span key={m} className="px-3 py-1 rounded-full bg-sage-50 text-sage-700 text-xs font-medium border border-sage-200">{m}</span>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Livello dipendenza */}
-      <div className="mb-8">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Livello di dipendenza</label>
-        {editing ? (
-          <div className="grid grid-cols-5 gap-2">
-            {[1, 2, 3, 4, 5].map(level => (
-              <button key={level} onClick={() => setDependencyLevel(level)}
-                className={`py-2.5 rounded-xl text-sm font-bold border transition-colors ${dependencyLevel === level ? 'bg-sage-500 border-sage-500 text-white' : 'border-gray-200 text-gray-600 hover:border-sage-300'}`}>
-                {level}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-800 text-sm">{user.dependencyLevel ? `${user.dependencyLevel} — ${DEPENDENCY_LABELS[user.dependencyLevel]}` : '—'}</p>
-        )}
-      </div>
-
-      {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}
-
-      {editing && (
-        <div className="flex gap-3 mb-8">
-          <button onClick={handleCancel} className="flex-1 py-3.5 border border-gray-200 text-gray-600 rounded-xl font-medium text-sm hover:bg-gray-50 transition-colors">Annulla</button>
-          <button onClick={handleSave} disabled={saving} className="flex-1 py-3.5 bg-sage-500 text-white rounded-xl font-semibold text-sm hover:bg-sage-600 disabled:opacity-60 transition-colors">
-            {saving ? 'Salvataggio…' : 'Salva'}
-          </button>
-        </div>
-      )}
-        </>
-      )}
-
-      {user.isPremium && (
-      <>
-      {/* Promemoria anti-craving */}
-      <div className="mb-8 border-t border-gray-100 pt-6">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-semibold text-gray-700">Promemoria anti-craving</h2>
-          {notifEnabled && (
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${notifRegistered ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-              {notifRegistered ? 'Dispositivo registrato ✓' : 'Registrazione…'}
-            </span>
-          )}
-        </div>
-        <p className="text-xs text-gray-400 mb-4">Notifiche di supporto nei tuoi momenti critici.</p>
-
-        {!notifSupported ? (
-          <p className="text-xs text-gray-400">Notifiche non supportate su questo dispositivo.</p>
-        ) : !notifEnabled ? (
-          <button onClick={enableNotifications} className="w-full py-3 border border-sage-300 text-sage-600 rounded-xl text-sm font-medium hover:bg-sage-50 transition-colors">
+          <button
+            onClick={enableNotifications}
+            className="w-full py-3 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft text-sm font-semibold shadow-sage active:scale-[0.98] transition-all"
+          >
             Attiva notifiche
           </button>
-        ) : (
-          <>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          {/* Anti-craving */}
+          <Field
+            label="Promemoria anti-craving"
+            hint="Notifiche di supporto nei tuoi momenti critici."
+            extra={
+              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${notifRegistered ? 'bg-sage-100 text-sage-700' : 'bg-cream-100 text-sage-600/70'}`}>
+                {notifRegistered ? 'Attivo' : 'Registrazione…'}
+              </span>
+            }
+          >
             <div className="flex flex-wrap gap-2 mb-3">
               {notifTimes.map(t => (
-                <span key={t} className="flex items-center gap-1.5 px-3 py-1.5 bg-sage-50 border border-sage-200 rounded-full text-xs font-medium text-sage-700">
+                <span key={t} className="flex items-center gap-1.5 px-3 py-1.5 bg-sage-50 border border-sage-200 rounded-full text-xs font-medium text-sage-800">
                   {t}
-                  <button onClick={() => removeTime(t)} className="text-sage-400 hover:text-sage-600 leading-none">✕</button>
+                  <button onClick={() => removeTime(t)} className="text-sage-500 hover:text-sage-800">✕</button>
                 </span>
               ))}
-              {notifTimes.length === 0 && <p className="text-xs text-gray-400">Nessun orario impostato</p>}
+              {notifTimes.length === 0 && <p className="text-[11px] text-sage-600/70">Nessun orario impostato</p>}
             </div>
             <div className="flex gap-2">
-              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
-              <button onClick={addTime} disabled={!newTime || notifSaving}
-                className="px-4 py-2 bg-sage-500 text-white rounded-xl text-sm font-medium hover:bg-sage-600 disabled:opacity-50 transition-colors">
+              <input
+                type="time"
+                value={newTime}
+                onChange={e => setNewTime(e.target.value)}
+                className="flex-1 min-w-0 px-3 py-2 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+              />
+              <button
+                onClick={addTime}
+                disabled={!newTime || notifSaving}
+                className="px-4 py-2 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft text-sm font-semibold shadow-sage disabled:opacity-50 transition-all"
+              >
                 {notifSaving ? '…' : 'Aggiungi'}
               </button>
             </div>
-            <button onClick={sendTestNotification}
-              className="mt-3 w-full py-2.5 border border-sage-300 text-sage-600 rounded-xl text-sm font-medium hover:bg-sage-50 transition-colors">
+          </Field>
+
+          {/* Incoraggiamento giornaliero */}
+          <Field
+            label="Incoraggiamento giornaliero"
+            hint="Una notifica al giorno, all'orario che scegli, per ricordarti il tuo progresso."
+            extra={
+              encouragementTime && (
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-sage-100 text-sage-700">
+                  Attivo · {encouragementTime}
+                </span>
+              )
+            }
+          >
+            {!encouragementTime ? (
+              <div className="flex gap-2">
+                <input
+                  type="time"
+                  value={encouragementTime}
+                  onChange={e => setEncouragementTime(e.target.value)}
+                  className="flex-1 min-w-0 px-3 py-2 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+                />
+                <button
+                  onClick={() => saveEncouragement(encouragementTime)}
+                  disabled={!encouragementTime || encouragementSaving}
+                  className="px-4 py-2 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft text-sm font-semibold shadow-sage disabled:opacity-50 transition-all"
+                >
+                  {encouragementSaving ? '…' : 'Attiva'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="time"
+                  value={encouragementTime}
+                  onChange={e => setEncouragementTime(e.target.value)}
+                  className="flex-1 min-w-0 px-3 py-2 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+                />
+                <button
+                  onClick={() => saveEncouragement(encouragementTime)}
+                  disabled={encouragementSaving || encouragementTime === (user.encouragementTime || '')}
+                  className="px-3 py-2 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft text-sm font-semibold shadow-sage disabled:opacity-50 transition-all"
+                >
+                  {encouragementSaving ? '…' : 'Salva'}
+                </button>
+                <button
+                  onClick={() => saveEncouragement(null)}
+                  disabled={encouragementSaving}
+                  className="px-3 py-2 border border-sage-200 text-sage-600 rounded-xl-soft text-sm font-medium hover:bg-sage-50 transition-colors"
+                >
+                  Disattiva
+                </button>
+              </div>
+            )}
+          </Field>
+
+          {/* Test notifica */}
+          <div className="pt-2 border-t border-sage-100/60">
+            <button
+              onClick={sendTestNotification}
+              className="w-full py-2.5 border border-sage-300 text-sage-700 rounded-xl-soft text-sm font-medium hover:bg-sage-50 transition-colors"
+            >
               Invia notifica di test
             </button>
             {testResult && (
-              <p className={`mt-2 text-xs text-center ${testResult.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>{testResult}</p>
+              <p className={`mt-2 text-xs text-center ${testResult.startsWith('✓') ? 'text-sage-700' : 'text-terracotta-700'}`}>
+                {testResult}
+              </p>
             )}
-          </>
-        )}
-      </div>
-
-      {/* Incoraggiamento giornaliero */}
-      <div className="mb-8 border-t border-gray-100 pt-6">
-        <div className="flex items-center justify-between mb-1">
-          <h2 className="text-sm font-semibold text-gray-700">Incoraggiamento giornaliero</h2>
-          {encouragementTime && (
-            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-sage-100 text-sage-700">
-              Attivo · {encouragementTime}
-            </span>
-          )}
-        </div>
-        <p className="text-xs text-gray-400 mb-4">
-          Una notifica al giorno, all'orario che scegli, per ricordarti il tuo progresso.
-        </p>
-
-        {!notifSupported ? (
-          <p className="text-xs text-gray-400">Notifiche non supportate su questo dispositivo.</p>
-        ) : !notifEnabled ? (
-          <p className="text-xs text-gray-400">Prima attiva le notifiche qui sopra.</p>
-        ) : !encouragementTime ? (
-          <div className="flex gap-2">
-            <input
-              type="time"
-              value={encouragementTime}
-              onChange={e => setEncouragementTime(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-            />
-            <button
-              onClick={() => saveEncouragement(encouragementTime)}
-              disabled={!encouragementTime || encouragementSaving}
-              className="px-4 py-2 bg-sage-500 text-white rounded-xl text-sm font-medium hover:bg-sage-600 disabled:opacity-50 transition-colors"
-            >
-              {encouragementSaving ? '…' : 'Attiva'}
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <input
-              type="time"
-              value={encouragementTime}
-              onChange={e => setEncouragementTime(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-            />
-            <button
-              onClick={() => saveEncouragement(encouragementTime)}
-              disabled={encouragementSaving || encouragementTime === (user.encouragementTime || '')}
-              className="px-3 py-2 bg-sage-500 text-white rounded-xl text-sm font-medium hover:bg-sage-600 disabled:opacity-50 transition-colors"
-            >
-              {encouragementSaving ? '…' : 'Salva'}
-            </button>
-            <button
-              onClick={() => saveEncouragement(null)}
-              disabled={encouragementSaving}
-              className="px-3 py-2 border border-gray-200 text-gray-500 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
-            >
-              Disattiva
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Reset cronologia */}
-      <div className="mb-8 border-t border-gray-100 pt-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-1">Cronologia tentativi</h2>
-        <p className="text-xs text-gray-400 mb-3">
-          Cancella tutti i tentativi precedenti (azzera anche il Record). Lo streak attuale non viene toccato.
-        </p>
-        {resetHistoryResult && (
-          <p className={`text-xs mb-2 ${resetHistoryResult.startsWith('Errore') ? 'text-red-500' : 'text-sage-700'}`}>
-            {resetHistoryResult}
-          </p>
-        )}
-        <button
-          onClick={() => setShowResetHistoryModal(true)}
-          className="w-full py-2.5 border border-sage-300 text-sage-700 rounded-xl text-sm font-medium hover:bg-sage-50 transition-colors"
-        >
-          Azzera cronologia
-        </button>
-      </div>
-
-      {/* Logout */}
-      <div className="border-t border-gray-100 pt-6">
-        <button onClick={handleLogout} className="w-full py-3 text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
-          Esci dall'account
-        </button>
-      </div>
-
-      {/* Installa app */}
-      <div className="mt-8 pt-6 border-t border-gray-100">
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Installa sul telefono</h2>
-        <InstallApp mode="section" />
-      </div>
-      </>
-      )}
-
-      {/* Informazioni legali */}
-      <div className="mt-8 pt-6 border-t border-gray-100">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Informazioni legali</p>
-        <div className="flex flex-col gap-2 text-sm">
-          <Link to="/privacy" className="text-sage-600 hover:underline">Privacy Policy</Link>
-          <Link to="/terms" className="text-sage-600 hover:underline">Termini di Servizio</Link>
-        </div>
-      </div>
-
-      {/* Zona pericolosa */}
-      <div className="mt-8 pt-6 border-t border-gray-100">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Zona pericolosa</p>
-        <button
-          onClick={() => { setShowDeleteModal(true); setDeleteConfirmEmail(''); setDeleteError(''); }}
-          className="text-xs text-gray-500 hover:text-red-600 underline transition-colors"
-        >
-          Elimina account
-        </button>
-      </div>
-
-      {showResetHistoryModal && (
-        <div className="fixed inset-0 z-50 bg-sage-900/40 backdrop-blur-sm flex items-end justify-center px-4 pb-8 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-mobile w-full p-6 shadow-lift animate-slide-up">
-            <h3 className="font-display text-xl font-semibold text-sage-900 mb-2">Azzerare la cronologia?</h3>
-            <p className="text-sm text-sage-700/80 mb-6 leading-relaxed">
-              Tutti i tentativi precedenti vengono cancellati definitivamente. Il Record verrà azzerato.
-              <span className="block mt-2 text-[11px] text-sage-600/70">
-                Lo streak attuale (giorni senza fumo) NON viene toccato.
-              </span>
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowResetHistoryModal(false)}
-                disabled={resettingHistory}
-                className="flex-1 py-3 border border-sage-200 text-sage-700 rounded-xl-soft font-medium text-sm hover:bg-sage-50 transition-colors active:scale-[0.98]"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleResetHistory}
-                disabled={resettingHistory}
-                className="flex-1 py-3 bg-terracotta-500 text-white rounded-xl-soft font-semibold text-sm hover:bg-terracotta-600 disabled:opacity-60 transition-colors active:scale-[0.98]"
-              >
-                {resettingHistory ? 'Azzero…' : 'Sì, azzera'}
-              </button>
-            </div>
           </div>
         </div>
       )}
-
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-6">
-          <div className="bg-white rounded-2xl max-w-mobile w-full p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Eliminare l'account?</h3>
-            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-              Questa azione è <strong>irreversibile</strong>. Verranno cancellati:
-              il tuo profilo, lo storico craving, il diario, i promemoria e tutte le
-              statistiche. Non potrai recuperarli.
-            </p>
-            <label className="block text-xs text-gray-500 mb-1">
-              Per confermare, digita la tua email <span className="font-medium">{user.email}</span>:
-            </label>
-            <input
-              type="email"
-              value={deleteConfirmEmail}
-              onChange={(e) => setDeleteConfirmEmail(e.target.value)}
-              placeholder={user.email}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-red-400"
-              autoFocus
-            />
-            {deleteError && (
-              <p className="text-xs text-red-600 bg-red-50 rounded-lg px-2 py-1.5 mb-3">{deleteError}</p>
-            )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                disabled={deleting}
-                className="flex-1 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={deleting || deleteConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()}
-                className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 disabled:opacity-40 transition-colors"
-              >
-                {deleting ? 'Cancellazione…' : 'Elimina definitivamente'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </SubPage>
   );
 }
 
-function CytisineSchedule({ startDate, firstDoseTime, schedule, currentPhase }) {
-  if (!firstDoseTime || !schedule) return null;
-
-  const totalProtocolDays = totalDays(schedule);
-  const endDate = startDate
-    ? new Date(new Date(startDate).getTime() + (totalProtocolDays - 1) * 86400000)
-    : null;
-
+// ── Field: wrapper label + content per i form ────────────────
+function Field({ label, hint, extra, children }) {
   return (
-    <div className="rounded-xl border border-gray-200 overflow-hidden">
-      {/* Intestazione fase corrente */}
-      {currentPhase && (
-        <div className="bg-sage-500 px-4 py-3">
-          <p className="text-white text-sm font-semibold">
-            Giorno {currentPhase.day} · Fase {currentPhase.index + 1}
-          </p>
-          <p className="text-sage-100 text-xs mt-0.5">
-            {currentPhase.pills} capsule al dì · 1 ogni {formatInterval(currentPhase.intervalMin)}
-          </p>
-        </div>
-      )}
-
-      {/* Date inizio / fine */}
-      {startDate && endDate && (
-        <div className="flex justify-between px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
-          <span>Inizio: <span className="font-medium text-gray-700">{new Date(startDate).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</span></span>
-          <span>Fine: <span className="font-medium text-gray-700">{endDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}</span></span>
-        </div>
-      )}
-
-      {/* Prospetto fasi */}
-      <div className="divide-y divide-gray-100">
-        {schedule.map((phase, idx) => {
-          const times = getDoseTimes(firstDoseTime, phase);
-          const isCurrent = currentPhase?.index === idx;
-          return (
-            <div key={idx} className={`px-4 py-3 ${isCurrent ? 'bg-sage-50' : 'bg-white'}`}>
-              <div className="flex items-baseline justify-between mb-1.5">
-                <span className={`text-xs font-semibold ${isCurrent ? 'text-sage-700' : 'text-gray-500'}`}>
-                  Gg {phaseDayRange(schedule, idx)}
-                </span>
-                <span className="text-xs text-gray-400">
-                  {phase.pills} cps · ogni {formatInterval(phase.intervalMin)}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {times.map(t => (
-                  <span key={t} className={`px-2 py-0.5 rounded-full text-xs font-medium ${isCurrent ? 'bg-sage-200 text-sage-800' : 'bg-gray-100 text-gray-600'}`}>
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+    <div>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold">{label}</p>
+        {extra}
       </div>
+      {children}
+      {hint && <p className="text-[11px] text-sage-600/60 mt-1.5 leading-snug">{hint}</p>}
     </div>
   );
 }
