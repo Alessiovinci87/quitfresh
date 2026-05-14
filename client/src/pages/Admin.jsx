@@ -9,7 +9,7 @@ const STATUS_LABELS = {
 };
 
 export default function Admin() {
-  const [token, setToken] = useState(() => sessionStorage.getItem('qf_admin_token') || '');
+  const [token, setToken] = useState(() => localStorage.getItem('qf_admin_token') || '');
   const [authed, setAuthed] = useState(false);
   const [codes, setCodes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -29,12 +29,12 @@ export default function Admin() {
     setLoading(true);
     try {
       const list = await api.admin.listPromoCodes(token);
-      sessionStorage.setItem('qf_admin_token', token);
+      localStorage.setItem('qf_admin_token', token);
       setCodes(list);
       setAuthed(true);
     } catch (err) {
       setError(err.message || 'Token non valido');
-      sessionStorage.removeItem('qf_admin_token');
+      localStorage.removeItem('qf_admin_token');
     } finally {
       setLoading(false);
     }
@@ -98,7 +98,7 @@ export default function Admin() {
   }
 
   function logout() {
-    sessionStorage.removeItem('qf_admin_token');
+    localStorage.removeItem('qf_admin_token');
     setToken('');
     setAuthed(false);
     setCodes([]);
