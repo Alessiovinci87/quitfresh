@@ -3,12 +3,28 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased overflow-x-hidden;
+    @apply bg-cream-100 text-gray-900 font-sans antialiased overflow-x-hidden;
+    font-feature-settings: 'ss01', 'cv01', 'cv02', 'cv03';
+  }
+
+  /* Display tipografia: Fraunces per h1 e numeri grandi (overridable con
+     classi specifiche). Usata solo dove serve carattere editoriale. */
+  .font-display {
+    font-feature-settings: 'ss01', 'liga' 1;
   }
 
   * {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    @apply bg-sage-200 text-sage-900;
   }
 
   /* iOS Safari zooma automaticamente sugli input con font-size < 16px,
@@ -35,5 +51,10 @@
 @layer utilities {
   .mobile-container {
     @apply w-full max-w-mobile mx-auto min-h-screen flex flex-col;
+  }
+
+  /* Padding sicuro per gesture bar iOS sui contenitori fixed bottom */
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
   }
 }
