@@ -18,6 +18,19 @@ const CRAVING_MESSAGES = [
   'Sei ancora qui. Gestisci questo orario con calma.',
 ];
 
+function buildEncouragementMessage(days) {
+  const pool = [
+    days === 0
+      ? 'Oggi inizia il viaggio. Sei più forte di quanto credi.'
+      : `Sono ${days} giorni senza fumo. Continui a fare grande.`,
+    `Hai resistito ${days === 1 ? 'un giorno intero' : `${days} giorni`}. Ogni giornata vinta è tua.`,
+    `${days === 0 ? 'Giorno 1' : `${days} giorni`} di nuovo respiro. Vai così.`,
+    `Sei a quota ${days === 1 ? '1 giorno' : `${days} giorni`}. Una scelta forte, oggi e ogni giorno.`,
+    `${days === 0 ? 'Oggi' : `${days} giorni`}: il tuo corpo ti ringrazia ogni minuto.`,
+  ];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 async function dispatchToUser(user, msg) {
   for (const sub of user.pushSubscriptions) {
     const result = await sendPush(
@@ -78,6 +91,28 @@ function startCron() {
         await dispatchToUser(user, {
           title: 'QuitFresh',
           body: CRAVING_MESSAGES[Math.floor(Math.random() * CRAVING_MESSAGES.length)],
+        });
+      }
+
+      // 3. Incoraggiamento giornaliero — singolo orario per utente, conta i giorni
+      // senza fumo dal quitDate (saltato se quitDate è nel futuro o assente).
+      const encouragementUsers = await prisma.user.findMany({
+        where: {
+          encouragementTime: timeStr,
+          quitDate: { not: null },
+          pushSubscriptions: { some: {} },
+        },
+        include: { pushSubscriptions: true },
+      });
+
+      for (const user of encouragementUsers) {
+        const quitDate = new Date(new Date(user.quitDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+        const days = Math.floor((romeNow - quitDate) / 86400000);
+        if (days < 0) continue;
+
+        await dispatchToUser(user, {
+          title: 'QuitFresh',
+          body: buildEncouragementMessage(days),
         });
       }
     } catch (err) {

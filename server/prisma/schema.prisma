@@ -20,6 +20,7 @@ model User {
   firstDoseTime      String?
   smokeFreeSince     DateTime?
   notificationTimes  String[]
+  encouragementTime  String?
   cytisineSchedule   Json?
   cigarettePackPrice Float              @default(5.80)
   isPremium          Boolean            @default(false)

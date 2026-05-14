@@ -40,6 +40,9 @@ export default function Profile() {
   const [notifRegistered, setNotifRegistered] = useState(false);
   const [testResult, setTestResult] = useState('');
 
+  const [encouragementTime, setEncouragementTime] = useState(user.encouragementTime || '');
+  const [encouragementSaving, setEncouragementSaving] = useState(false);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -136,6 +139,19 @@ export default function Profile() {
     const updated = [...notifTimes, newTime].sort();
     setNewTime('');
     saveNotifTimes(updated);
+  }
+
+  async function saveEncouragement(time) {
+    setEncouragementSaving(true);
+    try {
+      const { user: updated } = await api.notifications.setEncouragement(time);
+      updateUser(updated);
+      setEncouragementTime(time || '');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setEncouragementSaving(false);
+    }
   }
 
   function removeTime(t) {
@@ -586,6 +602,66 @@ export default function Profile() {
               <p className={`mt-2 text-xs text-center ${testResult.startsWith('✓') ? 'text-green-600' : 'text-red-500'}`}>{testResult}</p>
             )}
           </>
+        )}
+      </div>
+
+      {/* Incoraggiamento giornaliero */}
+      <div className="mb-8 border-t border-gray-100 pt-6">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-sm font-semibold text-gray-700">Incoraggiamento giornaliero</h2>
+          {encouragementTime && (
+            <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-sage-100 text-sage-700">
+              Attivo · {encouragementTime}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-400 mb-4">
+          Una notifica al giorno, all'orario che scegli, per ricordarti il tuo progresso.
+        </p>
+
+        {!notifSupported ? (
+          <p className="text-xs text-gray-400">Notifiche non supportate su questo dispositivo.</p>
+        ) : !notifEnabled ? (
+          <p className="text-xs text-gray-400">Prima attiva le notifiche qui sopra.</p>
+        ) : !encouragementTime ? (
+          <div className="flex gap-2">
+            <input
+              type="time"
+              value={encouragementTime}
+              onChange={e => setEncouragementTime(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+            />
+            <button
+              onClick={() => saveEncouragement(encouragementTime)}
+              disabled={!encouragementTime || encouragementSaving}
+              className="px-4 py-2 bg-sage-500 text-white rounded-xl text-sm font-medium hover:bg-sage-600 disabled:opacity-50 transition-colors"
+            >
+              {encouragementSaving ? '…' : 'Attiva'}
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="time"
+              value={encouragementTime}
+              onChange={e => setEncouragementTime(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+            />
+            <button
+              onClick={() => saveEncouragement(encouragementTime)}
+              disabled={encouragementSaving || encouragementTime === (user.encouragementTime || '')}
+              className="px-3 py-2 bg-sage-500 text-white rounded-xl text-sm font-medium hover:bg-sage-600 disabled:opacity-50 transition-colors"
+            >
+              {encouragementSaving ? '…' : 'Salva'}
+            </button>
+            <button
+              onClick={() => saveEncouragement(null)}
+              disabled={encouragementSaving}
+              className="px-3 py-2 border border-gray-200 text-gray-500 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              Disattiva
+            </button>
+          </div>
         )}
       </div>
 

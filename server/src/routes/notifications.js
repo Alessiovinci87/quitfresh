@@ -70,6 +70,27 @@ router.put('/times', requireAuth, async (req, res) => {
   }
 });
 
+// PUT /api/notifications/encouragement — orario incoraggiamento giornaliero
+// body: { time: "HH:MM" } per attivare, { time: null } per disattivare
+router.put('/encouragement', requireAuth, async (req, res) => {
+  const { time } = req.body;
+  if (time !== null && !/^\d{2}:\d{2}$/.test(time || '')) {
+    return res.status(400).json({ error: 'time deve essere HH:MM o null' });
+  }
+
+  try {
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { encouragementTime: time },
+    });
+    const { passwordHash, ...safe } = updated;
+    res.json({ user: safe });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore nel salvataggio dell\'orario' });
+  }
+});
+
 // GET /api/notifications/debug — diagnostica (solo autenticati)
 router.get('/debug', requireAuth, async (req, res) => {
   const pub = process.env.VAPID_PUBLIC_KEY;
