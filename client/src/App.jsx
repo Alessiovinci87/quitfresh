@@ -61,11 +61,11 @@ function SplashScreen() {
         <img
           src={`${baseUrl}apple-touch-icon.png`}
           alt="QuitFresh"
-          className="w-28 h-28 rounded-3xl shadow-card mx-auto mb-4"
+          className="w-56 h-56 sm:w-64 sm:h-64 rounded-[2.25rem] shadow-card mx-auto mb-6"
           style={{ animation: 'qfLogoEnter 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
         />
         <p
-          className="font-display text-2xl font-semibold text-sage-900"
+          className="font-display text-3xl font-semibold text-sage-900"
           style={{ animation: 'qfTitleEnter 800ms ease-out forwards' }}
         >
           QuitFresh
