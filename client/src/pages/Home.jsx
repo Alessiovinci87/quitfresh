@@ -159,130 +159,167 @@ export default function Home() {
     );
   }
 
+  const days = progress?.daysSinceQuit ?? 0;
+  const nextBadge = progress?.badges?.find((b) => !b.earned);
+  const ringTarget = nextBadge?.days ?? Math.max(days + 1, 30);
+  const ringProgress = Math.min(days / ringTarget, 1);
+
   return (
-    <div className="px-6 py-8 animate-fade-in">
-      <InstallApp mode="card" />
-      {verifyBanner}
-      <div className="mb-8 flex items-end justify-between">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.18em] text-sage-600/70 font-medium">Bentornato</p>
-          <h1 className="font-display text-3xl font-semibold text-sage-900 truncate leading-tight mt-1">
-            {user.email.split('@')[0]}
-          </h1>
+    <div className="animate-fade-in">
+      {/* Large title sticky — iOS style */}
+      <header className="sticky top-0 z-30 px-6 pt-6 pb-3 bg-cream-50/85 backdrop-blur-xl border-b border-sage-100/30">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Oggi</p>
+        <h1 className="font-display text-3xl font-semibold text-sage-900 truncate leading-tight mt-0.5">
+          {user.email.split('@')[0]}
+        </h1>
+      </header>
+
+      <div className="px-6 pt-6 pb-2">
+        <InstallApp mode="card" />
+        {verifyBanner}
+      </div>
+
+      {/* Hero — Progress Ring */}
+      <div className="px-6 pb-6">
+        <div className="relative flex flex-col items-center py-2">
+          {loading ? (
+            <div className="h-[240px] flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-sage-400 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <>
+              <ProgressRing value={days} max={ringTarget} size={240} stroke={14}>
+                <p className="font-display text-[72px] font-semibold text-sage-800 tabular-nums leading-none tracking-tight">
+                  {days}
+                </p>
+                <p className="text-[11px] font-medium text-sage-600/80 tracking-wide mt-1 uppercase">
+                  {days === 1 ? 'giorno' : 'giorni'}
+                </p>
+                {nextBadge ? (
+                  <p className="text-[10px] text-sage-600/60 mt-1.5">
+                    {ringTarget - days} al traguardo
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-sage-700 mt-1.5 font-medium">Tutti i traguardi ✓</p>
+                )}
+              </ProgressRing>
+
+              <p className="mt-4 text-sm text-sage-700/80">
+                dal {progress?.quitDate
+                  ? new Date(progress.quitDate).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : '—'}
+              </p>
+
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  onClick={() => adjustDays(-1)}
+                  disabled={adjusting || days <= 0}
+                  className="w-9 h-9 rounded-full bg-white border border-sage-200/70 text-sage-700 text-lg font-bold disabled:opacity-30 hover:bg-sage-50 transition-all flex items-center justify-center shadow-soft active:scale-95"
+                  aria-label="Diminuisci giorni"
+                >−</button>
+                <span className="text-[11px] uppercase tracking-wider text-sage-600/70 font-medium">Aggiusta</span>
+                <button
+                  onClick={() => adjustDays(+1)}
+                  disabled={adjusting}
+                  className="w-9 h-9 rounded-full bg-white border border-sage-200/70 text-sage-700 text-lg font-bold disabled:opacity-30 hover:bg-sage-50 transition-all flex items-center justify-center shadow-soft active:scale-95"
+                  aria-label="Aumenta giorni"
+                >+</button>
+              </div>
+
+              {progress?.bestDays > 0 && (
+                <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-sage-700 bg-sage-50 border border-sage-100 px-2.5 py-1 rounded-full">
+                  <span className="text-terracotta-500">★</span>
+                  Record: {progress.bestDays} {progress.bestDays === 1 ? 'giorno' : 'giorni'}
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      {/* Days counter — hero editoriale */}
-      <div className="relative text-center mb-8 py-12 px-6 rounded-2xl-soft overflow-hidden bg-gradient-to-br from-sage-50 via-cream-50 to-sage-100 shadow-card">
-        <div className="absolute inset-0 pointer-events-none opacity-60 bg-[radial-gradient(circle_at_50%_30%,rgba(104,131,97,0.18),transparent_60%)]" />
-        {loading ? (
-          <div className="w-8 h-8 border-2 border-sage-400 border-t-transparent rounded-full animate-spin mx-auto relative" />
-        ) : (
-          <div className="relative">
-            <div className="flex items-center justify-center gap-5">
-              <button
-                onClick={() => adjustDays(-1)}
-                disabled={adjusting || (progress?.daysSinceQuit ?? 0) <= 0}
-                className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-sage-200/60 text-sage-700 text-xl font-bold disabled:opacity-30 hover:bg-white transition-all flex items-center justify-center shadow-soft active:scale-95"
-                aria-label="Diminuisci giorni"
-              >−</button>
-              <p className="font-display text-[88px] font-semibold text-sage-700 tabular-nums leading-none tracking-tight">
-                {progress?.daysSinceQuit ?? 0}
-              </p>
-              <button
-                onClick={() => adjustDays(+1)}
-                disabled={adjusting}
-                className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm border border-sage-200/60 text-sage-700 text-xl font-bold disabled:opacity-30 hover:bg-white transition-all flex items-center justify-center shadow-soft active:scale-95"
-                aria-label="Aumenta giorni"
-              >+</button>
+      {/* CTA primaria — floating sopra al contenuto */}
+      <div className="px-6 mb-6">
+        <button
+          onClick={() => navigate('/craving')}
+          className="w-full py-4 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-2xl-soft font-semibold text-base tracking-wide shadow-sage hover:from-sage-600 hover:to-sage-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          Ho bisogno ORA
+        </button>
+      </div>
+
+      <div className="px-6 space-y-3 mb-6">
+        {/* Card "Oggi" unificata: capsule + KPI */}
+        {!loading && progress && (
+          <SectionCard
+            title="Capsule e statistiche"
+            icon={
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+          >
+            <CapsuleTracker user={user} embedded />
+            <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-sage-100/60">
+              <StatCard label="Sigarette evitate" value={progress.cigarettesAvoided} unit="" />
+              <StatCard label="Risparmio" value={`€${progress.moneySaved.toFixed(2)}`} unit="" />
             </div>
-            <p className="mt-4 text-sm font-medium text-sage-700 tracking-wide">
-              {(progress?.daysSinceQuit ?? 0) === 1 ? 'giorno senza fumo' : 'giorni senza fumo'}
-            </p>
-            <p className="mt-1 text-xs text-sage-600/70">
-              dal {progress?.quitDate
-                ? new Date(progress.quitDate).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
-                : '—'}
-            </p>
-            {progress?.bestDays > 0 && (
-              <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-sage-700 bg-white/70 px-2.5 py-1 rounded-full backdrop-blur-sm">
-                <span>★</span>
-                Record precedente: {progress.bestDays} {progress.bestDays === 1 ? 'giorno' : 'giorni'}
-              </p>
-            )}
-          </div>
+          </SectionCard>
         )}
       </div>
 
-      {/* Stats */}
-      {!loading && progress && (
-        <div className="grid grid-cols-2 gap-3 mb-8">
-          <StatCard label="Sigarette evitate" value={progress.cigarettesAvoided} unit="sigarette" />
-          <StatCard label="Risparmio stimato" value={`€${progress.moneySaved.toFixed(2)}`} unit="" />
-        </div>
-      )}
+      <div className="px-6 pb-2">
+        {/* Relapse button — discreto */}
+        <button
+          onClick={() => setShowRelapseConfirm(true)}
+          className="w-full py-2 text-xs text-sage-600/60 hover:text-sage-700 transition-colors mb-6 underline-offset-4 hover:underline"
+        >
+          Ho ceduto — vuoi azzerare il contatore?
+        </button>
 
-      {/* Capsule tracker */}
-      <CapsuleTracker user={user} />
-
-      {/* CTA */}
-      <button
-        onClick={() => navigate('/craving')}
-        className="w-full py-5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-2xl-soft font-semibold text-lg tracking-wide shadow-sage hover:from-sage-600 hover:to-sage-700 active:scale-[0.98] transition-all mb-4"
-      >
-        Ho bisogno ORA
-      </button>
-
-      {/* Relapse button — discreto */}
-      <button
-        onClick={() => setShowRelapseConfirm(true)}
-        className="w-full py-2 text-xs text-sage-600/60 hover:text-sage-700 transition-colors mb-6 underline-offset-4 hover:underline"
-      >
-        Ho ceduto — vuoi azzerare il contatore?
-      </button>
-
-      {/* Badges */}
-      {!loading && progress?.badges && (
-        <div>
-          <h2 className="text-[11px] font-semibold text-sage-600/70 uppercase tracking-[0.18em] mb-3">Traguardi</h2>
-          <div className="space-y-2">
-            {progress.badges.map((badge) => (
-              <div
-                key={badge.id}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl-soft transition-all ${
-                  badge.earned
-                    ? 'bg-white border border-sage-100 shadow-soft'
-                    : 'bg-cream-100/60 border border-sage-100/40 opacity-70'
-                }`}
-              >
-                <span className="text-2xl">{BADGE_EMOJI[badge.id] || '🎯'}</span>
-                <div className="min-w-0">
-                  <p className={`text-sm font-medium ${badge.earned ? 'text-sage-900' : 'text-sage-700/60'}`}>
-                    {badge.label}
-                  </p>
-                  {!badge.earned && progress.daysSinceQuit < badge.days && (
-                    <p className="text-xs text-sage-600/60 mt-0.5">
-                      Mancano {badge.days - progress.daysSinceQuit} giorni
+        {/* Badges */}
+        {!loading && progress?.badges && (
+          <div>
+            <h2 className="text-[11px] font-semibold text-sage-600/70 uppercase tracking-[0.18em] mb-3 px-1">Traguardi</h2>
+            <div className="bg-white rounded-xl-soft shadow-soft overflow-hidden divide-y divide-sage-100/60">
+              {progress.badges.map((badge) => (
+                <div
+                  key={badge.id}
+                  className={`flex items-center gap-3 px-4 py-3.5 transition-all ${
+                    badge.earned ? '' : 'opacity-50'
+                  }`}
+                >
+                  <span className="text-2xl shrink-0">{BADGE_EMOJI[badge.id] || '🎯'}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-medium ${badge.earned ? 'text-sage-900' : 'text-sage-700/70'}`}>
+                      {badge.label}
                     </p>
+                    {!badge.earned && progress.daysSinceQuit < badge.days && (
+                      <p className="text-xs text-sage-600/60 mt-0.5">
+                        Mancano {badge.days - progress.daysSinceQuit} giorni
+                      </p>
+                    )}
+                  </div>
+                  {badge.earned && (
+                    <span className="text-[11px] text-sage-700 font-medium bg-sage-50 px-2 py-0.5 rounded-full shrink-0">
+                      Raggiunto
+                    </span>
                   )}
                 </div>
-                {badge.earned && (
-                  <span className="ml-auto text-[11px] text-sage-700 font-medium bg-sage-50 px-2 py-0.5 rounded-full">
-                    Raggiunto
-                  </span>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Past attempts */}
-      {!loading && progress?.pastAttempts?.length > 0 && (
-        <div className="mt-6">
-          <PastAttempts attempts={progress.pastAttempts} bestDays={progress.bestDays} />
-        </div>
-      )}
+        {/* Past attempts */}
+        {!loading && progress?.pastAttempts?.length > 0 && (
+          <div className="mt-6">
+            <PastAttempts attempts={progress.pastAttempts} bestDays={progress.bestDays} />
+          </div>
+        )}
+      </div>
 
       {/* Relapse confirm modal */}
       {showRelapseConfirm && (
@@ -314,7 +351,7 @@ export default function Home() {
   );
 }
 
-function CapsuleTracker({ user }) {
+function CapsuleTracker({ user, embedded = false }) {
   const [pillsTaken, setPillsTaken] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -352,11 +389,11 @@ function CapsuleTracker({ user }) {
   const taken = pillsTaken ?? 0;
   const allTaken = taken >= phase.pills;
 
-  return (
-    <div className="mb-6 border border-sage-100/80 rounded-xl-soft px-4 py-4 bg-white shadow-soft">
+  const content = (
+    <>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold text-sage-900">Capsule di oggi</h2>
-        <span className="text-[11px] font-medium text-sage-700 bg-sage-50 px-2 py-0.5 rounded-full">
+        <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold">Capsule oggi</p>
+        <span className="text-[10px] font-medium text-sage-700 bg-sage-50 px-2 py-0.5 rounded-full">
           Giorno {phase.day} · Fase {phase.index + 1}
         </span>
       </div>
@@ -365,12 +402,14 @@ function CapsuleTracker({ user }) {
       <div className="flex gap-2 mb-4 flex-wrap">
         {doseTimes.map((t, i) => (
           <div key={t} className="flex flex-col items-center gap-1 min-w-[2.5rem]">
-            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-              i < taken ? 'bg-sage-500 text-white' : 'bg-gray-100 text-gray-400'
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+              i < taken
+                ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage'
+                : 'bg-sage-50 text-sage-400 border border-sage-100'
             }`}>
               {i < taken ? '✓' : i + 1}
             </div>
-            <span className="text-xs text-gray-400">{t}</span>
+            <span className="text-[10px] text-sage-600/70">{t}</span>
           </div>
         ))}
       </div>
@@ -380,37 +419,103 @@ function CapsuleTracker({ user }) {
         <button
           onClick={() => taken > 0 && updateCount(taken - 1)}
           disabled={taken <= 0 || saving}
-          className="w-10 h-10 rounded-full border border-sage-100 text-sage-700 text-xl font-bold disabled:opacity-30 hover:bg-sage-50 transition-all flex items-center justify-center active:scale-95"
+          className="w-9 h-9 rounded-full border border-sage-200/70 text-sage-700 text-lg font-bold disabled:opacity-30 hover:bg-sage-50 transition-all flex items-center justify-center active:scale-95"
           aria-label="Togli capsula"
         >−</button>
         <div className="flex-1 text-center">
-          <p className="font-display text-2xl font-semibold text-sage-800 tabular-nums">
+          <p className="font-display text-xl font-semibold text-sage-800 tabular-nums">
             {pillsTaken === null ? '…' : taken}
-            <span className="text-sm font-normal text-sage-500/80 font-sans"> / {phase.pills}</span>
+            <span className="text-sm font-normal text-sage-500/70 font-sans"> / {phase.pills}</span>
           </p>
-          <p className="text-xs text-sage-600/70 mt-0.5">
-            {allTaken ? 'Tutte le capsule prese ✓' : `ancora ${phase.pills - taken} da prendere`}
+          <p className="text-[11px] text-sage-600/70 mt-0.5">
+            {allTaken ? 'Tutte prese ✓' : `${phase.pills - taken} da prendere`}
           </p>
         </div>
         <button
           onClick={() => !allTaken && updateCount(taken + 1)}
           disabled={allTaken || saving}
-          className="w-10 h-10 rounded-full bg-sage-600 text-white text-xl font-bold disabled:opacity-30 hover:bg-sage-700 transition-all flex items-center justify-center shadow-sage active:scale-95"
+          className="w-9 h-9 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 text-white text-lg font-bold disabled:opacity-30 transition-all flex items-center justify-center shadow-sage active:scale-95"
           aria-label="Aggiungi capsula"
         >+</button>
       </div>
+    </>
+  );
+
+  if (embedded) return <div>{content}</div>;
+  return (
+    <div className="mb-6 border border-sage-100/80 rounded-xl-soft px-4 py-4 bg-white shadow-soft">
+      {content}
     </div>
   );
 }
 
 function StatCard({ label, value, unit }) {
   return (
-    <div className="bg-white border border-sage-100/80 rounded-xl-soft px-4 py-4 shadow-soft">
-      <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-medium mb-1.5">{label}</p>
-      <p className="font-display text-2xl font-semibold text-sage-900 tabular-nums">
+    <div className="bg-sage-50/60 rounded-xl px-3 py-3">
+      <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold mb-1">{label}</p>
+      <p className="font-display text-xl font-semibold text-sage-900 tabular-nums leading-tight">
         {value}
-        {unit && <span className="text-[11px] font-normal text-gray-500 ml-1 font-sans">{unit}</span>}
+        {unit && <span className="text-[11px] font-normal text-sage-500 ml-1 font-sans">{unit}</span>}
       </p>
+    </div>
+  );
+}
+
+function SectionCard({ title, icon, children }) {
+  return (
+    <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 overflow-hidden">
+      <div className="px-4 pt-4 pb-3 flex items-center gap-2 text-sage-700">
+        <span className="w-7 h-7 rounded-lg bg-sage-50 flex items-center justify-center">
+          {icon}
+        </span>
+        <h2 className="text-sm font-semibold text-sage-900">{title}</h2>
+      </div>
+      <div className="px-4 pb-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ProgressRing({ value, max, size = 220, stroke = 14, children }) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const ratio = max > 0 ? Math.min(value / max, 1) : 0;
+  const offset = circumference * (1 - ratio);
+  const gradientId = 'ringGrad';
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90 absolute inset-0">
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#85a081" />
+            <stop offset="100%" stopColor="#41553e" />
+          </linearGradient>
+        </defs>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(104,131,97,0.12)"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={`url(#${gradientId})`}
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+        {children}
+      </div>
     </div>
   );
 }
