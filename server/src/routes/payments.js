@@ -69,7 +69,7 @@ router.post('/checkout', requireAuth, async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       ...(discounts && { discounts }),
       success_url: `${clientUrl}${basePath}/premium-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${clientUrl}${basePath}/craving`,
+      cancel_url: `${clientUrl}${basePath}/paywall`,
       metadata: {
         userId: req.user.id,
         promoCode: promoCodeApplied || '',

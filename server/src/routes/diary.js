@@ -1,6 +1,9 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
+const { requirePremium } = require('../middleware/premium');
+
+router.use(requireAuth, requirePremium);
 
 function dayStart(date) {
   const d = new Date(date);
@@ -9,7 +12,7 @@ function dayStart(date) {
 }
 
 // GET /api/diary — ultimi 30 giorni
-router.get('/', requireAuth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const entries = await prisma.diaryEntry.findMany({
       where: { userId: req.user.id },
@@ -24,7 +27,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // POST /api/diary — crea o aggiorna l'entry di oggi
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', async (req, res) => {
   const { date, pillsTaken, cigarettesToday, sideEffects, notes } = req.body;
 
   if (pillsTaken === undefined) {
@@ -59,7 +62,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PATCH /api/diary/cigs — aggiorna solo le sigarette del giorno
-router.patch('/cigs', requireAuth, async (req, res) => {
+router.patch('/cigs', async (req, res) => {
   const { date, cigarettes } = req.body;
   if (cigarettes === undefined) return res.status(400).json({ error: 'cigarettes obbligatorio' });
 

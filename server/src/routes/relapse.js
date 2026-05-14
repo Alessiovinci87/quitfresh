@@ -1,9 +1,12 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
+const { requirePremium } = require('../middleware/premium');
+
+router.use(requireAuth, requirePremium);
 
 // POST /api/relapse — registra una ricaduta e azzera il contatore
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', async (req, res) => {
   const user = req.user;
 
   try {
@@ -31,7 +34,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // POST /api/relapse/restart — imposta una nuova data di inizio
-router.post('/restart', requireAuth, async (req, res) => {
+router.post('/restart', async (req, res) => {
   try {
     const updated = await prisma.user.update({
       where: { id: req.user.id },

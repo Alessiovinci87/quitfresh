@@ -1,8 +1,19 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+
+// Route accessibili anche a utenti loggati ma non ancora premium.
+// Tutte le altre route private redirezionano a /paywall.
+const PAYWALL_EXEMPT = new Set([
+  '/paywall',
+  '/premium-success',
+  '/onboarding',
+  '/profile',
+  '/privacy',
+]);
 
 export default function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -13,6 +24,10 @@ export default function PrivateRoute({ children }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+
+  if (!user.isPremium && !PAYWALL_EXEMPT.has(location.pathname)) {
+    return <Navigate to="/paywall" replace />;
+  }
 
   return children;
 }

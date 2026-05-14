@@ -49,7 +49,7 @@ export default function Onboarding() {
         quitDate: new Date().toISOString(),
       });
       updateUser(user);
-      navigate('/home', { replace: true });
+      navigate(user.isPremium ? '/home' : '/paywall', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

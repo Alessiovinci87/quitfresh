@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api/client';
 
-const BASE_PRICE = 4.99;
+const BASE_PRICE = 2.99;
 
 export default function PremiumGate({ onCancel }) {
   const [promoCode, setPromoCode] = useState('');
@@ -29,26 +29,30 @@ export default function PremiumGate({ onCancel }) {
       </div>
 
       <h2 className="text-xl font-bold text-gray-900 text-center mb-2">
-        Sblocca il coach AI
+        Sblocca QuitFresh
       </h2>
       <p className="text-sm text-gray-500 text-center mb-6">
-        Conversazioni illimitate con un coach AI che ti aiuta nei momenti critici.
-        Acquisto unico, niente abbonamento.
+        Un unico pagamento di €{BASE_PRICE.toFixed(2)} per accedere a tutto il
+        percorso. Nessun abbonamento, nessun rinnovo.
       </p>
 
       <div className="w-full bg-sage-50 border border-sage-200 rounded-2xl px-5 py-4 mb-5">
         <ul className="space-y-2 text-sm text-sage-800">
           <li className="flex items-start gap-2">
             <span className="text-sage-500 mt-0.5">✓</span>
+            <span>Tracker giorni senza fumo e risparmio</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-sage-500 mt-0.5">✓</span>
+            <span>Promemoria personalizzati nei momenti critici</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-sage-500 mt-0.5">✓</span>
+            <span>Diario, statistiche e protocollo citisina</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-sage-500 mt-0.5">✓</span>
             <span>Chat AI illimitata, sempre disponibile</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-sage-500 mt-0.5">✓</span>
-            <span>Risposte calibrate sul tuo profilo</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-sage-500 mt-0.5">✓</span>
-            <span>Tutte le altre funzioni dell'app restano gratis</span>
           </li>
         </ul>
       </div>

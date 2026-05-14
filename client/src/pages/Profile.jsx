@@ -259,6 +259,21 @@ export default function Profile() {
         )}
       </div>
 
+      {!user.isPremium && (
+        <button
+          onClick={() => navigate('/paywall')}
+          className="w-full mb-6 bg-sage-500 hover:bg-sage-600 text-white rounded-xl px-4 py-3.5 flex items-center justify-between transition-colors"
+        >
+          <div className="text-left">
+            <p className="text-sm font-semibold">Sblocca QuitFresh</p>
+            <p className="text-xs text-sage-100">€2.99 una tantum — accesso completo</p>
+          </div>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
+
       {success && <p className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2 mb-4">{success}</p>}
 
       {/* Account */}

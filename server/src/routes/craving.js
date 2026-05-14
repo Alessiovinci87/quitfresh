@@ -1,11 +1,14 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
+const { requirePremium } = require('../middleware/premium');
 const { cravingLimiter } = require('../middleware/rateLimit');
 const { getCravingResponse } = require('../lib/openai');
 
+router.use(requireAuth, requirePremium);
+
 // POST /api/craving
-router.post('/', requireAuth, cravingLimiter, async (req, res) => {
+router.post('/', cravingLimiter, async (req, res) => {
   const { context = '' } = req.body;
 
   try {
@@ -35,7 +38,7 @@ router.post('/', requireAuth, cravingLimiter, async (req, res) => {
 });
 
 // PATCH /api/craving/:id/resolve
-router.patch('/:id/resolve', requireAuth, async (req, res) => {
+router.patch('/:id/resolve', async (req, res) => {
   try {
     const log = await prisma.cravingLog.findFirst({
       where: { id: req.params.id, userId: req.user.id },
@@ -58,7 +61,7 @@ router.patch('/:id/resolve', requireAuth, async (req, res) => {
 });
 
 // GET /api/craving/history
-router.get('/history', requireAuth, async (req, res) => {
+router.get('/history', async (req, res) => {
   try {
     const logs = await prisma.cravingLog.findMany({
       where: { userId: req.user.id },

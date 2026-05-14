@@ -38,11 +38,11 @@ export default function PremiumSuccess() {
       </div>
 
       <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
-        Benvenuto in QuitFresh Premium
+        QuitFresh è sbloccato
       </h1>
       <p className="text-sm text-gray-500 text-center mb-8 max-w-xs">
-        Il coach AI è ora disponibile. Aprilo ogni volta che ne hai bisogno —
-        in pausa caffè, dopo cena, prima di dormire.
+        Tracker, promemoria, diario e chat AI sono ora tutti disponibili.
+        Buon percorso.
       </p>
 
       {user && !user.isPremium && (
@@ -52,16 +52,11 @@ export default function PremiumSuccess() {
       )}
 
       <button
-        onClick={() => navigate('/craving')}
-        className="w-full py-3.5 bg-sage-500 text-white rounded-2xl font-semibold text-base hover:bg-sage-600 transition-colors max-w-xs"
-      >
-        Apri la chat
-      </button>
-      <button
         onClick={() => navigate('/home')}
-        className="mt-3 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        disabled={user && !user.isPremium}
+        className="w-full py-3.5 bg-sage-500 text-white rounded-2xl font-semibold text-base hover:bg-sage-600 disabled:opacity-60 transition-colors max-w-xs"
       >
-        Torna alla home
+        Inizia
       </button>
     </div>
   );

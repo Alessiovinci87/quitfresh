@@ -14,6 +14,7 @@ import Tools from './pages/Tools';
 import Diary from './pages/Diary';
 import Stats from './pages/Stats';
 import PremiumSuccess from './pages/PremiumSuccess';
+import Paywall from './pages/Paywall';
 import Privacy from './pages/Privacy';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -39,6 +40,7 @@ export default function App() {
             <Route path="/tools" element={<PrivateRoute><Layout><Tools /></Layout></PrivateRoute>} />
             <Route path="/diary" element={<PrivateRoute><Layout><Diary /></Layout></PrivateRoute>} />
             <Route path="/stats" element={<PrivateRoute><Layout><Stats /></Layout></PrivateRoute>} />
+            <Route path="/paywall" element={<PrivateRoute><Paywall /></PrivateRoute>} />
             <Route path="/premium-success" element={<PrivateRoute><PremiumSuccess /></PrivateRoute>} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
