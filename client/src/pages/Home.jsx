@@ -20,6 +20,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [showRelapseConfirm, setShowRelapseConfirm] = useState(false);
   const [showStreakSheet, setShowStreakSheet] = useState(false);
+  const [showCapsuleDetails, setShowCapsuleDetails] = useState(false);
   const [relapseLoading, setRelapseLoading] = useState(false);
   const [restartLoading, setRestartLoading] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
@@ -249,7 +250,7 @@ export default function Home() {
       </button>
 
       {/* Capsule oggi — compatta */}
-      <CapsuleCompact user={user} />
+      <CapsuleCompact user={user} onOpenDetails={() => setShowCapsuleDetails(true)} />
 
       {/* CTA */}
       <button
@@ -290,12 +291,20 @@ export default function Home() {
           onUseFreeze={handleUseFreeze}
         />
       )}
+
+      {/* Capsule details sub-page */}
+      {showCapsuleDetails && (
+        <CapsuleDetailsPage
+          user={user}
+          onClose={() => setShowCapsuleDetails(false)}
+        />
+      )}
     </div>
   );
 }
 
 // ── CapsuleCompact: card piccola con dots + bottoni +/- ──────
-function CapsuleCompact({ user }) {
+function CapsuleCompact({ user, onOpenDetails }) {
   const [pillsTaken, setPillsTaken] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -332,18 +341,28 @@ function CapsuleCompact({ user }) {
   if (!phase || !doseTimes) return null;
   const taken = pillsTaken ?? 0;
   const allTaken = taken >= phase.pills;
+  const nextTime = !allTaken ? doseTimes[taken] : null;
 
   return (
     <div className="bg-white border border-sage-100/80 rounded-2xl-soft px-4 py-3 shadow-soft mt-3">
-      <div className="flex items-center justify-between mb-2">
+      <button
+        onClick={onOpenDetails}
+        className="w-full flex items-center justify-between mb-2 -mx-1 px-1 rounded-md hover:bg-sage-50/40 active:bg-sage-50 transition-colors"
+        aria-label="Apri dettagli capsule"
+      >
         <div className="flex items-center gap-2 min-w-0">
           <span className="w-6 h-6 rounded-md bg-sage-50 flex items-center justify-center text-xs">💊</span>
           <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold">Capsule oggi</p>
         </div>
-        <span className="text-[10px] font-medium text-sage-700 bg-sage-50 px-2 py-0.5 rounded-full shrink-0">
-          Fase {phase.index + 1}
-        </span>
-      </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[10px] font-medium text-sage-700 bg-sage-50 px-2 py-0.5 rounded-full">
+            Fase {phase.index + 1}
+          </span>
+          <svg className="w-4 h-4 text-sage-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </button>
 
       <div className="flex items-center gap-3">
         <button
@@ -368,7 +387,9 @@ function CapsuleCompact({ user }) {
             <span className="font-display text-sm font-semibold text-sage-900 tabular-nums">{taken}</span>
             <span className="text-sage-500/70"> / {phase.pills}</span>
             {' · '}
-            {allTaken ? 'tutte prese ✓' : `${phase.pills - taken} da prendere`}
+            {allTaken
+              ? 'tutte prese ✓'
+              : <>prossima alle <span className="font-semibold text-sage-800 tabular-nums">{nextTime}</span></>}
           </p>
         </div>
 
@@ -378,6 +399,124 @@ function CapsuleCompact({ user }) {
           className="w-9 h-9 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 text-white text-lg font-bold disabled:opacity-30 transition-all flex items-center justify-center shadow-sage active:scale-95 shrink-0"
           aria-label="Aggiungi capsula"
         >+</button>
+      </div>
+    </div>
+  );
+}
+
+// ── CapsuleDetailsPage: sub-pagina full-screen con tutti gli orari ──
+function CapsuleDetailsPage({ user, onClose }) {
+  const [pillsTaken, setPillsTaken] = useState(null);
+
+  const phase = user.cytisineStartDate
+    ? getActivePhase(user.cytisineSchedule, user.cytisineStartDate)
+    : null;
+  const doseTimes = phase && user.firstDoseTime ? getDoseTimes(user.firstDoseTime, phase) : null;
+
+  useEffect(() => {
+    if (!phase || !doseTimes) return;
+    const today = getTodayStr();
+    api.diary.list()
+      .then(entries => {
+        const entry = entries.find(e => e.date?.startsWith(today));
+        setPillsTaken(entry?.pillsTaken ?? 0);
+      })
+      .catch(() => setPillsTaken(0));
+  }, []);
+
+  // Lock body scroll while open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  if (!phase || !doseTimes) return null;
+  const taken = pillsTaken ?? 0;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-cream-50 animate-slide-in-right overflow-y-auto"
+      style={{ animation: 'slideInRight 280ms cubic-bezier(0.16, 1, 0.3, 1)' }}
+    >
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+      `}</style>
+
+      {/* Header sticky con tasto Indietro */}
+      <header className="sticky top-0 z-10 px-6 pt-6 pb-3 bg-cream-50/85 backdrop-blur-xl border-b border-sage-100/30 flex items-center gap-3">
+        <button
+          onClick={onClose}
+          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-sage-700 hover:bg-sage-100/60 transition-colors active:scale-95"
+          aria-label="Torna alla Home"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Protocollo</p>
+          <h1 className="font-display text-2xl font-semibold text-sage-900 leading-tight">Capsule oggi</h1>
+        </div>
+      </header>
+
+      <div className="px-6 py-5 space-y-5">
+        {/* Status fase */}
+        <div className="bg-white border border-sage-100 rounded-2xl-soft p-4 shadow-soft">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-sage-600/70 font-semibold">Fase corrente</p>
+            <span className="text-[10px] font-medium text-sage-700 bg-sage-50 px-2 py-0.5 rounded-full">
+              Giorno {phase.day} · Fase {phase.index + 1}
+            </span>
+          </div>
+          <p className="font-display text-2xl font-semibold text-sage-900 leading-tight">
+            {phase.pills} {phase.pills === 1 ? 'capsula' : 'capsule'} al giorno
+          </p>
+          <p className="text-sm text-sage-700/70 mt-1">
+            Una ogni {Math.round(phase.intervalMin / 60)} {phase.intervalMin / 60 === 1 ? 'ora' : 'ore'}
+          </p>
+        </div>
+
+        {/* Timeline orari */}
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-sage-600/70 font-semibold mb-2 px-1">
+            Orari di oggi
+          </p>
+          <div className="bg-white rounded-2xl-soft border border-sage-100 shadow-soft overflow-hidden divide-y divide-sage-100/60">
+            {doseTimes.map((time, i) => {
+              const isPast = i < taken;
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center gap-3 px-4 py-3.5 transition-all ${isPast ? 'bg-sage-50/40' : ''}`}
+                >
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                    isPast
+                      ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage'
+                      : 'bg-sage-50 text-sage-700 border border-sage-200'
+                  }`}>
+                    {isPast ? '✓' : i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display text-base font-semibold text-sage-900 tabular-nums">
+                      {time}
+                    </p>
+                    <p className="text-[11px] text-sage-600/70">
+                      {isPast ? 'presa' : i === taken ? 'prossima' : 'in arrivo'}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <p className="text-[11px] text-sage-600/60 px-1 leading-snug">
+          Gli orari si calcolano dal primo dose-time impostato in Profilo e dal numero di capsule giornaliere della fase corrente.
+        </p>
       </div>
     </div>
   );
