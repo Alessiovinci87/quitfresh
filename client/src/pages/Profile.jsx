@@ -401,9 +401,13 @@ export default function Profile() {
                           <button
                             type="button"
                             onClick={() => updatePhase(idx, 'firstDoseTime', undefined)}
-                            className="px-2 text-xs text-gray-400 hover:text-gray-600"
+                            aria-label="Ripristina orario default"
+                            className="px-3 py-1.5 rounded-lg bg-sage-50 border border-sage-200 text-sage-700 text-xs font-medium hover:bg-sage-100 transition-colors flex items-center gap-1"
                           >
-                            ↺
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Default
                           </button>
                         )}
                       </div>
