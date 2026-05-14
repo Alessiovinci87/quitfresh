@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const prisma = require('../lib/prisma');
 const { forgotPasswordLimiter } = require('../middleware/rateLimit');
+const { sendResetEmail } = require('../lib/email');
 
 function buildResetLink(token) {
   const base = (process.env.CLIENT_BASE_URL || 'http://localhost:5173').replace(/\/$/, '');
@@ -31,8 +32,10 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
         where: { id: user.id },
         data: { resetToken: token, resetTokenExp: exp },
       });
-      // TODO: invio email — per ora log a console.
-      console.log(`[password-reset] link per ${user.email}: ${buildResetLink(token)}`);
+      // Invio in background — un fallimento email non deve cambiare la
+      // risposta generica al client (no info leak).
+      sendResetEmail(user.email, buildResetLink(token))
+        .catch(err => console.error('[forgot-password] email error:', err));
     }
   } catch (err) {
     console.error('forgot-password error:', err);

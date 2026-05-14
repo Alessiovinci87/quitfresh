@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
+const { sendVerifyEmail } = require('../lib/email');
 
 function signToken(userId) {
   return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -15,14 +16,14 @@ function buildVerifyLink(token) {
   return `${base}/verify-email?token=${token}`;
 }
 
-async function generateAndLogVerifyToken(user) {
+async function generateAndSendVerifyToken(user) {
   const token = crypto.randomUUID();
   await prisma.user.update({
     where: { id: user.id },
     data: { verifyToken: token },
   });
-  // TODO: invio email — per ora log a console.
-  console.log(`[verify-email] link per ${user.email}: ${buildVerifyLink(token)}`);
+  const link = buildVerifyLink(token);
+  await sendVerifyEmail(user.email, link);
   return token;
 }
 
@@ -49,7 +50,9 @@ router.post('/register', loginLimiter, async (req, res) => {
       data: { email, passwordHash, verifyToken },
     });
 
-    console.log(`[verify-email] link per ${user.email}: ${buildVerifyLink(verifyToken)}`);
+    // Invio email in background — un fallimento non deve bloccare la registrazione.
+    sendVerifyEmail(user.email, buildVerifyLink(verifyToken))
+      .catch(err => console.error('[register] email error:', err));
 
     const token = signToken(user.id);
     res.status(201).json({ token, user: sanitize(user) });
@@ -117,8 +120,8 @@ router.post('/resend-verify', requireAuth, async (req, res) => {
     return res.json({ message: 'Email già verificata' });
   }
   try {
-    await generateAndLogVerifyToken(req.user);
-    res.json({ message: 'Link di verifica inviato (controlla i log in dev).' });
+    await generateAndSendVerifyToken(req.user);
+    res.json({ message: 'Link di verifica inviato. Controlla la tua casella email.' });
   } catch (err) {
     console.error('resend-verify error:', err);
     res.status(500).json({ error: 'Errore durante l\'invio del link' });
