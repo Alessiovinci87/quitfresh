@@ -68,7 +68,7 @@ export default function PremiumGate({ onCancel }) {
           </li>
           <li className="flex items-start gap-2">
             <span className="text-sage-500 mt-0.5">✓</span>
-            <span>Chat AI illimitata, sempre disponibile</span>
+            <span>Coach AI disponibile nei momenti di crisi</span>
           </li>
         </ul>
       </div>
