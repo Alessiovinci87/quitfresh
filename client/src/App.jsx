@@ -35,9 +35,58 @@ export default function App() {
   );
 }
 
+function SplashScreen() {
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-gradient-to-br from-cream-50 via-cream-100 to-sage-50"
+      style={{ animation: 'qfSplashFade 1.8s ease-out forwards' }}
+    >
+      <style>{`
+        @keyframes qfSplashFade {
+          0%, 70% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes qfLogoEnter {
+          0% { opacity: 0; transform: scale(0.85); }
+          50% { opacity: 1; transform: scale(1.02); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes qfTitleEnter {
+          0%, 30% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <div className="text-center">
+        <img
+          src={`${baseUrl}apple-touch-icon.png`}
+          alt="QuitFresh"
+          className="w-28 h-28 rounded-3xl shadow-card mx-auto mb-4"
+          style={{ animation: 'qfLogoEnter 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+        />
+        <p
+          className="font-display text-2xl font-semibold text-sage-900"
+          style={{ animation: 'qfTitleEnter 800ms ease-out forwards' }}
+        >
+          QuitFresh
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function AppShell() {
   const location = useLocation();
   const isChat = location.pathname === '/craving';
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Splash screen iniziale: 1.8s al primo mount, poi route normale.
+  useEffect(() => {
+    const t = setTimeout(() => setShowSplash(false), 1800);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (showSplash) return <SplashScreen />;
 
   // Per la chat usiamo visualViewport.height (sempre aggiornato all'apertura
   // della tastiera iOS Safari, anche su versioni vecchie che non supportano
