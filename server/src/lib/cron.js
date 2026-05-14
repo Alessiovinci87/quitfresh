@@ -22,7 +22,7 @@ function buildEncouragementMessage(days) {
   const pool = [
     days === 0
       ? 'Oggi inizia il viaggio. Sei più forte di quanto credi.'
-      : `Sono ${days} giorni senza fumo. Continui a fare grande.`,
+      : `Sono ${days} giorni senza fumo. Stai andando alla grande.`,
     `Hai resistito ${days === 1 ? 'un giorno intero' : `${days} giorni`}. Ogni giornata vinta è tua.`,
     `${days === 0 ? 'Giorno 1' : `${days} giorni`} di nuovo respiro. Vai così.`,
     `Sei a quota ${days === 1 ? '1 giorno' : `${days} giorni`}. Una scelta forte, oggi e ogni giorno.`,
