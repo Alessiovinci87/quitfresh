@@ -11,9 +11,10 @@ export default function Craving() {
   const [error, setError] = useState('');
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
-  const [viewportHeight, setViewportHeight] = useState(
-    typeof window !== 'undefined' ? `${window.innerHeight}px` : '100dvh'
-  );
+  const [vp, setVp] = useState(() => ({
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    offsetTop: 0,
+  }));
 
   useEffect(() => {
     startChat();
@@ -26,11 +27,16 @@ export default function Craving() {
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  // Track visualViewport to handle virtual keyboard on mobile
+  // Track visualViewport to handle virtual keyboard on iOS Safari / Android.
+  // On iOS, `position: fixed` stays anchored to the layout viewport which does
+  // NOT shrink when the keyboard opens — so we manually sync height + offsetTop
+  // to the visual viewport.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const update = () => setViewportHeight(`${vv.height}px`);
+    const update = () => {
+      setVp({ height: vv.height, offsetTop: vv.offsetTop });
+    };
     update();
     vv.addEventListener('resize', update);
     vv.addEventListener('scroll', update);
@@ -42,7 +48,7 @@ export default function Craving() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading, viewportHeight]);
+  }, [messages, loading, vp.height]);
 
   async function startChat() {
     setLoading(true);
@@ -103,11 +109,13 @@ export default function Craving() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-white overflow-hidden">
-      <div
-        className="flex flex-col w-full max-w-mobile mx-auto bg-white overflow-hidden"
-        style={{ height: viewportHeight }}
-      >
+    <div
+      className="fixed left-1/2 -translate-x-1/2 z-50 bg-white overflow-hidden w-full max-w-mobile flex flex-col"
+      style={{
+        top: `${vp.offsetTop}px`,
+        height: `${vp.height}px`,
+      }}
+    >
         {/* Header */}
         <div
           className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/60 shrink-0 bg-white/90 backdrop-blur-sm"
@@ -207,7 +215,6 @@ export default function Craving() {
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 }
