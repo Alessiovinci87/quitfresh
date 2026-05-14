@@ -11,19 +11,49 @@ export default function Craving() {
   const [error, setError] = useState('');
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const headerRef = useRef(null);
+  const inputBarRef = useRef(null);
+  const [vhPx, setVhPx] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
+  const [headerH, setHeaderH] = useState(0);
+  const [inputH, setInputH] = useState(0);
+
+  // Misura header e input bar per posizionare la zona messaggi tra loro
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro1 = new ResizeObserver((entries) => {
+      for (const e of entries) setHeaderH(e.contentRect.height);
+    });
+    const ro2 = new ResizeObserver((entries) => {
+      for (const e of entries) setInputH(e.contentRect.height);
+    });
+    if (headerRef.current) ro1.observe(headerRef.current);
+    if (inputBarRef.current) ro2.observe(inputBarRef.current);
+    return () => { ro1.disconnect(); ro2.disconnect(); };
+  }, []);
 
   useEffect(() => {
     startChat();
   }, []);
 
-  // NIENTE body scroll lock: il container e' gia' fixed inset-0 overflow-hidden,
-  // il background non scrolla. Togliendo overflow:hidden dal body evitiamo lo
-  // shift orizzontale della Home al rientro (la scrollbar appare/sparisce e
-  // sposta il contenuto centrato con mx-auto).
+  // visualViewport gestisce correttamente l'apertura della tastiera su iOS Safari
+  // dove 'fixed inset-0' non si restringe automaticamente. SOLO height (no top
+  // dinamico — quello rompeva l'input attaccato alla tastiera).
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) {
+      const onResize = () => setVhPx(window.innerHeight);
+      window.addEventListener('resize', onResize);
+      return () => window.removeEventListener('resize', onResize);
+    }
+    const update = () => setVhPx(vv.height);
+    update();
+    vv.addEventListener('resize', update);
+    return () => vv.removeEventListener('resize', update);
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, loading, vhPx]);
 
   async function startChat() {
     setLoading(true);
@@ -85,13 +115,14 @@ export default function Craving() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-cream-50 overflow-hidden"
+      className="fixed top-0 left-0 right-0 z-[100] bg-cream-50 overflow-hidden"
+      style={{ height: `${vhPx}px` }}
     >
-      {/* Header FISSO in alto */}
+      {/* Header — ANCORATO al top in modo assoluto, NON scrolla mai */}
       <header
-        className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white w-full"
+        ref={headerRef}
+        className="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white"
         style={{
-          flexShrink: 0,
           paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
         }}
       >
@@ -117,10 +148,14 @@ export default function Craving() {
         </button>
       </header>
 
-      {/* Messages — UNICA zona scrollabile */}
+      {/* Messages — ASSOLUTO tra header e input, UNICA zona scrollabile */}
       <div
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 bg-cream-50"
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        className="absolute left-0 right-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 bg-cream-50"
+        style={{
+          top: `${headerH}px`,
+          bottom: `${inputH}px`,
+          WebkitOverflowScrolling: 'touch',
+        }}
       >
           {messages.length === 0 && loading && (
             <div className="flex items-center gap-2 text-sage-500/70">
@@ -162,11 +197,11 @@ export default function Craving() {
           <div ref={bottomRef} />
         </div>
 
-      {/* Input FISSO in basso */}
+      {/* Input — ANCORATO al bottom in modo assoluto, NON scrolla mai */}
       <div
-        className="border-t border-sage-100/50 px-4 pt-3 bg-white w-full"
+        ref={inputBarRef}
+        className="absolute bottom-0 left-0 right-0 z-10 border-t border-sage-100/50 px-4 pt-3 bg-white"
         style={{
-          flexShrink: 0,
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
         }}
       >
