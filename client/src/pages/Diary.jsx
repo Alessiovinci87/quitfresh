@@ -91,8 +91,8 @@ export default function Diary() {
   }
 
   return (
-    <div className="animate-fade-in">
-      <header className="sticky top-0 z-30 px-6 pt-6 pb-3 bg-cream-50/85 backdrop-blur-xl border-b border-sage-100/30">
+    <div className="min-h-[calc(100dvh-7rem)] flex flex-col px-6 pt-6 animate-fade-in">
+      <header className="mb-4">
         <div className="flex items-end justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Registro</p>
@@ -116,7 +116,7 @@ export default function Diary() {
         )}
       </header>
 
-      <div className="px-6 pt-6 pb-2">
+      <div className="flex-1 pb-2">
         {success && (
           <p className="text-sm text-sage-700 bg-sage-50 rounded-xl-soft px-3 py-2 mb-4 border border-sage-100">{success}</p>
         )}

@@ -4,37 +4,39 @@ export default function Tools() {
   const [activeTab, setActiveTab] = useState('breath');
 
   return (
-    <div className="animate-fade-in">
-      <header className="sticky top-0 z-30 px-6 pt-6 pb-3 bg-cream-50/85 backdrop-blur-xl border-b border-sage-100/30">
+    <div className="min-h-[calc(100dvh-7rem)] flex flex-col px-6 pt-6 animate-fade-in">
+      <header className="mb-4">
         <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Aiuti</p>
         <h1 className="font-display text-3xl font-semibold text-sage-900 leading-tight mt-0.5">Strumenti</h1>
       </header>
 
-      <div className="px-6 pt-6 pb-2">
-        <div className="bg-white border border-sage-100/60 rounded-xl-soft p-1 shadow-soft flex gap-1 mb-6">
-          {[
-            { id: 'breath', label: 'Respira', icon: '🫁' },
-            { id: 'timer', label: 'Timer', icon: '⏱' },
-            { id: 'audio', label: 'Audio', icon: '🎧' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
-                activeTab === t.id
-                  ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage'
-                  : 'text-sage-700/70 hover:bg-sage-50'
-              }`}
-            >
-              <span>{t.icon}</span>
-              {t.label}
-            </button>
-          ))}
-        </div>
+      <div className="bg-white border border-sage-100/60 rounded-xl-soft p-1 shadow-soft flex gap-1 mb-4">
+        {[
+          { id: 'breath', label: 'Respira', icon: '🫁' },
+          { id: 'timer', label: 'Timer', icon: '⏱' },
+          { id: 'audio', label: 'Audio', icon: '🎧' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === t.id
+                ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage'
+                : 'text-sage-700/70 hover:bg-sage-50'
+            }`}
+          >
+            <span>{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        {activeTab === 'breath' && <BreathingExercise />}
-        {activeTab === 'timer' && <CravingTimer />}
-        {activeTab === 'audio' && <AudioPlayer />}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="w-full">
+          {activeTab === 'breath' && <BreathingExercise />}
+          {activeTab === 'timer' && <CravingTimer />}
+          {activeTab === 'audio' && <AudioPlayer />}
+        </div>
       </div>
     </div>
   );
