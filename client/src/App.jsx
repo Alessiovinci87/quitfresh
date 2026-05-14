@@ -39,7 +39,7 @@ export default function App() {
             <Route path="/admin/promo-codes" element={<PrivateRoute><Admin /></PrivateRoute>} />
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
-            <Route path="/craving" element={<PrivateRoute><Layout><Craving /></Layout></PrivateRoute>} />
+            <Route path="/craving" element={<PrivateRoute><Craving /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute><Layout><Profile /></Layout></PrivateRoute>} />
             <Route path="/tools" element={<PrivateRoute><Layout><Tools /></Layout></PrivateRoute>} />
             <Route path="/diary" element={<PrivateRoute><Layout><Diary /></Layout></PrivateRoute>} />

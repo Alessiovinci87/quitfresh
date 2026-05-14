@@ -11,49 +11,12 @@ export default function Craving() {
   const [error, setError] = useState('');
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
-  const headerRef = useRef(null);
-  const inputBarRef = useRef(null);
-  const [vhPx, setVhPx] = useState(typeof window !== 'undefined' ? window.innerHeight : 0);
-  const [headerH, setHeaderH] = useState(0);
-  const [inputH, setInputH] = useState(0);
 
-  // Misura header e input bar per posizionare la zona messaggi tra loro
-  useEffect(() => {
-    if (typeof ResizeObserver === 'undefined') return;
-    const ro1 = new ResizeObserver((entries) => {
-      for (const e of entries) setHeaderH(e.contentRect.height);
-    });
-    const ro2 = new ResizeObserver((entries) => {
-      for (const e of entries) setInputH(e.contentRect.height);
-    });
-    if (headerRef.current) ro1.observe(headerRef.current);
-    if (inputBarRef.current) ro2.observe(inputBarRef.current);
-    return () => { ro1.disconnect(); ro2.disconnect(); };
-  }, []);
-
-  useEffect(() => {
-    startChat();
-  }, []);
-
-  // visualViewport gestisce correttamente l'apertura della tastiera su iOS Safari
-  // dove 'fixed inset-0' non si restringe automaticamente. SOLO height (no top
-  // dinamico — quello rompeva l'input attaccato alla tastiera).
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) {
-      const onResize = () => setVhPx(window.innerHeight);
-      window.addEventListener('resize', onResize);
-      return () => window.removeEventListener('resize', onResize);
-    }
-    const update = () => setVhPx(vv.height);
-    update();
-    vv.addEventListener('resize', update);
-    return () => vv.removeEventListener('resize', update);
-  }, []);
+  useEffect(() => { startChat(); }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading, vhPx]);
+  }, [messages, loading]);
 
   async function startChat() {
     setLoading(true);
@@ -70,14 +33,12 @@ export default function Craving() {
   async function sendMessage() {
     const text = input.trim();
     if (!text || loading) return;
-
     const userMsg = { role: 'user', content: text };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
     setError('');
-
     try {
       const { reply } = await api.chat.send(newMessages);
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
@@ -92,15 +53,10 @@ export default function Craving() {
   async function handleResolved() {
     setResolving(true);
     try {
-      const summary = messages
-        .filter(m => m.role === 'user')
-        .map(m => m.content)
-        .join(' | ')
-        .slice(0, 200);
+      const summary = messages.filter(m => m.role === 'user').map(m => m.content).join(' | ').slice(0, 200);
       await api.craving.create({ context: summary });
-    } catch {
-      // non critico
-    } finally {
+    } catch { /* non critico */ }
+    finally {
       setResolving(false);
       navigate('/home');
     }
@@ -115,16 +71,21 @@ export default function Craving() {
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-[100] bg-cream-50 overflow-hidden"
-      style={{ height: `${vhPx}px` }}
+      className="chat-root w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden"
+      style={{
+        // triple fallback iOS Safari: vh -> svh -> dvh
+        // dvh si adatta a URL bar dinamico iOS 16.4+. svh fallback per 15.4+.
+        height: '100vh',
+      }}
     >
-      {/* Header — ANCORATO al top in modo assoluto, NON scrolla mai */}
+      <style>{`
+        .chat-root { height: 100vh; height: 100svh; height: 100dvh; }
+      `}</style>
+
+      {/* Header in alto — flex-shrink-0 lo tiene fermo */}
       <header
-        ref={headerRef}
-        className="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white"
-        style={{
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
-        }}
+        className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white shrink-0"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
       >
         <button
           onClick={() => navigate('/home')}
@@ -148,64 +109,58 @@ export default function Craving() {
         </button>
       </header>
 
-      {/* Messages — ASSOLUTO tra header e input, UNICA zona scrollabile */}
+      {/* Messages — flex-1 + min-h-0 cruciale per scroll dentro flex.
+          overscroll-contain previene scroll chain al body (iOS pull-to-refresh) */}
       <div
-        className="absolute left-0 right-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 bg-cream-50"
-        style={{
-          top: `${headerH}px`,
-          bottom: `${inputH}px`,
-          WebkitOverflowScrolling: 'touch',
-        }}
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 space-y-3 bg-cream-50"
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
-          {messages.length === 0 && loading && (
-            <div className="flex items-center gap-2 text-sage-500/70">
+        {messages.length === 0 && loading && (
+          <div className="flex items-center gap-2 text-sage-500/70">
+            <TypingDots />
+          </div>
+        )}
+
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+          >
+            <div
+              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-soft ${
+                msg.role === 'user'
+                  ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-br-md'
+                  : 'bg-white text-sage-900 rounded-bl-md border border-sage-100/60'
+              }`}
+            >
+              {msg.content}
+            </div>
+          </div>
+        ))}
+
+        {loading && messages.length > 0 && (
+          <div className="flex justify-start animate-fade-in">
+            <div className="bg-white border border-sage-100/60 rounded-2xl rounded-bl-md px-4 py-3 shadow-soft">
               <TypingDots />
             </div>
-          )}
+          </div>
+        )}
 
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-            >
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-soft ${
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-br-md'
-                    : 'bg-white text-sage-900 rounded-bl-md border border-sage-100/60'
-                }`}
-              >
-                {msg.content}
-              </div>
-            </div>
-          ))}
+        {error && (
+          <p className="text-xs text-terracotta-600 text-center bg-terracotta-50 border border-terracotta-200 rounded-xl-soft px-3 py-2">
+            {error}
+          </p>
+        )}
 
-          {loading && messages.length > 0 && (
-            <div className="flex justify-start animate-fade-in">
-              <div className="bg-white border border-sage-100/60 rounded-2xl rounded-bl-md px-4 py-3 shadow-soft">
-                <TypingDots />
-              </div>
-            </div>
-          )}
+        <div ref={bottomRef} />
+      </div>
 
-          {error && (
-            <p className="text-xs text-terracotta-600 text-center bg-terracotta-50 border border-terracotta-200 rounded-xl-soft px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          <div ref={bottomRef} />
-        </div>
-
-      {/* Input — ANCORATO al bottom in modo assoluto, NON scrolla mai */}
+      {/* Input in basso — flex-shrink-0 lo tiene fermo */}
       <div
-        ref={inputBarRef}
-        className="absolute bottom-0 left-0 right-0 z-10 border-t border-sage-100/50 px-4 pt-3 bg-white"
-        style={{
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
-        }}
+        className="border-t border-sage-100/50 px-4 pt-3 bg-white shrink-0"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
       >
-        <div className="flex items-end gap-2 min-w-0 max-w-mobile mx-auto">
+        <div className="flex items-end gap-2 min-w-0">
           <textarea
             ref={inputRef}
             value={input}
@@ -216,7 +171,6 @@ export default function Craving() {
             className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
             style={{ minHeight: '42px', fontSize: '16px' }}
             onFocus={() => {
-              // Quando la tastiera si apre, scrolla l'ultimo messaggio in vista
               setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 300);
             }}
             onInput={(e) => {
@@ -246,7 +200,7 @@ function TypingDots() {
       {[0, 1, 2].map((i) => (
         <span
           key={i}
-          className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
+          className="w-1.5 h-1.5 bg-sage-400 rounded-full animate-bounce"
           style={{ animationDelay: `${i * 0.15}s` }}
         />
       ))}
