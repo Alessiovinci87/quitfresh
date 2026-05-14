@@ -78,14 +78,13 @@ function SplashScreen() {
 function AppShell() {
   const location = useLocation();
   const isChat = location.pathname === '/craving';
-  const [showSplash, setShowSplash] = useState(true);
   const [chatHeight, setChatHeight] = useState(
     typeof window !== 'undefined' ? window.innerHeight : 0
   );
+  const [splashVisible, setSplashVisible] = useState(true);
 
-  // Splash screen iniziale: 1.8s al primo mount, poi route normale.
   useEffect(() => {
-    const t = setTimeout(() => setShowSplash(false), 1800);
+    const t = setTimeout(() => setSplashVisible(false), 1800);
     return () => clearTimeout(t);
   }, []);
 
@@ -110,10 +109,6 @@ function AppShell() {
     }
   }, [isChat]);
 
-  // IMPORTANTE: tutti gli hook SOPRA, early return SOTTO.
-  // Mai chiamare hook condizionalmente o dopo un return — React error #310.
-  if (showSplash) return <SplashScreen />;
-
   // Per la chat: position fixed = container ancorato al viewport.
   // height da visualViewport.height = si adatta alla tastiera iOS.
   const wrapperStyle = isChat ? { height: `${chatHeight}px` } : undefined;
@@ -123,6 +118,7 @@ function AppShell() {
 
   return (
     <>
+      {splashVisible && <SplashScreen />}
       <div className={wrapperClass} style={wrapperStyle}>
         <Routes>
           <Route path="/login" element={<Login />} />
