@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
@@ -38,26 +39,40 @@ function AppShell() {
   const location = useLocation();
   const isChat = location.pathname === '/craving';
 
-  // Wrapper diverso per chat: container che riempie ESATTAMENTE il viewport
-  // visibile (anche con tastiera aperta), flex-col, niente min-height growth.
-  // Pattern WhatsApp/Telegram web — il browser shrinka il layout viewport
-  // con la tastiera (via 'interactive-widget=resizes-content'), il container
-  // shrinka, l'input rimane sopra la tastiera.
+  // Per la chat usiamo visualViewport.height (sempre aggiornato all'apertura
+  // della tastiera iOS Safari, anche su versioni vecchie che non supportano
+  // 100dvh). Il container shrinka, l'input flex-shrink-0 rimane sopra la
+  // tastiera. Pattern usato da WhatsApp/Telegram web.
+  const [chatHeight, setChatHeight] = useState(
+    typeof window !== 'undefined' ? window.innerHeight : 0
+  );
+
+  useEffect(() => {
+    if (!isChat) return;
+    const vv = window.visualViewport;
+    const update = () => setChatHeight(vv ? vv.height : window.innerHeight);
+    update();
+    if (vv) {
+      vv.addEventListener('resize', update);
+      vv.addEventListener('scroll', update);
+      return () => {
+        vv.removeEventListener('resize', update);
+        vv.removeEventListener('scroll', update);
+      };
+    } else {
+      window.addEventListener('resize', update);
+      return () => window.removeEventListener('resize', update);
+    }
+  }, [isChat]);
+
+  const wrapperStyle = isChat ? { height: `${chatHeight}px` } : undefined;
   const wrapperClass = isChat
-    ? "chat-shell w-full flex flex-col"
+    ? "w-full flex flex-col overflow-hidden"
     : "min-h-screen bg-gray-100 flex items-start justify-center";
 
   return (
     <>
-      <style>{`
-        /* triple fallback per Safari iOS */
-        .chat-shell {
-          height: 100vh;
-          height: 100svh;
-          height: 100dvh;
-        }
-      `}</style>
-      <div className={wrapperClass}>
+      <div className={wrapperClass} style={wrapperStyle}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
