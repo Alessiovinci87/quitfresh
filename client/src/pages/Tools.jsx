@@ -4,32 +4,38 @@ export default function Tools() {
   const [activeTab, setActiveTab] = useState('breath');
 
   return (
-    <div className="px-6 py-8 animate-fade-in">
-      <h1 className="text-xl font-bold text-gray-900 mb-6">Strumenti</h1>
+    <div className="animate-fade-in">
+      <header className="sticky top-0 z-30 px-6 pt-6 pb-3 bg-cream-50/85 backdrop-blur-xl border-b border-sage-100/30">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Aiuti</p>
+        <h1 className="font-display text-3xl font-semibold text-sage-900 leading-tight mt-0.5">Strumenti</h1>
+      </header>
 
-      <div className="flex gap-2 mb-6">
-        {[
-          { id: 'breath', label: '🫁 Respira' },
-          { id: 'timer', label: '⏱ Timer' },
-          { id: 'audio', label: '🎧 Audio' },
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-              activeTab === t.id
-                ? 'bg-sage-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="px-6 pt-6 pb-2">
+        <div className="bg-white border border-sage-100/60 rounded-xl-soft p-1 shadow-soft flex gap-1 mb-6">
+          {[
+            { id: 'breath', label: 'Respira', icon: '🫁' },
+            { id: 'timer', label: 'Timer', icon: '⏱' },
+            { id: 'audio', label: 'Audio', icon: '🎧' },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                activeTab === t.id
+                  ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage'
+                  : 'text-sage-700/70 hover:bg-sage-50'
+              }`}
+            >
+              <span>{t.icon}</span>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'breath' && <BreathingExercise />}
+        {activeTab === 'timer' && <CravingTimer />}
+        {activeTab === 'audio' && <AudioPlayer />}
       </div>
-
-      {activeTab === 'breath' && <BreathingExercise />}
-      {activeTab === 'timer' && <CravingTimer />}
-      {activeTab === 'audio' && <AudioPlayer />}
     </div>
   );
 }
@@ -96,10 +102,10 @@ function BreathingExercise() {
   if (done) {
     return (
       <div className="text-center py-12 animate-fade-in">
-        <p className="text-5xl mb-4">✓</p>
-        <p className="text-xl font-bold text-gray-900 mb-2">Fatto.</p>
-        <p className="text-sm text-gray-500 mb-8">5 cicli completati. Il tuo sistema nervoso è più calmo adesso.</p>
-        <button onClick={start} className="px-6 py-3 bg-sage-500 text-white rounded-xl font-semibold text-sm hover:bg-sage-600 transition-colors">
+        <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-sage-500 to-sage-700 flex items-center justify-center text-white text-2xl shadow-sage mb-4">✓</div>
+        <p className="font-display text-2xl font-semibold text-sage-900 mb-2">Fatto.</p>
+        <p className="text-sm text-sage-700/80 mb-8 leading-relaxed">5 cicli completati. Il tuo sistema nervoso è più calmo adesso.</p>
+        <button onClick={start} className="px-6 py-3 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all">
           Ricomincia
         </button>
       </div>
@@ -107,36 +113,37 @@ function BreathingExercise() {
   }
 
   return (
-    <div className="text-center py-6">
-      <p className="text-sm text-gray-500 mb-2">Box breathing — 4-4-4-4</p>
-      <p className="text-xs text-gray-400 mb-8">Ciclo {running ? cycles + 1 : '—'} di {totalCycles}</p>
+    <div className="text-center py-4">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-sage-600/70 font-semibold mb-2">Box breathing 4·4·4·4</p>
+      <p className="text-[11px] text-sage-700/70 mb-8">Ciclo {running ? cycles + 1 : '—'} di {totalCycles}</p>
 
-      <div className="relative flex items-center justify-center mb-10">
+      <div className="relative flex items-center justify-center mb-10 h-56">
+        <div className="absolute w-40 h-40 rounded-full bg-gradient-to-br from-sage-100 via-cream-50 to-sage-200 opacity-50" />
         <div
-          className="w-40 h-40 rounded-full bg-sage-100 border-4 border-sage-400 flex items-center justify-center transition-all"
+          className="relative w-40 h-40 rounded-full bg-gradient-to-br from-sage-400 to-sage-600 flex items-center justify-center shadow-sage"
           style={{
             transform: running ? `scale(${phase.scale})` : 'scale(1)',
             transition: `transform ${phase.duration}s ease-in-out`,
           }}
         >
           <div className="text-center">
-            <p className="text-2xl font-bold text-sage-700">{running ? count : ''}</p>
-            <p className="text-sm font-medium text-sage-600">{running ? phase.label : ''}</p>
+            <p className="font-display text-3xl font-semibold text-white tabular-nums leading-none">{running ? count : '·'}</p>
+            <p className="text-[11px] font-medium text-white/90 mt-1.5 tracking-wide">{running ? phase.label : 'Tocca Inizia'}</p>
           </div>
         </div>
       </div>
 
       {!running ? (
-        <button onClick={start} className="w-full py-4 bg-sage-500 text-white rounded-2xl font-bold text-base hover:bg-sage-600 transition-colors">
+        <button onClick={start} className="w-full py-4 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-2xl-soft font-semibold text-base shadow-sage active:scale-[0.98] transition-all">
           Inizia
         </button>
       ) : (
-        <button onClick={stop} className="w-full py-4 bg-gray-100 text-gray-700 rounded-2xl font-semibold text-base hover:bg-gray-200 transition-colors">
+        <button onClick={stop} className="w-full py-4 bg-white border border-sage-200 text-sage-700 rounded-2xl-soft font-medium text-base hover:bg-sage-50 transition-colors">
           Interrompi
         </button>
       )}
 
-      <p className="mt-4 text-xs text-gray-400">
+      <p className="mt-4 text-[11px] text-sage-600/60">
         Inspira 4s → Tieni 4s → Espira 4s → Tieni 4s
       </p>
     </div>
@@ -194,10 +201,10 @@ function CravingTimer() {
   if (done) {
     return (
       <div className="text-center py-12 animate-fade-in">
-        <p className="text-5xl mb-4">✓</p>
-        <p className="text-xl font-bold text-gray-900 mb-2">Hai resistito.</p>
-        <p className="text-sm text-gray-500 mb-8">Il picco del craving è passato. Bel lavoro.</p>
-        <button onClick={start} className="px-6 py-3 bg-sage-500 text-white rounded-xl font-semibold text-sm hover:bg-sage-600 transition-colors">
+        <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-sage-500 to-sage-700 flex items-center justify-center text-white text-2xl shadow-sage mb-4">✓</div>
+        <p className="font-display text-2xl font-semibold text-sage-900 mb-2">Hai resistito.</p>
+        <p className="text-sm text-sage-700/80 mb-8 leading-relaxed">Il picco del craving è passato. Bel lavoro.</p>
+        <button onClick={start} className="px-6 py-3 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all">
           Ricomincia
         </button>
       </div>
@@ -205,18 +212,26 @@ function CravingTimer() {
   }
 
   return (
-    <div className="text-center py-6">
-      <p className="text-sm text-gray-500 mb-2">Timer anti-craving</p>
-      <p className="text-xs text-gray-400 mb-8">Il picco dura al massimo 5 minuti. Aspetta che passi.</p>
+    <div className="text-center py-4">
+      <p className="text-[10px] uppercase tracking-[0.18em] text-sage-600/70 font-semibold mb-2">Timer anti-craving</p>
+      <p className="text-[11px] text-sage-700/70 mb-8 leading-snug px-4">
+        Il picco dura al massimo 5 minuti. Aspetta che passi — il corpo ti dà retta.
+      </p>
 
       <div className="relative flex items-center justify-center mb-10">
-        <svg width="180" height="180" className="-rotate-90">
-          <circle cx="90" cy="90" r={radius} fill="none" stroke="#e5e7eb" strokeWidth="8" />
+        <svg width="200" height="200" className="-rotate-90">
+          <defs>
+            <linearGradient id="timerGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#85a081" />
+              <stop offset="100%" stopColor="#41553e" />
+            </linearGradient>
+          </defs>
+          <circle cx="100" cy="100" r={radius} fill="none" stroke="rgba(104,131,97,0.12)" strokeWidth="10" />
           <circle
-            cx="90" cy="90" r={radius}
+            cx="100" cy="100" r={radius}
             fill="none"
-            stroke="#6B8F71"
-            strokeWidth="8"
+            stroke="url(#timerGrad)"
+            strokeWidth="10"
             strokeLinecap="round"
             strokeDasharray={circ}
             strokeDashoffset={circ - (circ * progress) / 100}
@@ -224,21 +239,21 @@ function CravingTimer() {
           />
         </svg>
         <div className="absolute text-center">
-          <p className="text-4xl font-bold text-gray-900 tabular-nums">{mm}:{ss}</p>
-          <p className="text-xs text-gray-500 mt-1">{running ? 'in corso' : remaining === TOTAL ? 'pronto' : 'in pausa'}</p>
+          <p className="font-display text-5xl font-semibold text-sage-900 tabular-nums leading-none tracking-tight">{mm}:{ss}</p>
+          <p className="text-[11px] text-sage-600/70 mt-2 uppercase tracking-wider">{running ? 'in corso' : remaining === TOTAL ? 'pronto' : 'in pausa'}</p>
         </div>
       </div>
 
       {remaining === TOTAL && !running ? (
-        <button onClick={start} className="w-full py-4 bg-sage-500 text-white rounded-2xl font-bold text-base hover:bg-sage-600 transition-colors">
+        <button onClick={start} className="w-full py-4 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-2xl-soft font-semibold text-base shadow-sage active:scale-[0.98] transition-all">
           Avvia
         </button>
       ) : (
         <div className="flex gap-3">
-          <button onClick={togglePause} className="flex-1 py-4 bg-sage-500 text-white rounded-2xl font-bold text-base hover:bg-sage-600 transition-colors">
+          <button onClick={togglePause} className="flex-1 py-4 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-2xl-soft font-semibold text-base shadow-sage active:scale-[0.98] transition-all">
             {running ? 'Pausa' : 'Riprendi'}
           </button>
-          <button onClick={reset} className="px-5 py-4 bg-gray-100 text-gray-700 rounded-2xl font-semibold text-base hover:bg-gray-200 transition-colors">
+          <button onClick={reset} className="px-5 py-4 bg-white border border-sage-200 text-sage-700 rounded-2xl-soft font-medium text-base hover:bg-sage-50 transition-colors">
             Reset
           </button>
         </div>
@@ -335,40 +350,44 @@ function AudioPlayer() {
   useEffect(() => () => stopAll(), []);
 
   return (
-    <div className="space-y-4">
-      <p className="text-xs text-gray-400 mb-2">
-        Per i binaural beats usa le cuffie — richiedono audio stereo per funzionare.
+    <div className="space-y-3">
+      <p className="text-[11px] text-sage-600/70 italic px-1">
+        Per i binaural beats usa le cuffie — richiedono audio stereo.
       </p>
 
-      {TRACKS.map((track) => (
-        <div key={track.id} className={`rounded-xl border px-4 py-4 transition-colors ${playing === track.id ? 'border-sage-400 bg-sage-50' : 'border-gray-200 bg-gray-50'}`}>
-          <div className="flex items-center justify-between mb-1">
-            <p className={`text-sm font-semibold ${playing === track.id ? 'text-sage-800' : 'text-gray-800'}`}>{track.label}</p>
-            <button
-              onClick={() => playing === track.id ? stopAll() : play(track)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-white transition-colors ${playing === track.id ? 'bg-sage-600' : 'bg-sage-500 hover:bg-sage-600'}`}
-            >
-              {playing === track.id ? (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
-              ) : (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
-              )}
-            </button>
+      {TRACKS.map((track) => {
+        const isPlaying = playing === track.id;
+        return (
+          <div key={track.id} className={`rounded-2xl-soft border px-4 py-4 transition-all ${isPlaying ? 'border-sage-300 bg-white shadow-sage' : 'border-sage-100/60 bg-white shadow-soft'}`}>
+            <div className="flex items-center justify-between mb-1">
+              <p className={`font-display text-base font-semibold ${isPlaying ? 'text-sage-900' : 'text-sage-800'}`}>{track.label}</p>
+              <button
+                onClick={() => isPlaying ? stopAll() : play(track)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sage active:scale-95 transition-all ${isPlaying ? 'bg-gradient-to-br from-terracotta-400 to-terracotta-500' : 'bg-gradient-to-br from-sage-500 to-sage-700'}`}
+                aria-label={isPlaying ? 'Stop' : 'Play'}
+              >
+                {isPlaying ? (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>
+                ) : (
+                  <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-sage-700/70 leading-snug">{track.desc}</p>
           </div>
-          <p className="text-xs text-gray-500">{track.desc}</p>
-        </div>
-      ))}
+        );
+      })}
 
-      <div className="pt-2">
-        <div className="flex items-center justify-between mb-1">
-          <label className="text-xs text-gray-500">Volume</label>
-          <span className="text-xs text-gray-500">{Math.round(volume * 100)}%</span>
+      <div className="bg-white rounded-2xl-soft border border-sage-100/60 px-4 py-4 shadow-soft mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold">Volume</label>
+          <span className="font-display text-sm font-semibold text-sage-900 tabular-nums">{Math.round(volume * 100)}%</span>
         </div>
         <input
           type="range" min="0" max="1" step="0.05"
           value={volume}
           onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="w-full accent-sage-500"
+          className="w-full accent-sage-600"
         />
       </div>
     </div>

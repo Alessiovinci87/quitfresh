@@ -15,9 +15,9 @@ function protocolDay(quitDate) {
 
 function phaseLabel(day) {
   if (!day) return null;
-  if (day <= 5) return { text: `Fase 1 — Giorno ${day} (riduci, continua la citisina)`, color: 'text-amber-600' };
-  if (day <= 25) return { text: `Fase 2 — Giorno ${day} (niente sigarette)`, color: 'text-sage-600' };
-  return { text: `Giorno ${day} — protocollo completato`, color: 'text-sage-700' };
+  if (day <= 5) return { text: `Fase 1 · Giorno ${day} — riduci, continua la citisina`, tone: 'warm' };
+  if (day <= 25) return { text: `Fase 2 · Giorno ${day} — niente sigarette`, tone: 'sage' };
+  return { text: `Giorno ${day} — protocollo completato`, tone: 'sage' };
 }
 
 export default function Diary() {
@@ -91,67 +91,83 @@ export default function Diary() {
   }
 
   return (
-    <div className="px-6 py-8 animate-fade-in">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-gray-900">Diario citisina</h1>
-        <button
-          onClick={() => openForm()}
-          className="px-3 py-1.5 bg-sage-500 text-white text-sm font-semibold rounded-full hover:bg-sage-600 transition-colors"
-        >
-          + Oggi
-        </button>
+    <div className="animate-fade-in">
+      <header className="sticky top-0 z-30 px-6 pt-6 pb-3 bg-cream-50/85 backdrop-blur-xl border-b border-sage-100/30">
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Registro</p>
+            <h1 className="font-display text-3xl font-semibold text-sage-900 leading-tight mt-0.5">Diario</h1>
+          </div>
+          <button
+            onClick={() => openForm()}
+            className="px-4 py-2 bg-gradient-to-br from-sage-500 to-sage-700 text-white text-xs font-semibold rounded-full shadow-sage active:scale-95 transition-all shrink-0"
+          >
+            + Oggi
+          </button>
+        </div>
+        {phase && (
+          <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${
+            phase.tone === 'warm'
+              ? 'bg-terracotta-100/80 text-terracotta-700'
+              : 'bg-sage-50 text-sage-700'
+          }`}>
+            {phase.text}
+          </div>
+        )}
+      </header>
+
+      <div className="px-6 pt-6 pb-2">
+        {success && (
+          <p className="text-sm text-sage-700 bg-sage-50 rounded-xl-soft px-3 py-2 mb-4 border border-sage-100">{success}</p>
+        )}
+
+        {/* Entries list */}
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <div className="w-6 h-6 border-2 border-sage-400 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-14 h-14 mx-auto rounded-full bg-sage-50 flex items-center justify-center mb-3 text-2xl">📝</div>
+            <p className="font-display text-lg font-semibold text-sage-900 mb-1">Nessuna registrazione</p>
+            <p className="text-sm text-sage-700/70">Inizia con quella di oggi.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {entries.map((entry, i) => (
+              <EntryCard key={i} entry={entry} onEdit={() => openForm(entry)} isPhase1={isPhase1} />
+            ))}
+          </div>
+        )}
       </div>
 
-      {phase && (
-        <div className={`text-xs font-medium mb-6 ${phase.color}`}>{phase.text}</div>
-      )}
-
-      {success && (
-        <p className="text-sm text-green-700 bg-green-50 rounded-lg px-3 py-2 mb-4">{success}</p>
-      )}
-
-      {/* Entries list */}
-      {loading ? (
-        <div className="flex justify-center py-10">
-          <div className="w-6 h-6 border-2 border-sage-400 border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : entries.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 text-sm">
-          Nessuna registrazione ancora.<br />Inizia con quella di oggi.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {entries.map((entry, i) => (
-            <EntryCard key={i} entry={entry} onEdit={() => openForm(entry)} isPhase1={isPhase1} />
-          ))}
-        </div>
-      )}
-
-      {/* Form modal */}
+      {/* Form modal — bottom sheet */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 flex items-end justify-center z-50 px-4 pb-4">
-          <div className="bg-white rounded-2xl w-full max-w-mobile max-h-[85vh] overflow-y-auto animate-slide-up">
+        <div className="fixed inset-0 bg-sage-900/40 backdrop-blur-sm flex items-end justify-center z-50 px-4 pb-4 animate-fade-in">
+          <div className="bg-white rounded-2xl-soft w-full max-w-mobile max-h-[85vh] overflow-y-auto animate-slide-up shadow-lift">
             <div className="px-6 py-5">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-bold text-gray-900">Registrazione</h2>
-                <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+                <h2 className="font-display text-xl font-semibold text-sage-900">Registrazione</h2>
+                <button onClick={() => setShowForm(false)} className="w-8 h-8 rounded-full hover:bg-sage-50 text-sage-700 transition-colors flex items-center justify-center" aria-label="Chiudi">✕</button>
               </div>
 
               <div className="space-y-5">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Data</label>
+                  <label className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold block mb-1.5">Data</label>
                   <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                    className="w-full px-3 py-2 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400" />
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-2">
-                    Compresse prese oggi <span className="text-sage-600 font-bold">{form.pillsTaken}</span>
+                  <label className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold block mb-2">
+                    Compresse prese — <span className="font-display text-base text-sage-800 normal-case tracking-normal">{form.pillsTaken}</span>
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1.5 flex-wrap">
                     {[0,1,2,3,4,5,6].map(n => (
                       <button key={n} onClick={() => setForm(f => ({ ...f, pillsTaken: n }))}
-                        className={`w-9 h-9 rounded-full text-sm font-bold border transition-colors ${form.pillsTaken === n ? 'bg-sage-500 border-sage-500 text-white' : 'border-gray-200 text-gray-600'}`}>
+                        className={`w-10 h-10 rounded-full text-sm font-bold border transition-all ${form.pillsTaken === n
+                          ? 'bg-gradient-to-br from-sage-500 to-sage-700 border-transparent text-white shadow-sage'
+                          : 'border-sage-200 text-sage-700 hover:bg-sage-50'}`}>
                         {n}
                       </button>
                     ))}
@@ -159,40 +175,42 @@ export default function Diary() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-2">
-                    Sigarette fumate oggi <span className="text-gray-600 font-bold">{form.cigarettesToday}</span>
+                  <label className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold block mb-2">
+                    Sigarette fumate
                   </label>
                   <div className="flex items-center gap-3">
                     <button onClick={() => setForm(f => ({ ...f, cigarettesToday: Math.max(0, f.cigarettesToday - 1) }))}
-                      className="w-9 h-9 rounded-full border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 text-lg">−</button>
-                    <span className="text-2xl font-bold text-gray-900 w-10 text-center">{form.cigarettesToday}</span>
+                      className="w-10 h-10 rounded-full border border-sage-200 text-sage-700 flex items-center justify-center hover:bg-sage-50 text-lg active:scale-95 transition-all">−</button>
+                    <span className="font-display text-3xl font-semibold text-sage-900 w-12 text-center tabular-nums">{form.cigarettesToday}</span>
                     <button onClick={() => setForm(f => ({ ...f, cigarettesToday: f.cigarettesToday + 1 }))}
-                      className="w-9 h-9 rounded-full border border-gray-200 text-gray-600 flex items-center justify-center hover:bg-gray-50 text-lg">+</button>
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 text-white flex items-center justify-center text-lg shadow-sage active:scale-95 transition-all">+</button>
                   </div>
-                  {form.cigarettesToday === 0 && <p className="text-xs text-sage-600 mt-1">Nessuna sigaretta — ottimo.</p>}
+                  {form.cigarettesToday === 0 && <p className="text-xs text-sage-700 mt-2 font-medium">Nessuna sigaretta — ottimo.</p>}
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-2">Effetti collaterali</label>
-                  <div className="flex flex-wrap gap-2">
+                  <label className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold block mb-2">Effetti collaterali</label>
+                  <div className="flex flex-wrap gap-1.5">
                     {SIDE_EFFECTS.map(e => (
                       <button key={e} onClick={() => toggleEffect(e)}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          form.sideEffects.includes(e) ? 'bg-amber-100 border-amber-400 text-amber-700' : 'border-gray-200 text-gray-600'
+                          form.sideEffects.includes(e)
+                            ? 'bg-terracotta-100 border-terracotta-200 text-terracotta-700'
+                            : 'border-sage-200 text-sage-700 hover:bg-sage-50'
                         }`}>{e}</button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">Note</label>
-                  <textarea rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  <label className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold block mb-1.5">Note</label>
+                  <textarea rows={3} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                     placeholder="Come ti sei sentito oggi?"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-400" />
+                    className="w-full px-3 py-2 border border-sage-200 rounded-xl-soft text-sm resize-none focus:outline-none focus:ring-2 focus:ring-sage-400" />
                 </div>
 
                 <button onClick={handleSave} disabled={saving}
-                  className="w-full py-3.5 bg-sage-500 text-white rounded-xl font-semibold text-sm hover:bg-sage-600 disabled:opacity-60 transition-colors">
+                  className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage disabled:opacity-60 active:scale-[0.98] transition-all">
                   {saving ? 'Salvataggio…' : 'Salva'}
                 </button>
               </div>
@@ -206,20 +224,27 @@ export default function Diary() {
 
 function EntryCard({ entry, onEdit }) {
   const date = new Date(entry.date).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+  const isSmokeFree = entry.cigarettesToday === 0;
   return (
-    <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+    <div className="bg-white rounded-xl-soft border border-sage-100/60 shadow-soft px-4 py-3">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold text-gray-800 capitalize">{date}</p>
-        <button onClick={onEdit} className="text-xs text-sage-600 hover:underline">modifica</button>
+        <p className="font-display text-sm font-semibold text-sage-900 capitalize">{date}</p>
+        <button onClick={onEdit} className="text-[11px] text-sage-600 hover:text-sage-800 hover:underline underline-offset-2">modifica</button>
       </div>
-      <div className="flex gap-4 text-xs text-gray-600">
-        <span>💊 {entry.pillsTaken} compresse</span>
-        <span>🚬 {entry.cigarettesToday} sigarette</span>
+      <div className="flex gap-3 text-[11px] flex-wrap">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sage-50 text-sage-700 font-medium">
+          💊 {entry.pillsTaken} compresse
+        </span>
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+          isSmokeFree ? 'bg-sage-100 text-sage-800' : 'bg-terracotta-100 text-terracotta-700'
+        }`}>
+          🚬 {entry.cigarettesToday} sigarette
+        </span>
       </div>
       {entry.sideEffects?.length > 0 && (
-        <p className="text-xs text-amber-600 mt-1">{entry.sideEffects.join(', ')}</p>
+        <p className="text-[11px] text-terracotta-600 mt-1.5">{entry.sideEffects.join(' · ')}</p>
       )}
-      {entry.notes && <p className="text-xs text-gray-500 mt-1 italic">"{entry.notes}"</p>}
+      {entry.notes && <p className="text-[11px] text-sage-700/70 mt-1.5 italic leading-snug">"{entry.notes}"</p>}
     </div>
   );
 }
