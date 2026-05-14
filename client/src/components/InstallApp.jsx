@@ -12,8 +12,7 @@ export default function InstallApp({ mode = 'section' }) {
   );
   const [installing, setInstalling] = useState(false);
 
-  if (isInstalled) return null;
-  if (mode === 'card' && dismissed) return null;
+  if (mode === 'card' && (isInstalled || dismissed)) return null;
 
   function handleDismiss() {
     localStorage.setItem(DISMISS_KEY, '1');
@@ -73,51 +72,60 @@ export default function InstallApp({ mode = 'section' }) {
 
   // mode === 'section' (Profile)
   return (
-    <div>
-      <p className="text-xs text-gray-500 mb-3">
-        Aggiungi QuitFresh alla home del telefono per aprirla con un tocco,
-        come una vera app. Niente da scaricare dallo store.
-      </p>
+    <div className="space-y-4">
+      {isInstalled ? (
+        <div className="bg-sage-50 border border-sage-200 rounded-xl-soft p-4 flex items-center gap-3">
+          <span className="w-9 h-9 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 flex items-center justify-center text-white shadow-sage shrink-0">✓</span>
+          <div className="min-w-0">
+            <p className="font-display text-base font-semibold text-sage-900 leading-tight">App già installata</p>
+            <p className="text-[11px] text-sage-700/80 mt-0.5">QuitFresh è sulla home del tuo telefono.</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-sage-700/80 leading-relaxed">
+            Aggiungi QuitFresh alla home del telefono per aprirla con un tocco, come una vera app. Niente da scaricare dallo store.
+          </p>
 
-      {hasNativePrompt && (
-        <button
-          onClick={handleInstall}
-          disabled={installing}
-          className="w-full mb-4 py-2.5 bg-sage-500 text-white rounded-xl text-sm font-semibold hover:bg-sage-600 disabled:opacity-60"
-        >
-          {installing ? 'Apertura…' : 'Installa ora'}
-        </button>
+          {hasNativePrompt && (
+            <button
+              onClick={handleInstall}
+              disabled={installing}
+              className="w-full py-3 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft text-sm font-semibold shadow-sage active:scale-[0.98] transition-all disabled:opacity-60"
+            >
+              {installing ? 'Apertura…' : 'Installa ora'}
+            </button>
+          )}
+        </>
       )}
 
-      <div className="space-y-4">
-        <Platform
-          name="iPhone · Safari"
-          steps={[
-            'Apri QuitFresh con Safari (non Chrome).',
-            'Tocca il pulsante Condividi in basso (⬆️).',
-            'Scorri e tocca “Aggiungi alla schermata Home”.',
-            'Conferma con “Aggiungi”.',
-          ]}
-        />
-        <Platform
-          name="Android · Chrome"
-          steps={[
-            'Apri QuitFresh con Chrome.',
-            'Tocca il menu ⋮ in alto a destra.',
-            'Tocca “Installa app” (o “Aggiungi a schermata Home”).',
-            'Conferma.',
-          ]}
-        />
-      </div>
+      <Platform
+        name="iPhone · Safari"
+        steps={[
+          'Apri QuitFresh con Safari (non Chrome).',
+          'Tocca il pulsante Condividi in basso.',
+          'Scorri e tocca "Aggiungi alla schermata Home".',
+          'Conferma con "Aggiungi".',
+        ]}
+      />
+      <Platform
+        name="Android · Chrome"
+        steps={[
+          'Apri QuitFresh con Chrome.',
+          'Tocca il menu ⋮ in alto a destra.',
+          'Tocca "Installa app" (o "Aggiungi a schermata Home").',
+          'Conferma.',
+        ]}
+      />
     </div>
   );
 }
 
 function Platform({ name, steps }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-3">
-      <p className="text-xs font-semibold text-gray-700 mb-2">{name}</p>
-      <ol className="text-xs text-gray-600 space-y-1 list-decimal list-inside">
+    <div className="bg-white border border-sage-100/60 rounded-xl-soft shadow-soft p-4">
+      <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold mb-2">{name}</p>
+      <ol className="text-sm text-sage-800 space-y-1.5 list-decimal list-inside leading-relaxed">
         {steps.map((s, i) => <li key={i}>{s}</li>)}
       </ol>
     </div>

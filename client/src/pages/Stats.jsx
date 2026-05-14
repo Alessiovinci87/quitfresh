@@ -152,10 +152,13 @@ export default function Stats() {
         )}
       </div>
 
-      {/* Chart 14g — compatto */}
+      {/* Chart 14g — istogramma sigarette per giorno */}
       <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4 mb-3">
-        <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold mb-2">Ultimi 14 giorni</p>
-        <div className="flex items-end gap-1 h-12">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold">Ultimi 14 giorni</p>
+          <p className="text-[10px] text-sage-600/70">sigarette/giorno</p>
+        </div>
+        <div className="flex items-end gap-1 h-16 mb-1.5">
           {last14.map(({ ds, cigs }, i) => {
             const pct = cigs === null ? 0 : (cigs / maxCigs) * 100;
             const isUnknown = cigs === null;
@@ -176,12 +179,19 @@ export default function Stats() {
               <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5">
                 <div
                   className={`w-full rounded-t-md transition-all ${fill} ${isCurrentDay ? 'ring-2 ring-offset-1 ring-sage-400' : ''}`}
-                  style={{ height: isUnknown ? '4px' : `${Math.max(10, pct)}%` }}
+                  style={{ height: isUnknown ? '4px' : `${Math.max(10, pct)}%`, minHeight: '4px' }}
                 />
               </div>
             );
           })}
         </div>
+        <div className="flex justify-between text-[10px] text-sage-600/70 tabular-nums">
+          <span>{new Date(last14[0].ds).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</span>
+          <span>oggi</span>
+        </div>
+        <p className="text-[10px] text-sage-600/60 mt-2 leading-snug">
+          Ogni barra è un giorno. Verde = 0 sigarette. Più alta la barra, più sigarette in quel giorno.
+        </p>
       </div>
 
       {/* Row-cards navigabili */}

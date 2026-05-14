@@ -28,7 +28,7 @@ const DEPENDENCY_LABELS = {
 export default function Profile() {
   const { user, updateUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [subPage, setSubPage] = useState(null); // 'edit' | 'notifications' | null
+  const [subPage, setSubPage] = useState(null); // 'profile' | 'habits' | 'notifications' | 'install' | null
 
   // Modali
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -135,15 +135,19 @@ export default function Profile() {
           <div className="space-y-2 mb-4">
             <NavRow
               icon="👤"
-              title="Profilo e abitudini"
-              value={`${user.cigarettesPerDay || '—'} sig/die · €${(user.cigarettePackPrice ?? 5.80).toFixed(2)}/pacc`}
-              onClick={() => setSubPage('edit')}
+              title="Profilo"
+              value={user.email}
+              onClick={() => setSubPage('profile')}
             />
             <NavRow
-              icon="💊"
-              title="Protocollo citisina"
-              value={currentPhase ? `Giorno ${currentPhase.day} · Fase ${currentPhase.index + 1}` : 'Non impostato'}
-              onClick={() => setSubPage('edit')}
+              icon="🌱"
+              title="Gestione abitudini"
+              value={
+                currentPhase
+                  ? `${user.cigarettesPerDay || '—'} sig/die · citisina G${currentPhase.day}·F${currentPhase.index + 1}`
+                  : `${user.cigarettesPerDay || '—'} sig/die · €${(user.cigarettePackPrice ?? 5.80).toFixed(2)}/pacc`
+              }
+              onClick={() => setSubPage('habits')}
             />
             <NavRow
               icon="🔔"
@@ -202,8 +206,14 @@ export default function Profile() {
       </div>
 
       {/* Sub-pages */}
-      {subPage === 'edit' && (
-        <ProfileEditSubPage
+      {subPage === 'profile' && (
+        <ProfileAccountSubPage
+          user={user}
+          onClose={() => setSubPage(null)}
+        />
+      )}
+      {subPage === 'habits' && (
+        <HabitsSubPage
           user={user}
           updateUser={updateUser}
           onClose={() => setSubPage(null)}
@@ -318,8 +328,49 @@ function NavRow({ icon, title, value, onClick }) {
   );
 }
 
-// ── ProfileEditSubPage: tutti i campi profilo + citisina ─────
-function ProfileEditSubPage({ user, updateUser, onClose }) {
+// ── ProfileAccountSubPage: solo dati account (email, cambia password) ─
+function ProfileAccountSubPage({ user, onClose }) {
+  return (
+    <SubPage eyebrow="Account" title="Profilo" onClose={onClose}>
+      <div className="space-y-5">
+        <Field label="Email">
+          <div className="bg-white border border-sage-100 rounded-xl-soft px-4 py-3 shadow-soft">
+            <p className="text-sm text-sage-900">{user.email}</p>
+            <p className="text-[11px] text-sage-600/70 mt-0.5">
+              {user.emailVerified ? '✓ Verificata' : 'Non ancora verificata'}
+            </p>
+          </div>
+        </Field>
+
+        <Field label="Password" hint="Per cambiare la password, ti invieremo un link di reset via email.">
+          <Link
+            to="/forgot-password"
+            className="block w-full text-center py-3 border border-sage-200 text-sage-700 rounded-xl-soft font-medium text-sm hover:bg-sage-50 transition-colors"
+          >
+            Cambia password
+          </Link>
+        </Field>
+
+        <Field label="Registrato">
+          <p className="text-sm text-sage-700">
+            {new Date(user.createdAt).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+          </p>
+        </Field>
+
+        {user.isPremium && user.premiumSince && (
+          <Field label="Premium dal">
+            <p className="text-sm text-sage-700">
+              {new Date(user.premiumSince).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          </Field>
+        )}
+      </div>
+    </SubPage>
+  );
+}
+
+// ── HabitsSubPage: gestione abitudini + protocollo citisina ─────
+function HabitsSubPage({ user, updateUser, onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -393,7 +444,7 @@ function ProfileEditSubPage({ user, updateUser, onClose }) {
   }
 
   return (
-    <SubPage eyebrow="Account" title="Profilo e abitudini" onClose={onClose}>
+    <SubPage eyebrow="Account" title="Gestione abitudini" onClose={onClose}>
       <div className="space-y-5">
         <Field label="Sigarette al giorno">
           <input

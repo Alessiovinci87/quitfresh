@@ -117,7 +117,10 @@ function BreathingExercise() {
   return (
     <div className="text-center py-4">
       <p className="text-[10px] uppercase tracking-[0.18em] text-sage-600/70 font-semibold mb-2">Box breathing 4·4·4·4</p>
-      <p className="text-[11px] text-sage-700/70 mb-8">Ciclo {running ? cycles + 1 : '—'} di {totalCycles}</p>
+      <p className="text-[11px] text-sage-700/70 mb-2">Ciclo {running ? cycles + 1 : '—'} di {totalCycles}</p>
+      {!running && (
+        <p className="text-sm text-sage-700 font-medium mb-4">Tap il cerchio verde per iniziare</p>
+      )}
 
       <div className="relative flex items-center justify-center mb-10 h-56">
         <div className="absolute w-40 h-40 rounded-full bg-gradient-to-br from-sage-100 via-cream-50 to-sage-200 opacity-50" />
