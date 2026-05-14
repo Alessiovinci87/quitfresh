@@ -229,32 +229,27 @@ export default function Home() {
               </ProgressRing>
             </button>
 
-            <p className="mt-3 text-[11px] text-sage-700/70 inline-flex items-center gap-2 flex-wrap justify-center px-4">
-              <span>
-                dal {progress?.quitDate
-                  ? new Date(progress.quitDate).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })
-                  : '—'}
-              </span>
+            <p className="mt-3 text-xs text-sage-700/80">
+              dal {progress?.quitDate
+                ? new Date(progress.quitDate).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })
+                : '—'}
+            </p>
+
+            <div className="mt-3 flex items-center gap-2 flex-wrap justify-center">
               {progress?.moneySaved > 0 && (
-                <>
-                  <span className="text-sage-300">·</span>
-                  <span className="inline-flex items-center gap-1 font-medium text-sage-800">
-                    <span>💰</span>
-                    <span className="font-display tabular-nums">€{progress.moneySaved.toFixed(2)}</span>
-                    <span className="text-sage-600/70">risparmiati</span>
-                  </span>
-                </>
+                <span className="inline-flex items-center gap-1.5 bg-gradient-to-br from-sage-50 to-sage-100 border border-sage-200 px-3 py-1.5 rounded-full shadow-soft text-sage-900">
+                  <span className="text-base">💰</span>
+                  <span className="font-display text-base font-semibold tabular-nums">€{progress.moneySaved.toFixed(2)}</span>
+                  <span className="text-[11px] text-sage-700/80 font-medium">risparmiati</span>
+                </span>
               )}
               {progress?.bestDays > 0 && (
-                <>
-                  <span className="text-sage-300">·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="text-terracotta-500">★</span>
-                    Record {progress.bestDays}
-                  </span>
-                </>
+                <span className="inline-flex items-center gap-1.5 bg-white border border-sage-200 px-3 py-1.5 rounded-full shadow-soft text-sage-900">
+                  <span className="text-terracotta-500">★</span>
+                  <span className="text-[11px] font-medium">Record <span className="font-display font-semibold tabular-nums">{progress.bestDays}</span></span>
+                </span>
               )}
-            </p>
+            </div>
 
             {/* Bottone esplicito per aprire lo Streak sheet */}
             <button
