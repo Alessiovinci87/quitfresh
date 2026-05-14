@@ -119,18 +119,24 @@ function AppShell() {
     }
   }, [isChat]);
 
-  // Per la chat: position fixed che segue visualViewport (height + top).
-  // Quando la tastiera iOS si apre, il container si restringe E si alza,
-  // l'input flex-shrink-0 in fondo coincide col bordo della tastiera.
+  // Per la chat: TUTTO inline (no Tailwind class) per bypassare qualsiasi
+  // cache CSS del SW PWA. Il wrapper segue visualViewport.height + offsetTop
+  // — il container coincide ESATTAMENTE con la zona visibile sopra la tastiera.
   const wrapperStyle = isChat
     ? {
+        position: 'fixed',
         top: `${chatVp.offsetTop}px`,
+        left: 0,
+        right: 0,
         height: `${chatVp.height}px`,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        zIndex: 50,
+        backgroundColor: '#fdfcf9', // cream-50 fallback
       }
     : undefined;
-  const wrapperClass = isChat
-    ? "fixed left-0 right-0 flex flex-col overflow-hidden z-50"
-    : "min-h-screen bg-gray-100 flex items-start justify-center";
+  const wrapperClass = isChat ? "" : "min-h-screen bg-gray-100 flex items-start justify-center";
 
   return (
     <>
