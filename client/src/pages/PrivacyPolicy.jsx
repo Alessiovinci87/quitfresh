@@ -1,75 +1,172 @@
-export default function PrivacyPolicy() {
-  return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "2rem 1.5rem", fontFamily: "Georgia, serif", color: "#1a1a1a", lineHeight: 1.8 }}>
-      <h1 style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "0.25rem" }}>Privacy Policy</h1>
-      <p style={{ color: "#666", fontSize: "0.9rem", marginBottom: "2rem" }}>Ultimo aggiornamento: 14 maggio 2026</p>
+import { useNavigate } from 'react-router-dom';
 
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>1. Titolare del trattamento</h2>
-        <p>
+export default function PrivacyPolicy() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="max-w-mobile mx-auto px-6 py-8">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-xs text-sage-600 hover:underline mb-6 inline-block"
+        >
+          ← Torna indietro
+        </button>
+
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
+        <p className="text-xs text-gray-400 mb-8">Ultimo aggiornamento: 14 maggio 2026</p>
+
+        <Section title="1. Titolare del trattamento">
           Alessio Vinci, P.IVA IT03014680908<br />
           Via Alessandro Fleming 41, 07041 Alghero (SS), Italia<br />
-          Email: <a href="mailto:info@quitfresh.it" style={{ color: "#4a7c59" }}>info@quitfresh.it</a>
+          Email:{' '}
+          <a href="mailto:info@quitfresh.it" className="text-sage-600 underline">
+            info@quitfresh.it
+          </a>
+        </Section>
+
+        <Section title="2. Dati raccolti">
+          <p className="mb-2">QuitFresh raccoglie i seguenti dati personali:</p>
+          <ul className="space-y-2 list-disc list-inside">
+            <li>
+              <strong>Dati di registrazione:</strong> indirizzo email, password
+              (in forma crittografata).
+            </li>
+            <li>
+              <strong>Dati del profilo fumatore:</strong> numero di sigarette al
+              giorno, prezzo del pacchetto, data di inizio percorso, livello di
+              dipendenza, momenti critici, protocollo farmacologico (citisina)
+              e orari di assunzione.
+            </li>
+            <li>
+              <strong>Dati d'uso:</strong> messaggi inviati alla chat AI coach,
+              voci del diario, tentativi di ricaduta.
+            </li>
+            <li>
+              <strong>Dati di pagamento:</strong> gestiti interamente da
+              Stripe. QuitFresh non memorizza dati di carta di credito.
+            </li>
+            <li>
+              <strong>Dati tecnici:</strong> token di notifica push (VAPID),
+              indirizzi IP, log di accesso.
+            </li>
+          </ul>
+        </Section>
+
+        <Section title="3. Finalità e base giuridica">
+          <ul className="space-y-2 list-disc list-inside mb-3">
+            <li>
+              <strong>Erogazione del servizio</strong> (contratto, art. 6.1.b
+              GDPR): gestione account, chat AI, promemoria farmaci, tracker.
+            </li>
+            <li>
+              <strong>Pagamento</strong> (contratto): elaborazione del
+              pagamento unico tramite Stripe.
+            </li>
+            <li>
+              <strong>Comunicazioni transazionali</strong> (contratto): email
+              di verifica account e reset password.
+            </li>
+            <li>
+              <strong>Obblighi legali</strong> (art. 6.1.c GDPR): conservazione
+              dei dati fiscali.
+            </li>
+          </ul>
+          <p>
+            I dati sanitari (protocollo citisina, numero di sigarette) sono
+            trattati ai sensi dell'art. 9.2.a GDPR su base consensuale
+            esplicita, prestato al momento della registrazione.
+          </p>
+        </Section>
+
+        <Section title="4. Servizi terzi">
+          <ul className="space-y-2 list-disc list-inside">
+            <li>
+              <strong>OpenAI</strong> (chat AI coach): i messaggi vengono
+              inviati alle API OpenAI. OpenAI non utilizza i dati degli utenti
+              API per addestrare i propri modelli (opt-out attivo).
+            </li>
+            <li>
+              <strong>Stripe</strong> (pagamenti): soggetto alla propria{' '}
+              <a
+                href="https://stripe.com/it/privacy"
+                target="_blank"
+                rel="noreferrer"
+                className="text-sage-600 underline"
+              >
+                Privacy Policy
+              </a>.
+            </li>
+            <li>
+              <strong>Resend</strong> (email transazionali): soggetto alla
+              propria privacy policy.
+            </li>
+            <li>
+              <strong>Railway</strong> (hosting backend): server in EU.
+            </li>
+            <li>
+              <strong>GitHub Pages</strong> (hosting frontend).
+            </li>
+          </ul>
+        </Section>
+
+        <Section title="5. Conservazione dei dati">
+          I dati dell'account vengono conservati fino alla cancellazione
+          dell'account da parte dell'utente. I dati fiscali sono conservati per
+          10 anni come previsto dalla normativa italiana. L'utente può
+          eliminare il proprio account in qualsiasi momento dalla sezione
+          Profilo → Zona Pericolosa → Elimina account.
+        </Section>
+
+        <Section title="6. Diritti dell'interessato">
+          Ai sensi del GDPR hai diritto di: accesso, rettifica, cancellazione,
+          limitazione del trattamento, portabilità, opposizione. Per esercitare
+          i tuoi diritti scrivi a{' '}
+          <a href="mailto:info@quitfresh.it" className="text-sage-600 underline">
+            info@quitfresh.it
+          </a>
+          . Hai inoltre il diritto di proporre reclamo al Garante per la
+          Protezione dei Dati Personali (
+          <a
+            href="https://www.garanteprivacy.it"
+            target="_blank"
+            rel="noreferrer"
+            className="text-sage-600 underline"
+          >
+            garanteprivacy.it
+          </a>
+          ).
+        </Section>
+
+        <Section title="7. Cookie e tracciamento">
+          QuitFresh non utilizza cookie di profilazione o di tracciamento
+          pubblicitario. Vengono utilizzati esclusivamente token tecnici (JWT)
+          per mantenere la sessione di accesso, conservati in memoria del
+          browser.
+        </Section>
+
+        <Section title="8. Modifiche">
+          Eventuali modifiche alla presente Privacy Policy saranno comunicate
+          via email agli utenti registrati e pubblicate su questa pagina con
+          aggiornamento della data in cima al documento.
+        </Section>
+
+        <p className="text-xs text-gray-400 mt-10 pb-4">
+          Per qualsiasi domanda:{' '}
+          <a href="mailto:info@quitfresh.it" className="text-sage-600 underline">
+            info@quitfresh.it
+          </a>
         </p>
-      </section>
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>2. Dati raccolti</h2>
-        <p>QuitFresh raccoglie i seguenti dati personali:</p>
-        <ul>
-          <li><strong>Dati di registrazione:</strong> indirizzo email, password (in forma crittografata).</li>
-          <li><strong>Dati del profilo fumatore:</strong> numero di sigarette al giorno, prezzo del pacchetto, data di inizio percorso, livello di dipendenza, momenti critici, protocollo farmacologico (citisina) e orari di assunzione.</li>
-          <li><strong>Dati d'uso:</strong> messaggi inviati alla chat AI coach, voci del diario, tentativi di ricaduta.</li>
-          <li><strong>Dati di pagamento:</strong> gestiti interamente da Stripe. QuitFresh non memorizza dati di carta di credito.</li>
-          <li><strong>Dati tecnici:</strong> token di notifica push (VAPID), indirizzi IP, log di accesso.</li>
-        </ul>
-      </section>
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>3. Finalità e base giuridica</h2>
-        <ul>
-          <li><strong>Erogazione del servizio</strong> (contratto, art. 6.1.b GDPR): gestione account, chat AI, promemoria farmaci, tracker.</li>
-          <li><strong>Pagamento</strong> (contratto): elaborazione del pagamento unico tramite Stripe.</li>
-          <li><strong>Comunicazioni transazionali</strong> (contratto): email di verifica account e reset password.</li>
-          <li><strong>Obblighi legali</strong> (art. 6.1.c GDPR): conservazione dei dati fiscali.</li>
-        </ul>
-        <p>I dati sanitari (protocollo citisina, numero di sigarette) sono trattati ai sensi dell'art. 9.2.a GDPR su base consensuale esplicita, prestato al momento della registrazione.</p>
-      </section>
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>4. Servizi terzi</h2>
-        <ul>
-          <li><strong>OpenAI</strong> (chat AI coach): i messaggi vengono inviati alle API OpenAI. OpenAI non utilizza i dati degli utenti API per addestrare i propri modelli (opt-out attivo).</li>
-          <li><strong>Stripe</strong> (pagamenti): soggetto alla propria <a href="https://stripe.com/it/privacy" style={{ color: "#4a7c59" }}>Privacy Policy</a>.</li>
-          <li><strong>Resend</strong> (email transazionali): soggetto alla propria privacy policy.</li>
-          <li><strong>Railway</strong> (hosting backend): server in EU.</li>
-          <li><strong>GitHub Pages</strong> (hosting frontend).</li>
-        </ul>
-      </section>
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>5. Conservazione dei dati</h2>
-        <p>I dati dell'account vengono conservati fino alla cancellazione dell'account da parte dell'utente. I dati fiscali sono conservati per 10 anni come previsto dalla normativa italiana. L'utente può eliminare il proprio account in qualsiasi momento dalla sezione Profilo → Zona Pericolosa → Elimina account.</p>
-      </section>
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>6. Diritti dell'interessato</h2>
-        <p>Ai sensi del GDPR hai diritto di: accesso, rettifica, cancellazione, limitazione del trattamento, portabilità, opposizione. Per esercitare i tuoi diritti scrivi a <a href="mailto:info@quitfresh.it" style={{ color: "#4a7c59" }}>info@quitfresh.it</a>. Hai inoltre il diritto di proporre reclamo al Garante per la Protezione dei Dati Personali (<a href="https://www.garanteprivacy.it" style={{ color: "#4a7c59" }}>garanteprivacy.it</a>).</p>
-      </section>
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>7. Cookie e tracciamento</h2>
-        <p>QuitFresh non utilizza cookie di profilazione o di tracciamento pubblicitario. Vengono utilizzati esclusivamente token tecnici (JWT) per mantenere la sessione di accesso, conservati in memoria del browser.</p>
-      </section>
-
-      <section style={{ marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "0.5rem" }}>8. Modifiche</h2>
-        <p>Eventuali modifiche alla presente Privacy Policy saranno comunicate via email agli utenti registrati e pubblicate su questa pagina con aggiornamento della data in cima al documento.</p>
-      </section>
-
-      <p style={{ marginTop: "3rem", fontSize: "0.85rem", color: "#888" }}>
-        Per qualsiasi domanda: <a href="mailto:info@quitfresh.it" style={{ color: "#4a7c59" }}>info@quitfresh.it</a>
-      </p>
+      </div>
     </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <section className="mb-7">
+      <h2 className="text-base font-semibold text-gray-800 mb-2">{title}</h2>
+      <div className="text-sm text-gray-600 leading-relaxed">{children}</div>
+    </section>
   );
 }
