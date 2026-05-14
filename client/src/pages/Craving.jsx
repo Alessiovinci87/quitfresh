@@ -86,12 +86,18 @@ export default function Craving() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-cream-50 flex justify-center overflow-hidden">
-      <div className="w-full max-w-mobile flex flex-col h-[100dvh] bg-cream-50">
-        {/* Header */}
+    <div
+      className="fixed inset-0 z-[100] bg-cream-50"
+      style={{ height: '100dvh' }}
+    >
+      <div className="absolute inset-0 max-w-mobile mx-auto flex flex-col bg-cream-50">
+        {/* Header — fisso in alto */}
         <header
-          className="shrink-0 px-4 pb-3 border-b border-sage-100/40 bg-cream-50/90 backdrop-blur-xl flex items-center gap-3"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+          className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white"
+          style={{
+            flexShrink: 0,
+            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+          }}
         >
           <button
             onClick={() => navigate('/home')}
@@ -102,9 +108,12 @@ export default function Craving() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 flex items-center justify-center text-white text-base shadow-sage shrink-0">
+            🌿
+          </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Coach</p>
-            <h1 className="font-display text-lg font-semibold text-sage-900 leading-tight truncate">QuitFresh</h1>
+            <p className="font-display text-base font-semibold text-sage-900 leading-tight truncate">QuitFresh Coach</p>
+            <p className="text-[10px] text-sage-600/70">online · sempre qui</p>
           </div>
           <button
             onClick={handleResolved}
@@ -115,8 +124,10 @@ export default function Craving() {
           </button>
         </header>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3">
+        {/* Messages — unica zona scrollabile (min-h-0 e' cruciale per flex scroll) */}
+        <div
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 bg-cream-50"
+        >
           {messages.length === 0 && loading && (
             <div className="flex items-center gap-2 text-sage-500/70">
               <TypingDots />
@@ -157,10 +168,13 @@ export default function Craving() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
+        {/* Input — fisso in basso */}
         <div
-          className="shrink-0 border-t border-sage-100/40 px-4 pt-3 bg-cream-50"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+          className="border-t border-sage-100/50 px-4 pt-3 bg-white"
+          style={{
+            flexShrink: 0,
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+          }}
         >
           <div className="flex items-end gap-2 min-w-0">
             <textarea
@@ -170,7 +184,7 @@ export default function Craving() {
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder="Scrivi qualcosa…"
-              className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-white shadow-soft"
+              className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
               style={{ minHeight: '42px' }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
