@@ -1,19 +1,11 @@
-const crypto = require('crypto');
-
+// requireAdmin va in catena DOPO requireAuth (che popola req.user dal JWT).
+// Gate basato sul flag User.isAdmin nel DB: niente più header/token separato.
 function requireAdmin(req, res, next) {
-  const expected = (process.env.ADMIN_TOKEN || '').trim();
-  if (!expected) {
-    return res.status(503).json({ error: 'Admin disattivato (ADMIN_TOKEN non configurato)' });
+  if (!req.user) {
+    return res.status(401).json({ error: 'Autenticazione richiesta' });
   }
-  const provided = (req.header('x-admin-token') || '').trim();
-  if (!provided) {
-    return res.status(401).json({ error: 'Token admin mancante' });
-  }
-  // timingSafeEqual richiede buffer della stessa lunghezza: pad o reject.
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    return res.status(401).json({ error: 'Token admin non valido' });
+  if (!req.user.isAdmin) {
+    return res.status(403).json({ error: 'Accesso admin richiesto' });
   }
   next();
 }

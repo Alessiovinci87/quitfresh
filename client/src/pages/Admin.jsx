@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 const STATUS_LABELS = {
   available: { label: 'Disponibile', color: 'bg-green-100 text-green-700' },
@@ -11,10 +12,8 @@ const STATUS_LABELS = {
 
 export default function Admin() {
   const navigate = useNavigate();
-  const [token, setToken] = useState(() => localStorage.getItem('qf_admin_token') || '');
-  const [authed, setAuthed] = useState(false);
+  const { user } = useAuth();
   const [codes, setCodes] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [code, setCode] = useState('');
@@ -25,36 +24,19 @@ export default function Admin() {
   const [creating, setCreating] = useState(false);
   const [createSuccess, setCreateSuccess] = useState('');
 
-  async function authenticate(e) {
-    e?.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const list = await api.admin.listPromoCodes(token);
-      localStorage.setItem('qf_admin_token', token);
-      setCodes(list);
-      setAuthed(true);
-    } catch (err) {
-      setError(err.message || 'Errore di autenticazione');
-      // Wipe solo se il token è effettivamente invalido (401/403).
-      // Errori di rete o 5xx non devono cancellare un token salvato valido.
-      if (err.status === 401 || err.status === 403) {
-        localStorage.removeItem('qf_admin_token');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    if (token) authenticate();
+    refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.isAdmin) return <Navigate to="/home" replace />;
+
   async function refresh() {
     try {
-      const list = await api.admin.listPromoCodes(token);
+      const list = await api.admin.listPromoCodes();
       setCodes(list);
+      setError('');
     } catch (err) {
       setError(err.message);
     }
@@ -75,7 +57,7 @@ export default function Admin() {
       if (expiresAt) body.expiresAt = new Date(expiresAt).toISOString();
       if (notes.trim()) body.notes = notes.trim();
 
-      const created = await api.admin.createPromoCode(token, body);
+      const created = await api.admin.createPromoCode(body);
       setCreateSuccess(`Codice creato: ${created.code}`);
       setCode('');
       setNotes('');
@@ -90,7 +72,7 @@ export default function Admin() {
 
   async function toggleActive(promo) {
     try {
-      await api.admin.updatePromoCode(token, promo.id, { active: !promo.active });
+      await api.admin.updatePromoCode(promo.id, { active: !promo.active });
       await refresh();
     } catch (err) { setError(err.message); }
   }
@@ -98,55 +80,9 @@ export default function Admin() {
   async function deleteCode(promo) {
     if (!confirm(`Eliminare il codice ${promo.code}?`)) return;
     try {
-      await api.admin.deletePromoCode(token, promo.id);
+      await api.admin.deletePromoCode(promo.id);
       await refresh();
     } catch (err) { setError(err.message); }
-  }
-
-  function logout() {
-    localStorage.removeItem('qf_admin_token');
-    setToken('');
-    setAuthed(false);
-    setCodes([]);
-  }
-
-  if (!authed) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-        <form onSubmit={authenticate} className="w-full max-w-md bg-white rounded-2xl p-6 shadow">
-          <div className="flex items-center gap-2 mb-1">
-            <button
-              type="button"
-              onClick={() => navigate('/home')}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="Torna alla home"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-lg font-bold text-gray-900">Admin · Codici promo</h1>
-          </div>
-          <p className="text-xs text-gray-500 mb-4">Inserisci il token admin (header <code>x-admin-token</code>).</p>
-          <input
-            type="password"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            placeholder="Token admin"
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-sage-400"
-            autoFocus
-          />
-          {error && <p className="text-xs text-red-600 bg-red-50 rounded-lg px-2 py-1.5 mt-2">{error}</p>}
-          <button
-            type="submit"
-            disabled={!token || loading}
-            className="w-full mt-3 py-2.5 bg-sage-500 text-white rounded-xl text-sm font-semibold hover:bg-sage-600 disabled:opacity-60"
-          >
-            {loading ? 'Verifica…' : 'Entra'}
-          </button>
-        </form>
-      </div>
-    );
   }
 
   return (
@@ -165,7 +101,6 @@ export default function Admin() {
             </button>
             <h1 className="text-xl font-bold text-gray-900">Codici promo</h1>
           </div>
-          <button onClick={logout} className="text-xs text-gray-400 hover:text-gray-600">Esci</button>
         </div>
 
         {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}

@@ -36,7 +36,7 @@ export default function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/admin/promo-codes" element={<Admin />} />
+            <Route path="/admin/promo-codes" element={<PrivateRoute><Admin /></PrivateRoute>} />
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
             <Route path="/craving" element={<PrivateRoute><Layout><Craving /></Layout></PrivateRoute>} />

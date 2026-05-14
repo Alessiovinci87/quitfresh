@@ -10,6 +10,7 @@ const PAYWALL_EXEMPT = new Set([
   '/profile',
   '/privacy',
   '/terms',
+  '/admin/promo-codes',
 ]);
 
 export default function PrivateRoute({ children }) {
