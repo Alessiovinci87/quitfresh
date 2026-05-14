@@ -153,7 +153,7 @@ export default function Home() {
   }
 
   return (
-    <div className="px-6 py-8 animate-fade-in bg-red-500">
+    <div className="px-6 py-8 animate-fade-in">
       <InstallApp mode="card" />
       {verifyBanner}
       <div className="mb-8 flex items-center justify-between">
