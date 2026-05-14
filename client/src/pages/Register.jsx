@@ -108,9 +108,13 @@ export default function Register() {
           </Link>
         </p>
 
-        <p className="mt-8 text-center">
-          <Link to="/privacy" className="text-xs text-gray-400 hover:text-gray-600 hover:underline">
+        <p className="mt-8 text-center text-xs text-gray-400">
+          <Link to="/privacy" className="hover:text-gray-600 hover:underline">
             Privacy Policy
+          </Link>
+          <span className="mx-2">·</span>
+          <Link to="/terms" className="hover:text-gray-600 hover:underline">
+            Termini di Servizio
           </Link>
         </p>
       </div>

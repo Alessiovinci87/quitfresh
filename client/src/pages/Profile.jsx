@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -577,6 +577,15 @@ export default function Profile() {
         <button onClick={handleLogout} className="w-full py-3 text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
           Esci dall'account
         </button>
+      </div>
+
+      {/* Informazioni legali */}
+      <div className="mt-8 pt-6 border-t border-gray-100">
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">Informazioni legali</p>
+        <div className="flex flex-col gap-2 text-sm">
+          <Link to="/privacy" className="text-sage-600 hover:underline">Privacy Policy</Link>
+          <Link to="/terms" className="text-sage-600 hover:underline">Termini di Servizio</Link>
+        </div>
       </div>
 
       {/* Zona pericolosa */}

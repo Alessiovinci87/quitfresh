@@ -9,6 +9,7 @@ const PAYWALL_EXEMPT = new Set([
   '/onboarding',
   '/profile',
   '/privacy',
+  '/terms',
 ]);
 
 export default function PrivateRoute({ children }) {
