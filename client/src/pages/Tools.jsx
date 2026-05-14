@@ -130,21 +130,12 @@ function BreathingExercise() {
             transition: `transform ${phase.duration}s ease-in-out`,
           }}
         >
-          <div className="text-center">
-            {running ? (
-              <>
-                <p className="font-display text-4xl font-semibold text-white tabular-nums leading-none">{count}</p>
-                <p className="text-[11px] font-medium text-white/90 mt-1.5 tracking-wide">{phase.label}</p>
-              </>
-            ) : (
-              <>
-                <svg className="w-10 h-10 text-white mx-auto" fill="currentColor" viewBox="0 0 24 24">
-                  <polygon points="7,4 20,12 7,20" />
-                </svg>
-                <p className="text-[11px] font-medium text-white/90 mt-2 tracking-wide">Inizia</p>
-              </>
-            )}
-          </div>
+          {running && (
+            <div className="text-center">
+              <p className="font-display text-4xl font-semibold text-white tabular-nums leading-none">{count}</p>
+              <p className="text-[11px] font-medium text-white/90 mt-1.5 tracking-wide">{phase.label}</p>
+            </div>
+          )}
         </button>
       </div>
 
