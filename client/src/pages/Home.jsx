@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { getActivePhase, getDoseTimes } from '../lib/cytisine';
+import InstallApp from '../components/InstallApp';
 
 const BADGE_EMOJI = {
   day1: '🌱', day3: '🌿', week1: '⭐', day14: '🌟', month1: '🏅', month3: '🏆',
@@ -117,7 +118,8 @@ export default function Home() {
   if (!user.quitDate && !loading) {
     return (
       <div className="px-6 py-8 animate-fade-in">
-        {verifyBanner}
+        <InstallApp mode="card" />
+      {verifyBanner}
         <div className="mb-8">
           <p className="text-sm text-gray-500">Ciao,</p>
           <h1 className="text-xl font-bold text-gray-900 truncate">{user.email.split('@')[0]}</h1>
@@ -152,6 +154,7 @@ export default function Home() {
 
   return (
     <div className="px-6 py-8 animate-fade-in">
+      <InstallApp mode="card" />
       {verifyBanner}
       <div className="mb-8 flex items-center justify-between">
         <div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import InstallApp from '../components/InstallApp';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -577,6 +578,12 @@ export default function Profile() {
         <button onClick={handleLogout} className="w-full py-3 text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
           Esci dall'account
         </button>
+      </div>
+
+      {/* Installa app */}
+      <div className="mt-8 pt-6 border-t border-gray-100">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Installa sul telefono</h2>
+        <InstallApp mode="section" />
       </div>
 
       {/* Informazioni legali */}
