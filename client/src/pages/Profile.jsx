@@ -253,7 +253,7 @@ export default function Profile() {
     <div className="px-6 py-8 animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-xl font-bold text-gray-900">Il tuo profilo</h1>
-        {!editing && (
+        {!editing && user.isPremium && (
           <button onClick={() => setEditing(true)} className="text-sm text-sage-600 font-medium hover:text-sage-700 transition-colors">
             Modifica
           </button>
@@ -296,6 +296,8 @@ export default function Profile() {
         )}
       </div>
 
+      {user.isPremium && (
+        <>
       {/* Giorni senza fumo */}
       <div className="mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Giorni senza fumo</label>
@@ -524,7 +526,11 @@ export default function Profile() {
           </button>
         </div>
       )}
+        </>
+      )}
 
+      {user.isPremium && (
+      <>
       {/* Promemoria anti-craving */}
       <div className="mb-8 border-t border-gray-100 pt-6">
         <div className="flex items-center justify-between mb-1">
@@ -585,6 +591,8 @@ export default function Profile() {
         <h2 className="text-sm font-semibold text-gray-700 mb-3">Installa sul telefono</h2>
         <InstallApp mode="section" />
       </div>
+      </>
+      )}
 
       {/* Informazioni legali */}
       <div className="mt-8 pt-6 border-t border-gray-100">
