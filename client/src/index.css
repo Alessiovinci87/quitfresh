@@ -4,11 +4,31 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    @apply bg-gray-50 text-gray-900 font-sans antialiased overflow-x-hidden;
   }
 
   * {
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* iOS Safari zooma automaticamente sugli input con font-size < 16px,
+     sbloccando lo scroll orizzontale e facendo apparire la pagina più
+     grande della viewport. Forza 16px solo su mobile (il design text-sm
+     resta su desktop). */
+  @media (max-width: 640px) {
+    input[type="email"],
+    input[type="password"],
+    input[type="text"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="search"],
+    input[type="url"],
+    input[type="date"],
+    input[type="time"],
+    textarea,
+    select {
+      font-size: 16px;
+    }
   }
 }
 
