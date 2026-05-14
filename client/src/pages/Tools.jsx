@@ -121,18 +121,31 @@ function BreathingExercise() {
 
       <div className="relative flex items-center justify-center mb-10 h-56">
         <div className="absolute w-40 h-40 rounded-full bg-gradient-to-br from-sage-100 via-cream-50 to-sage-200 opacity-50" />
-        <div
-          className="relative w-40 h-40 rounded-full bg-gradient-to-br from-sage-400 to-sage-600 flex items-center justify-center shadow-sage"
+        <button
+          onClick={running ? stop : start}
+          aria-label={running ? 'Interrompi' : 'Inizia'}
+          className="relative w-40 h-40 rounded-full bg-gradient-to-br from-sage-400 to-sage-600 flex items-center justify-center shadow-sage active:scale-95 transition-all focus:outline-none"
           style={{
             transform: running ? `scale(${phase.scale})` : 'scale(1)',
             transition: `transform ${phase.duration}s ease-in-out`,
           }}
         >
           <div className="text-center">
-            <p className="font-display text-3xl font-semibold text-white tabular-nums leading-none">{running ? count : '·'}</p>
-            <p className="text-[11px] font-medium text-white/90 mt-1.5 tracking-wide">{running ? phase.label : 'Tocca Inizia'}</p>
+            {running ? (
+              <>
+                <p className="font-display text-4xl font-semibold text-white tabular-nums leading-none">{count}</p>
+                <p className="text-[11px] font-medium text-white/90 mt-1.5 tracking-wide">{phase.label}</p>
+              </>
+            ) : (
+              <>
+                <svg className="w-10 h-10 text-white mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                  <polygon points="7,4 20,12 7,20" />
+                </svg>
+                <p className="text-[11px] font-medium text-white/90 mt-2 tracking-wide">Inizia</p>
+              </>
+            )}
           </div>
-        </div>
+        </button>
       </div>
 
       {!running ? (
