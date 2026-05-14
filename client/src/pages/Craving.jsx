@@ -16,12 +16,10 @@ export default function Craving() {
     startChat();
   }, []);
 
-  // Body scroll lock mentre la chat e' aperta (e' un overlay full-screen)
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
+  // NIENTE body scroll lock: il container e' gia' fixed inset-0 overflow-hidden,
+  // il background non scrolla. Togliendo overflow:hidden dal body evitiamo lo
+  // shift orizzontale della Home al rientro (la scrollbar appare/sparisce e
+  // sposta il contenuto centrato con mx-auto).
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,47 +85,43 @@ export default function Craving() {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-cream-50"
-      style={{ height: '100dvh' }}
+      className="fixed inset-0 z-[100] flex flex-col bg-cream-50 overflow-hidden"
     >
-      <div className="absolute inset-0 max-w-mobile mx-auto flex flex-col bg-cream-50">
-        {/* Header — fisso in alto */}
-        <header
-          className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white"
-          style={{
-            flexShrink: 0,
-            paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
-          }}
+      {/* Header FISSO in alto */}
+      <header
+        className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white w-full"
+        style={{
+          flexShrink: 0,
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+        }}
+      >
+        <button
+          onClick={() => navigate('/home')}
+          className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-sage-700 hover:bg-sage-100/60 transition-colors active:scale-95 shrink-0"
+          aria-label="Torna alla home"
         >
-          <button
-            onClick={() => navigate('/home')}
-            className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-sage-700 hover:bg-sage-100/60 transition-colors active:scale-95 shrink-0"
-            aria-label="Torna alla home"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 flex items-center justify-center text-white text-base shadow-sage shrink-0">
-            🌿
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-display text-base font-semibold text-sage-900 leading-tight truncate">QuitFresh Coach</p>
-            <p className="text-[10px] text-sage-600/70">online · sempre qui</p>
-          </div>
-          <button
-            onClick={handleResolved}
-            disabled={resolving || messages.length < 2}
-            className="ml-auto px-3 py-1.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white text-[11px] font-semibold rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
-          >
-            {resolving ? '…' : "Ce l'ho fatta ✓"}
-          </button>
-        </header>
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-base font-semibold text-sage-900 leading-tight truncate">QuitFresh Coach</p>
+          <p className="text-[10px] text-sage-600/70">online · sempre qui</p>
+        </div>
+        <button
+          onClick={handleResolved}
+          disabled={resolving || messages.length < 2}
+          className="ml-auto px-3 py-1.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white text-[11px] font-semibold rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
+        >
+          {resolving ? '…' : "Ce l'ho fatta ✓"}
+        </button>
+      </header>
 
-        {/* Messages — unica zona scrollabile (min-h-0 e' cruciale per flex scroll) */}
-        <div
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 bg-cream-50"
-        >
+      {/* Messages — UNICA zona scrollabile */}
+      <div
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 bg-cream-50"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
           {messages.length === 0 && loading && (
             <div className="flex items-center gap-2 text-sage-500/70">
               <TypingDots />
@@ -168,40 +162,43 @@ export default function Craving() {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input — fisso in basso */}
-        <div
-          className="border-t border-sage-100/50 px-4 pt-3 bg-white"
-          style={{
-            flexShrink: 0,
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
-          }}
-        >
-          <div className="flex items-end gap-2 min-w-0">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={1}
-              placeholder="Scrivi qualcosa…"
-              className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
-              style={{ minHeight: '42px' }}
-              onInput={(e) => {
-                e.target.style.height = 'auto';
-                e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
-              }}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || loading}
-              className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
-              aria-label="Invia"
-            >
-              <svg className="w-4 h-4 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
-              </svg>
-            </button>
-          </div>
+      {/* Input FISSO in basso */}
+      <div
+        className="border-t border-sage-100/50 px-4 pt-3 bg-white w-full"
+        style={{
+          flexShrink: 0,
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+        }}
+      >
+        <div className="flex items-end gap-2 min-w-0 max-w-mobile mx-auto">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
+            placeholder="Scrivi qualcosa…"
+            className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
+            style={{ minHeight: '42px' }}
+            onFocus={() => {
+              // Quando la tastiera si apre, scrolla l'ultimo messaggio in vista
+              setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 300);
+            }}
+            onInput={(e) => {
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
+            }}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!input.trim() || loading}
+            className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
+            aria-label="Invia"
+          >
+            <svg className="w-4 h-4 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
