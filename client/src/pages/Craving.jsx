@@ -11,14 +11,38 @@ export default function Craving() {
   const [error, setError] = useState('');
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const [viewportHeight, setViewportHeight] = useState(
+    typeof window !== 'undefined' ? `${window.innerHeight}px` : '100dvh'
+  );
 
   useEffect(() => {
     startChat();
   }, []);
 
+  // Lock body scroll while chat is open (overlay)
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  // Track visualViewport to handle virtual keyboard on mobile
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setViewportHeight(`${vv.height}px`);
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, loading, viewportHeight]);
 
   async function startChat() {
     setLoading(true);
@@ -79,8 +103,11 @@ export default function Craving() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-white">
-      <div className="flex flex-col w-full max-w-mobile mx-auto bg-white h-[100dvh]">
+    <div className="fixed inset-0 z-50 flex bg-white overflow-hidden">
+      <div
+        className="flex flex-col w-full max-w-mobile mx-auto bg-white overflow-hidden"
+        style={{ height: viewportHeight }}
+      >
         {/* Header */}
         <div
           className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/60 shrink-0 bg-white/90 backdrop-blur-sm"
@@ -109,7 +136,7 @@ export default function Craving() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-cream-50/40">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 space-y-3 bg-cream-50/40">
           {messages.length === 0 && loading && (
             <div className="flex items-center gap-2 text-sage-500/70">
               <TypingDots />
@@ -122,7 +149,7 @@ export default function Craving() {
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
             >
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap shadow-soft ${
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-soft ${
                   msg.role === 'user'
                     ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-br-md'
                     : 'bg-white text-sage-900 rounded-bl-md border border-sage-100/60'
@@ -153,7 +180,7 @@ export default function Craving() {
           className="shrink-0 border-t border-sage-100/60 px-4 pt-3 bg-white"
           style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
         >
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-2 min-w-0">
             <textarea
               ref={inputRef}
               value={input}
@@ -161,7 +188,7 @@ export default function Craving() {
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder="Scrivi qualcosa…"
-              className="flex-1 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50/50"
+              className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50/50"
               style={{ minHeight: '42px' }}
               onInput={(e) => {
                 e.target.style.height = 'auto';
