@@ -78,9 +78,10 @@ function SplashScreen() {
 function AppShell() {
   const location = useLocation();
   const isChat = location.pathname === '/craving';
-  const [chatHeight, setChatHeight] = useState(
-    typeof window !== 'undefined' ? window.innerHeight : 0
-  );
+  const [chatVp, setChatVp] = useState({
+    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    offsetTop: 0,
+  });
   const [splashVisible, setSplashVisible] = useState(true);
 
   useEffect(() => {
@@ -88,13 +89,22 @@ function AppShell() {
     return () => clearTimeout(t);
   }, []);
 
-  // visualViewport.height per la chat: sempre aggiornato all'apertura della
-  // tastiera iOS Safari (universal, anche su versioni vecchie). Pattern
-  // KeyboardAvoidingView replicato su web.
+  // Pattern WhatsApp/Telegram Web per iOS Safari + tastiera virtuale:
+  // il wrapper segue ESATTAMENTE height e offsetTop di visualViewport.
+  // Quando la tastiera si apre, vv.height diminuisce (zona visibile shrinka)
+  // e vv.offsetTop aumenta (iOS sposta la pagina in alto). Il container si
+  // restringe E si alza, l'input fixed-shrink-0 coincide con il bordo della
+  // tastiera — incollato esattamente sopra di essa.
   useEffect(() => {
     if (!isChat) return;
     const vv = window.visualViewport;
-    const update = () => setChatHeight(vv ? vv.height : window.innerHeight);
+    const update = () => {
+      if (vv) {
+        setChatVp({ height: vv.height, offsetTop: vv.offsetTop });
+      } else {
+        setChatVp({ height: window.innerHeight, offsetTop: 0 });
+      }
+    };
     update();
     if (vv) {
       vv.addEventListener('resize', update);
@@ -109,11 +119,17 @@ function AppShell() {
     }
   }, [isChat]);
 
-  // Per la chat: position fixed = container ancorato al viewport.
-  // height da visualViewport.height = si adatta alla tastiera iOS.
-  const wrapperStyle = isChat ? { height: `${chatHeight}px` } : undefined;
+  // Per la chat: position fixed che segue visualViewport (height + top).
+  // Quando la tastiera iOS si apre, il container si restringe E si alza,
+  // l'input flex-shrink-0 in fondo coincide col bordo della tastiera.
+  const wrapperStyle = isChat
+    ? {
+        top: `${chatVp.offsetTop}px`,
+        height: `${chatVp.height}px`,
+      }
+    : undefined;
   const wrapperClass = isChat
-    ? "fixed top-0 left-0 right-0 flex flex-col overflow-hidden z-50"
+    ? "fixed left-0 right-0 flex flex-col overflow-hidden z-50"
     : "min-h-screen bg-gray-100 flex items-start justify-center";
 
   return (
