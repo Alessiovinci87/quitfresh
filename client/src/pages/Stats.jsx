@@ -174,11 +174,11 @@ export default function Stats() {
     if (!d) return '';
     const ds = `${calMonth.year}-${String(calMonth.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const cigs = cigsByDate[ds];
-    if (cigs === undefined) return 'text-gray-300';
-    if (cigs === 0) return 'bg-sage-100 text-sage-700';
-    if (cigs <= 5) return 'bg-yellow-100 text-yellow-700';
-    if (cigs <= 10) return 'bg-orange-100 text-orange-700';
-    return 'bg-red-100 text-red-700';
+    if (cigs === undefined) return 'text-sage-600/30';
+    if (cigs === 0) return 'bg-sage-100 text-sage-800';
+    if (cigs <= 5) return 'bg-sage-200/80 text-sage-900';
+    if (cigs <= 10) return 'bg-terracotta-100 text-terracotta-700';
+    return 'bg-terracotta-200 text-terracotta-800';
   }
 
   function isToday(d) {
@@ -198,88 +198,118 @@ export default function Stats() {
   })();
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="animate-fade-in">
+      {/* Large title sticky */}
+      <header className="sticky top-0 z-30 px-6 pt-6 pb-3 bg-cream-50/85 backdrop-blur-xl border-b border-sage-100/30">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Andamento</p>
+        <h1 className="font-display text-3xl font-semibold text-sage-900 leading-tight mt-0.5">Statistiche</h1>
+      </header>
+
+      <div className="px-6 pt-6 pb-2 space-y-3">
 
       {/* ── TRACKER SIGARETTE ── */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">🚬 Sigarette oggi</h2>
-        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-1">
-            <button
-              onClick={() => changeCigs(-1)}
-              disabled={todayCigs === 0 || savingCigs}
-              className="w-10 h-10 rounded-full bg-gray-100 text-xl font-bold text-gray-600 disabled:opacity-30 active:scale-95 transition"
-            >−</button>
-            <div className="text-center">
-              <span className="text-4xl font-bold text-gray-800">
-                {todayCigs ?? '—'}
-              </span>
-              {savingCigs && <p className="text-xs text-gray-400 mt-0.5">salvataggio…</p>}
-            </div>
-            <button
-              onClick={() => changeCigs(1)}
-              disabled={savingCigs}
-              className="w-10 h-10 rounded-full bg-gray-100 text-xl font-bold text-gray-600 disabled:opacity-30 active:scale-95 transition"
-            >+</button>
+      <SectionCard
+        title="Sigarette oggi"
+        icon={
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M5 8v8m14-8v8" />
+          </svg>
+        }
+      >
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => changeCigs(-1)}
+            disabled={todayCigs === 0 || savingCigs}
+            className="w-10 h-10 rounded-full bg-white border border-sage-200/70 text-sage-700 text-xl font-bold disabled:opacity-30 active:scale-95 transition-all shadow-soft flex items-center justify-center"
+            aria-label="Diminuisci"
+          >−</button>
+          <div className="text-center">
+            <span className="font-display text-5xl font-semibold text-sage-900 tabular-nums leading-none">
+              {todayCigs ?? '—'}
+            </span>
+            {savingCigs && <p className="text-[11px] text-sage-500/70 mt-1">salvataggio…</p>}
           </div>
-          {todayCigs === 0 && (
-            <p className="text-center text-sm text-sage-600 font-medium mt-2">🌟 Giornata senza fumo!</p>
-          )}
-          {todayCigs > 0 && (
-            <p className="text-center text-xs text-gray-400 mt-2">
-              Registra ogni sigaretta per monitorare il tuo percorso
-            </p>
-          )}
+          <button
+            onClick={() => changeCigs(1)}
+            disabled={savingCigs}
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 text-white text-xl font-bold disabled:opacity-30 active:scale-95 transition-all shadow-sage flex items-center justify-center"
+            aria-label="Aumenta"
+          >+</button>
         </div>
+        {todayCigs === 0 && (
+          <p className="text-center text-sm text-sage-700 font-medium mt-3 bg-sage-50 py-2 rounded-xl">
+            🌟 Giornata senza fumo
+          </p>
+        )}
+        {todayCigs > 0 && (
+          <p className="text-center text-[11px] text-sage-600/60 mt-3">
+            Registra ogni sigaretta per monitorare il percorso
+          </p>
+        )}
 
         {/* Grafico ultimi 14 giorni */}
-        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm mt-3">
-          <p className="text-xs font-medium text-gray-500 mb-3">Ultimi 14 giorni</p>
-          <div className="flex items-end gap-1 h-16">
+        <div className="mt-4 pt-4 border-t border-sage-100/60">
+          <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold mb-3">Ultimi 14 giorni</p>
+          <div className="flex items-end gap-1 h-20">
             {last14.map(({ ds, cigs }, i) => {
               const pct = cigs === null ? 0 : (cigs / maxCigs) * 100;
-              const isSmokeFree = cigs === 0;
               const isUnknown = cigs === null;
               const isCurrentDay = ds === todayStr;
+              const level =
+                isUnknown ? 'unknown'
+                : cigs === 0 ? 'free'
+                : cigs <= 5 ? 'low'
+                : cigs <= 10 ? 'mid'
+                : 'high';
+              const fill =
+                level === 'unknown' ? 'bg-sage-100/60'
+                : level === 'free' ? 'bg-gradient-to-t from-sage-400 to-sage-300'
+                : level === 'low' ? 'bg-gradient-to-t from-sage-600 to-sage-500'
+                : level === 'mid' ? 'bg-gradient-to-t from-terracotta-300 to-terracotta-200'
+                : 'bg-gradient-to-t from-terracotta-500 to-terracotta-400';
               return (
                 <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5">
                   <div
-                    className={`w-full rounded-t transition-all ${
-                      isUnknown ? 'bg-gray-100'
-                      : isSmokeFree ? 'bg-sage-400'
-                      : cigs <= 5 ? 'bg-yellow-400'
-                      : cigs <= 10 ? 'bg-orange-400'
-                      : 'bg-red-400'
-                    } ${isCurrentDay ? 'ring-1 ring-offset-1 ring-gray-400' : ''}`}
-                    style={{ height: isUnknown ? '4px' : `${Math.max(8, pct)}%` }}
+                    className={`w-full rounded-t-md transition-all ${fill} ${isCurrentDay ? 'ring-2 ring-offset-1 ring-sage-400' : ''}`}
+                    style={{ height: isUnknown ? '4px' : `${Math.max(10, pct)}%` }}
                   />
                 </div>
               );
             })}
           </div>
-          <div className="flex justify-between text-xs text-gray-300 mt-1">
+          <div className="flex justify-between text-[10px] text-sage-600/50 mt-1.5">
             <span>{new Date(last14[0].ds).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</span>
             <span>oggi</span>
           </div>
-          <div className="flex flex-wrap gap-3 mt-3 pt-2 border-t border-gray-100">
-            {[['bg-sage-400', '0 sigarette'], ['bg-yellow-400', '1–5'], ['bg-orange-400', '6–10'], ['bg-red-400', '10+']].map(([cls, lbl]) => (
-              <div key={lbl} className="flex items-center gap-1 text-xs text-gray-400">
+          <div className="flex flex-wrap gap-3 mt-3">
+            {[
+              ['bg-gradient-to-t from-sage-400 to-sage-300', '0 sigarette'],
+              ['bg-gradient-to-t from-sage-600 to-sage-500', '1–5'],
+              ['bg-gradient-to-t from-terracotta-300 to-terracotta-200', '6–10'],
+              ['bg-gradient-to-t from-terracotta-500 to-terracotta-400', '10+'],
+            ].map(([cls, lbl]) => (
+              <div key={lbl} className="flex items-center gap-1.5 text-[10px] text-sage-600/70">
                 <div className={`w-2.5 h-2.5 rounded-sm ${cls}`} />
                 {lbl}
               </div>
             ))}
           </div>
         </div>
-      </section>
+      </SectionCard>
 
       {/* ── SALUTE NEL TEMPO ── */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">❤️ Salute nel tempo</h2>
-
+      <SectionCard
+        title="Salute nel tempo"
+        icon={
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        }
+      >
         {/* CTA quit / badge non-fumo */}
         {!smokeFreeSince ? (
-          <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3 mb-3">
-            <p className="text-sm text-gray-600">
+          <div className="space-y-3 mb-3">
+            <p className="text-sm text-sage-700/80 leading-relaxed">
               Pronto a iniziare? Premi il pulsante quando smetti — il conteggio parte da subito.
             </p>
             {!showQuitForm ? (
@@ -287,36 +317,36 @@ export default function Stats() {
                 <button
                   onClick={confirmQuitNow}
                   disabled={settingQuit}
-                  className="w-full bg-sage-500 text-white py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition disabled:opacity-50"
+                  className="w-full bg-gradient-to-br from-sage-500 to-sage-700 text-white py-3 rounded-xl-soft text-sm font-semibold active:scale-[0.98] transition-all disabled:opacity-50 shadow-sage"
                 >
                   ✅ Ho smesso adesso
                 </button>
                 <button
                   onClick={() => { setQuitInput(nowLocalStr); setShowQuitForm(true); }}
-                  className="w-full border border-gray-200 text-gray-600 py-2.5 rounded-xl text-sm"
+                  className="w-full border border-sage-200 text-sage-700 py-3 rounded-xl-soft text-sm font-medium hover:bg-sage-50 transition-colors"
                 >
-                  Ho smesso prima — inserisci data e ora
+                  Ho smesso prima — inserisci data
                 </button>
               </div>
             ) : (
               <div className="space-y-2">
-                <label className="text-xs text-gray-500">Data e ora dell'ultima sigaretta</label>
+                <label className="text-xs text-sage-600/70">Data e ora dell'ultima sigaretta</label>
                 <input
                   type="datetime-local"
                   value={quitInput}
                   max={nowLocalStr}
                   onChange={e => setQuitInput(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                  className="w-full border border-sage-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
                 />
                 <div className="flex gap-2">
                   <button
                     onClick={confirmQuit}
                     disabled={settingQuit || !quitInput}
-                    className="flex-1 bg-sage-500 text-white py-2 rounded-xl text-sm font-semibold disabled:opacity-50"
+                    className="flex-1 bg-gradient-to-br from-sage-500 to-sage-700 text-white py-2 rounded-xl-soft text-sm font-semibold disabled:opacity-50 shadow-sage"
                   >
                     Conferma
                   </button>
-                  <button onClick={() => setShowQuitForm(false)} className="text-gray-400 px-3 text-sm">
+                  <button onClick={() => setShowQuitForm(false)} className="text-sage-500 px-3 text-sm">
                     Annulla
                   </button>
                 </div>
@@ -324,18 +354,18 @@ export default function Stats() {
             )}
           </div>
         ) : (
-          <div className="bg-sage-50 border border-sage-200 rounded-xl px-3 py-2.5 mb-3 flex items-center justify-between">
+          <div className="bg-sage-50 border border-sage-100 rounded-xl-soft px-4 py-3 mb-3 flex items-center justify-between">
             <div>
-              <p className="text-xs text-sage-600 font-medium">Non fumo da</p>
-              <p className="text-sm font-semibold text-sage-700">
+              <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold">Non fumo da</p>
+              <p className="font-display text-base font-semibold text-sage-900 mt-0.5">
                 {smokeFreeSince.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
-                {' '}ore {smokeFreeSince.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                {' '}· {smokeFreeSince.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
             <button
               onClick={resetQuit}
               disabled={settingQuit}
-              className="text-xs text-gray-400 underline ml-2"
+              className="text-[11px] text-sage-600/70 hover:text-sage-700 underline underline-offset-2 ml-2"
             >
               Reimposta
             </button>
@@ -344,195 +374,225 @@ export default function Stats() {
 
         {/* Card 'sta succedendo ora' — solo se ha smesso e ha raggiunto qualcosa */}
         {smokeFreeSince && lastReachedMilestone && (
-          <div className="bg-gradient-to-br from-sage-500 to-sage-600 rounded-xl p-4 mb-3 shadow-sm">
-            <p className="text-xs font-medium text-sage-100 uppercase tracking-wide mb-1">Sta succedendo ora</p>
-            <p className="text-base font-bold text-white">{lastReachedMilestone.label} raggiunti</p>
-            <p className="text-sm text-sage-50 mt-1 leading-snug">{lastReachedMilestone.desc}</p>
+          <div className="relative overflow-hidden bg-gradient-to-br from-sage-600 to-sage-800 rounded-2xl-soft p-4 mb-3 shadow-sage">
+            <div className="absolute inset-0 pointer-events-none opacity-30 bg-[radial-gradient(circle_at_85%_15%,rgba(255,255,255,0.18),transparent_55%)]" />
+            <div className="relative">
+              <p className="text-[10px] font-semibold text-sage-100 uppercase tracking-[0.18em] mb-1">Sta succedendo ora</p>
+              <p className="font-display text-xl font-semibold text-white leading-tight">{lastReachedMilestone.label} raggiunti</p>
+              <p className="text-sm text-sage-50/90 mt-1 leading-snug">{lastReachedMilestone.desc}</p>
+            </div>
           </div>
         )}
 
         {/* Prossimo — solo se ha smesso */}
         {smokeFreeSince && nextMilestone && (
-          <div className="bg-white border border-gray-100 rounded-xl p-3 mb-3 flex items-start gap-3 shadow-sm">
-            <span className="text-2xl mt-0.5">🎯</span>
-            <div>
-              <p className="text-sm font-semibold text-gray-700">Prossimo: {nextMilestone.label}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{nextMilestone.desc}</p>
-              <p className="text-xs text-sage-500 mt-1 font-medium">tra {formatHoursLeft(nextHoursLeft)}</p>
+          <div className="bg-cream-100/80 border border-sage-100/60 rounded-xl-soft p-3 mb-3 flex items-start gap-3">
+            <span className="w-9 h-9 rounded-lg bg-sage-50 flex items-center justify-center text-lg shrink-0">🎯</span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-sage-900">Prossimo: {nextMilestone.label}</p>
+              <p className="text-xs text-sage-700/70 mt-0.5">{nextMilestone.desc}</p>
+              <p className="text-[11px] text-sage-700 mt-1 font-medium">tra {formatHoursLeft(nextHoursLeft)}</p>
             </div>
           </div>
         )}
 
         {/* Hint anteprima quando non ha ancora smesso */}
         {!smokeFreeSince && (
-          <p className="text-xs text-gray-500 mb-2 px-1">
+          <p className="text-xs text-sage-600/70 mb-2 px-1 italic">
             Ecco cosa guadagneresti smettendo:
           </p>
         )}
 
-        {/* Timeline milestone — sempre visibile, earned solo se ha smesso */}
-        <div className="space-y-2">
+        {/* Timeline milestone — lista divisa con divider */}
+        <div className="bg-cream-50/60 rounded-xl-soft overflow-hidden divide-y divide-sage-100/40">
           {HEALTH_MILESTONES.map((m) => {
             const earned = smokeFreeSince ? hoursFree >= m.hours : false;
             return (
               <div
                 key={m.hours}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${earned ? 'bg-sage-50' : 'bg-gray-50'}`}
+                className={`flex items-center gap-3 px-3 py-2.5 ${earned ? '' : 'opacity-50'}`}
               >
-                <span className={`text-lg flex-shrink-0 ${earned ? '' : 'grayscale opacity-40'}`}>
-                  {earned ? '✅' : '⏳'}
+                <span className="text-lg shrink-0">
+                  {earned ? '✓' : '○'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${earned ? 'text-sage-700' : 'text-gray-600'}`}>{m.label}</p>
-                  <p className={`text-xs ${earned ? 'text-sage-600' : 'text-gray-500'}`}>{m.desc}</p>
+                  <p className={`text-sm font-medium ${earned ? 'text-sage-900' : 'text-sage-700/70'}`}>{m.label}</p>
+                  <p className={`text-[11px] ${earned ? 'text-sage-700/80' : 'text-sage-600/60'} leading-snug`}>{m.desc}</p>
                 </div>
               </div>
             );
           })}
         </div>
-      </section>
+      </SectionCard>
 
       {/* ── RISPARMIO ── */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">💰 Risparmio</h2>
-        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm space-y-3">
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="text-xs text-gray-400">Giorni senza fumo registrati</p>
-              <p className="text-2xl font-bold text-sage-600">{smokeFreeCount}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-400">Risparmio totale</p>
-              <p className="text-2xl font-bold text-sage-600">€{totalSaved.toFixed(2)}</p>
-            </div>
+      <SectionCard
+        title="Risparmio"
+        icon={
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        }
+      >
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="bg-sage-50/60 rounded-xl px-3 py-3">
+            <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold mb-1">Giorni senza fumo</p>
+            <p className="font-display text-2xl font-semibold text-sage-900 tabular-nums leading-tight">{smokeFreeCount}</p>
           </div>
-          <p className="text-xs text-gray-400">
-            Basato su {smokeFreeCount} {smokeFreeCount === 1 ? 'giornata' : 'giornate'} senza fumo × €{packPrice.toFixed(2)}/pacchetto
-          </p>
-
-          {smokeFreeCount === 0 && (
-            <p className="text-xs text-gray-400 italic">
-              Il risparmio si calcola automaticamente quando registri una giornata a 0 sigarette.
-            </p>
-          )}
-
-          {goal > 0 && !editingGoal ? (
-            <>
-              <div>
-                <div className="flex justify-between text-xs text-gray-400 mb-1">
-                  <span>Obiettivo: €{goal.toFixed(0)}</span>
-                  <span>{goalPct.toFixed(0)}%</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div
-                    className="bg-sage-500 h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${goalPct}%` }}
-                  />
-                </div>
-              </div>
-              {goalPct >= 100 ? (
-                <p className="text-sm font-semibold text-sage-600 text-center">🎉 Obiettivo raggiunto!</p>
-              ) : daysToGoal > 0 ? (
-                <p className="text-xs text-gray-400">
-                  Raggiungerai l'obiettivo in circa{' '}
-                  <span className="font-medium text-gray-600">{daysToGoal} giorni senza fumo</span>
-                </p>
-              ) : null}
-              <button
-                onClick={() => { setGoalInput(String(goal)); setEditingGoal(true); }}
-                className="text-xs text-sage-600 underline"
-              >
-                Modifica obiettivo
-              </button>
-            </>
-          ) : !editingGoal ? (
-            <button
-              onClick={() => setEditingGoal(true)}
-              className="w-full border border-dashed border-sage-300 rounded-lg py-2.5 text-sm text-sage-600 hover:bg-sage-50 transition"
-            >
-              + Imposta un obiettivo di risparmio
-            </button>
-          ) : null}
-
-          {editingGoal && (
-            <div className="flex gap-2">
-              <input
-                type="number"
-                value={goalInput}
-                onChange={e => setGoalInput(e.target.value)}
-                placeholder="es. 500"
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-                autoFocus
-                onKeyDown={e => e.key === 'Enter' && saveGoal()}
-              />
-              <button onClick={saveGoal} className="bg-sage-500 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                Salva
-              </button>
-              <button onClick={() => setEditingGoal(false)} className="text-gray-400 px-2 text-lg leading-none">✕</button>
-            </div>
-          )}
+          <div className="bg-sage-50/60 rounded-xl px-3 py-3">
+            <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold mb-1">Risparmio totale</p>
+            <p className="font-display text-2xl font-semibold text-sage-900 tabular-nums leading-tight">€{totalSaved.toFixed(2)}</p>
+          </div>
         </div>
-      </section>
+        <p className="text-[11px] text-sage-600/60 leading-snug">
+          {smokeFreeCount} {smokeFreeCount === 1 ? 'giornata' : 'giornate'} × €{packPrice.toFixed(2)}/pacchetto
+        </p>
+
+        {smokeFreeCount === 0 && (
+          <p className="text-[11px] text-sage-600/60 italic mt-2">
+            Il risparmio parte quando registri una giornata a 0 sigarette.
+          </p>
+        )}
+
+        {goal > 0 && !editingGoal ? (
+          <div className="mt-4 pt-4 border-t border-sage-100/60 space-y-2">
+            <div>
+              <div className="flex justify-between text-[11px] text-sage-600/70 mb-1.5">
+                <span className="font-medium">Obiettivo: €{goal.toFixed(0)}</span>
+                <span className="font-semibold text-sage-700">{goalPct.toFixed(0)}%</span>
+              </div>
+              <div className="w-full bg-sage-100/60 rounded-full h-2 overflow-hidden">
+                <div
+                  className="h-2 rounded-full transition-all duration-700 ease-out bg-gradient-to-r from-sage-500 to-sage-700"
+                  style={{ width: `${goalPct}%` }}
+                />
+              </div>
+            </div>
+            {goalPct >= 100 ? (
+              <p className="text-sm font-semibold text-sage-700 text-center bg-sage-50 py-2 rounded-xl">🎉 Obiettivo raggiunto</p>
+            ) : daysToGoal > 0 ? (
+              <p className="text-[11px] text-sage-600/70">
+                Raggiungerai l'obiettivo in circa{' '}
+                <span className="font-semibold text-sage-800">{daysToGoal} giorni</span>
+              </p>
+            ) : null}
+            <button
+              onClick={() => { setGoalInput(String(goal)); setEditingGoal(true); }}
+              className="text-[11px] text-sage-600 hover:text-sage-700 underline underline-offset-2"
+            >
+              Modifica obiettivo
+            </button>
+          </div>
+        ) : !editingGoal ? (
+          <button
+            onClick={() => setEditingGoal(true)}
+            className="mt-4 w-full border border-dashed border-sage-300 rounded-xl-soft py-3 text-sm text-sage-700 hover:bg-sage-50 transition-colors font-medium"
+          >
+            + Imposta obiettivo di risparmio
+          </button>
+        ) : null}
+
+        {editingGoal && (
+          <div className="flex gap-2 mt-4">
+            <input
+              type="number"
+              value={goalInput}
+              onChange={e => setGoalInput(e.target.value)}
+              placeholder="es. 500"
+              className="flex-1 min-w-0 border border-sage-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && saveGoal()}
+            />
+            <button onClick={saveGoal} className="bg-gradient-to-br from-sage-500 to-sage-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sage">
+              Salva
+            </button>
+            <button onClick={() => setEditingGoal(false)} className="text-sage-500 px-2 text-lg leading-none">✕</button>
+          </div>
+        )}
+      </SectionCard>
 
       {/* ── CALENDARIO ── */}
-      <section className="pb-4">
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">📅 Calendario</h2>
-        <div className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setCalMonth(({ year, month }) => month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 })}
-              className="text-gray-400 hover:text-gray-600 text-xl px-1"
-            >‹</button>
-            <span className="text-sm font-medium text-gray-700 capitalize">{monthName}</span>
-            <button
-              onClick={() => setCalMonth(({ year, month }) => month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 })}
-              className="text-gray-400 hover:text-gray-600 text-xl px-1"
-            >›</button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-1 text-center mb-2">
-            {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d, i) => (
-              <span key={i} className="text-xs text-gray-400 font-medium">{d}</span>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {calDays.map((d, i) => {
-              const cls = dayColor(d);
-              const tod = isToday(d);
-              const ds = d ? `${calMonth.year}-${String(calMonth.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
-              const cigs = ds ? cigsByDate[ds] : undefined;
-              return (
-                <div
-                  key={i}
-                  className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs font-medium select-none
-                    ${cls} ${tod ? 'ring-2 ring-offset-1 ring-gray-400' : ''}`}
-                >
-                  <span>{d ?? ''}</span>
-                  {cigs !== undefined && cigs > 0 && (
-                    <span className="text-[9px] leading-none opacity-70">{cigs}</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-gray-100">
-            {[
-              ['bg-sage-100 text-sage-700', '0 sig.'],
-              ['bg-yellow-100 text-yellow-700', '1–5'],
-              ['bg-orange-100 text-orange-700', '6–10'],
-              ['bg-red-100 text-red-700', '10+'],
-            ].map(([cls, lbl]) => (
-              <div key={lbl} className="flex items-center gap-1.5 text-xs text-gray-500">
-                <div className={`w-4 h-4 rounded-sm ${cls} flex items-center justify-center text-[9px]`} />
-                {lbl}
-              </div>
-            ))}
-          </div>
+      <SectionCard
+        title="Calendario"
+        icon={
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        }
+      >
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => setCalMonth(({ year, month }) => month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 })}
+            className="w-9 h-9 rounded-full hover:bg-sage-50 text-sage-700 transition-colors flex items-center justify-center text-xl"
+            aria-label="Mese precedente"
+          >‹</button>
+          <span className="font-display text-base font-semibold text-sage-900 capitalize">{monthName}</span>
+          <button
+            onClick={() => setCalMonth(({ year, month }) => month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 })}
+            className="w-9 h-9 rounded-full hover:bg-sage-50 text-sage-700 transition-colors flex items-center justify-center text-xl"
+            aria-label="Mese successivo"
+          >›</button>
         </div>
-      </section>
 
+        <div className="grid grid-cols-7 gap-1 text-center mb-2">
+          {['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d, i) => (
+            <span key={i} className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold">{d}</span>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {calDays.map((d, i) => {
+            const cls = dayColor(d);
+            const tod = isToday(d);
+            const ds = d ? `${calMonth.year}-${String(calMonth.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
+            const cigs = ds ? cigsByDate[ds] : undefined;
+            return (
+              <div
+                key={i}
+                className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs font-medium select-none transition-all
+                  ${cls} ${tod ? 'ring-2 ring-sage-500' : ''}`}
+              >
+                <span className="tabular-nums">{d ?? ''}</span>
+                {cigs !== undefined && cigs > 0 && (
+                  <span className="text-[9px] leading-none opacity-70 tabular-nums">{cigs}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-sage-100/60">
+          {[
+            ['bg-sage-100 text-sage-700', '0 sig.'],
+            ['bg-sage-200/80 text-sage-800', '1–5'],
+            ['bg-terracotta-100 text-terracotta-700', '6–10'],
+            ['bg-terracotta-200 text-terracotta-700', '10+'],
+          ].map(([cls, lbl]) => (
+            <div key={lbl} className="flex items-center gap-1.5 text-[10px] text-sage-600/70">
+              <div className={`w-4 h-4 rounded-sm ${cls.split(' ')[0]}`} />
+              {lbl}
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ title, icon, children }) {
+  return (
+    <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 overflow-hidden">
+      <div className="px-4 pt-4 pb-3 flex items-center gap-2 text-sage-700">
+        <span className="w-7 h-7 rounded-lg bg-sage-50 flex items-center justify-center">
+          {icon}
+        </span>
+        <h2 className="text-sm font-semibold text-sage-900">{title}</h2>
+      </div>
+      <div className="px-4 pb-4">
+        {children}
+      </div>
     </div>
   );
 }
