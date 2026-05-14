@@ -71,4 +71,23 @@ export const api = {
       body: JSON.stringify({ promoCode: promoCode || '' }),
     }),
   },
+  admin: {
+    listPromoCodes: (token) => request('/api/admin/promo-codes', {
+      headers: { 'x-admin-token': token },
+    }),
+    createPromoCode: (token, body) => request('/api/admin/promo-codes', {
+      method: 'POST',
+      headers: { 'x-admin-token': token },
+      body: JSON.stringify(body),
+    }),
+    updatePromoCode: (token, id, body) => request(`/api/admin/promo-codes/${id}`, {
+      method: 'PATCH',
+      headers: { 'x-admin-token': token },
+      body: JSON.stringify(body),
+    }),
+    deletePromoCode: (token, id) => request(`/api/admin/promo-codes/${id}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-token': token },
+    }),
+  },
 };

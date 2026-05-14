@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 const BASE_PRICE = 2.99;
 
 export default function PremiumGate({ onCancel }) {
+  const navigate = useNavigate();
+  const { updateUser } = useAuth();
   const [promoCode, setPromoCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -12,8 +16,20 @@ export default function PremiumGate({ onCancel }) {
     setLoading(true);
     setError('');
     try {
-      const { url } = await api.payments.checkout(promoCode || null);
-      if (url) window.location.href = url;
+      const result = await api.payments.checkout(promoCode || null);
+      if (result.freeActivated) {
+        // Codice 100% riscattato lato server: refresh utente e vai al success.
+        const { user } = await api.auth.me();
+        updateUser(user);
+        navigate('/premium-success', { replace: true });
+        return;
+      }
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        setError('Risposta inattesa dal server');
+        setLoading(false);
+      }
     } catch (err) {
       setError(err.message || 'Impossibile avviare il pagamento');
       setLoading(false);

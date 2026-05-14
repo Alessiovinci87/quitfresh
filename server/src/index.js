@@ -39,6 +39,7 @@ const relapseRoutes = require('./routes/relapse');
 const diaryRoutes = require('./routes/diary');
 const notificationsRoutes = require('./routes/notifications');
 const paymentsRoutes = require('./routes/payments');
+const adminRoutes = require('./routes/admin');
 
 const { init: initPush } = require('./lib/push');
 const { startCron } = require('./lib/cron');
@@ -92,6 +93,7 @@ app.use('/api/relapse', relapseRoutes);
 app.use('/api/diary', diaryRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

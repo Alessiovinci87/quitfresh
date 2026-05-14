@@ -15,6 +15,7 @@ import Diary from './pages/Diary';
 import Stats from './pages/Stats';
 import PremiumSuccess from './pages/PremiumSuccess';
 import Paywall from './pages/Paywall';
+import Admin from './pages/Admin';
 import Privacy from './pages/Privacy';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/admin/promo-codes" element={<Admin />} />
             <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
             <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
             <Route path="/craving" element={<PrivateRoute><Layout><Craving /></Layout></PrivateRoute>} />

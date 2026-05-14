@@ -37,12 +37,15 @@ model User {
 }
 
 model PromoCode {
-  id           String   @id @default(cuid())
-  code         String   @unique
+  id           String    @id @default(cuid())
+  code         String    @unique
   discountPct  Int
-  active       Boolean  @default(true)
-  usageCount   Int      @default(0)
-  createdAt    DateTime @default(now())
+  active       Boolean   @default(true)
+  usageCount   Int       @default(0)
+  maxUses      Int?
+  expiresAt    DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
 }
 
 model CravingLog {

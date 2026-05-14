@@ -15,23 +15,60 @@ router.get('/status', requireAuth, (req, res) => {
 });
 
 // POST /api/payments/checkout — crea Stripe Checkout Session
+// Caso speciale: codice promo al 100% → bypass Stripe, attivazione diretta.
 router.post('/checkout', requireAuth, async (req, res) => {
-  if (!isConfigured()) {
-    return res.status(503).json({ error: 'Pagamenti non configurati' });
-  }
   if (req.user.isPremium) {
     return res.status(400).json({ error: 'Già premium' });
   }
 
   const rawCode = (req.body?.promoCode || '').trim().toUpperCase();
-  let discounts;
-  let promoCodeApplied = null;
+  let promo = null;
 
   if (rawCode) {
-    const promo = await prisma.promoCode.findUnique({ where: { code: rawCode } });
+    promo = await prisma.promoCode.findUnique({ where: { code: rawCode } });
     if (!promo || !promo.active) {
       return res.status(400).json({ error: 'Codice promozionale non valido' });
     }
+    if (promo.maxUses != null && promo.usageCount >= promo.maxUses) {
+      return res.status(400).json({ error: 'Codice esaurito' });
+    }
+    if (promo.expiresAt && promo.expiresAt < new Date()) {
+      return res.status(400).json({ error: 'Codice scaduto' });
+    }
+
+    // 100% di sconto → niente Stripe, attivazione gratuita immediata.
+    if (promo.discountPct >= 100) {
+      try {
+        await prisma.$transaction([
+          prisma.user.update({
+            where: { id: req.user.id },
+            data: {
+              isPremium: true,
+              premiumSince: new Date(),
+              promoCodeUsed: promo.code,
+            },
+          }),
+          prisma.promoCode.update({
+            where: { id: promo.id },
+            data: { usageCount: { increment: 1 } },
+          }),
+        ]);
+        return res.json({ url: null, freeActivated: true });
+      } catch (err) {
+        console.error('Free activation error:', err);
+        return res.status(500).json({ error: 'Errore durante l\'attivazione' });
+      }
+    }
+  }
+
+  // Da qui in poi serve Stripe (sconto parziale o nessuno sconto).
+  if (!isConfigured()) {
+    return res.status(503).json({ error: 'Pagamenti non configurati' });
+  }
+
+  let discounts;
+  let promoCodeApplied = null;
+  if (promo) {
     try {
       const coupon = await stripe.coupons.create({
         percent_off: promo.discountPct,
