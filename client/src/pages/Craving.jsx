@@ -178,8 +178,8 @@ export default function Craving() {
             onKeyDown={handleKeyDown}
             rows={1}
             placeholder="Scrivi qualcosa…"
-            className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
-            style={{ minHeight: '42px' }}
+            className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
+            style={{ minHeight: '42px', fontSize: '16px' }}
             onFocus={() => {
               // Quando la tastiera si apre, scrolla l'ultimo messaggio in vista
               setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 300);

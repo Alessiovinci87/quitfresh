@@ -1,11 +1,25 @@
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
+import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
-// Precache: app shell (HTML, JS, CSS, fonts, icons). Lista iniettata da vite-plugin-pwa.
+// Precache: app shell (JS, CSS, fonts, icons con hash univoco).
+// NOTA: index.html viene anche precachato ma e' sovrascritto sotto da
+// NavigationRoute con NetworkFirst per garantire sempre l'ultima versione.
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
+
+// Navigation requests (HTML) → NetworkFirst con timeout 3s, fallback cache.
+// Cosi' ogni refresh prova prima il network: se il deploy ha nuovi bundle,
+// il client li scarica immediatamente. Solo se offline cade su cache.
+registerRoute(
+  new NavigationRoute(
+    new NetworkFirst({
+      cacheName: 'qf-html',
+      networkTimeoutSeconds: 3,
+    }).handle
+  )
+);
 
 // API → network-first con fallback cache (max 6s timeout, 1h TTL)
 registerRoute(
