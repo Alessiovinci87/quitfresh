@@ -48,6 +48,24 @@ export default function Profile() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  const [showResetHistoryModal, setShowResetHistoryModal] = useState(false);
+  const [resettingHistory, setResettingHistory] = useState(false);
+  const [resetHistoryResult, setResetHistoryResult] = useState('');
+
+  async function handleResetHistory() {
+    setResettingHistory(true);
+    try {
+      const { deleted } = await api.relapse.resetHistory();
+      setResetHistoryResult(`Cronologia svuotata (${deleted} ${deleted === 1 ? 'tentativo cancellato' : 'tentativi cancellati'}).`);
+      setShowResetHistoryModal(false);
+      setTimeout(() => setResetHistoryResult(''), 4000);
+    } catch (err) {
+      setResetHistoryResult('Errore: ' + (err.message || 'riprova'));
+    } finally {
+      setResettingHistory(false);
+    }
+  }
+
   async function handleDeleteAccount() {
     if (deleteConfirmEmail.trim().toLowerCase() !== user.email.toLowerCase()) {
       setDeleteError('L\'email digitata non corrisponde.');
@@ -665,6 +683,25 @@ export default function Profile() {
         )}
       </div>
 
+      {/* Reset cronologia */}
+      <div className="mb-8 border-t border-gray-100 pt-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-1">Cronologia tentativi</h2>
+        <p className="text-xs text-gray-400 mb-3">
+          Cancella tutti i tentativi precedenti (azzera anche il Record). Lo streak attuale non viene toccato.
+        </p>
+        {resetHistoryResult && (
+          <p className={`text-xs mb-2 ${resetHistoryResult.startsWith('Errore') ? 'text-red-500' : 'text-sage-700'}`}>
+            {resetHistoryResult}
+          </p>
+        )}
+        <button
+          onClick={() => setShowResetHistoryModal(true)}
+          className="w-full py-2.5 border border-sage-300 text-sage-700 rounded-xl text-sm font-medium hover:bg-sage-50 transition-colors"
+        >
+          Azzera cronologia
+        </button>
+      </div>
+
       {/* Logout */}
       <div className="border-t border-gray-100 pt-6">
         <button onClick={handleLogout} className="w-full py-3 text-sm text-red-500 hover:text-red-700 font-medium transition-colors">
@@ -699,6 +736,36 @@ export default function Profile() {
           Elimina account
         </button>
       </div>
+
+      {showResetHistoryModal && (
+        <div className="fixed inset-0 z-50 bg-sage-900/40 backdrop-blur-sm flex items-end justify-center px-4 pb-8 animate-fade-in">
+          <div className="bg-white rounded-2xl max-w-mobile w-full p-6 shadow-lift animate-slide-up">
+            <h3 className="font-display text-xl font-semibold text-sage-900 mb-2">Azzerare la cronologia?</h3>
+            <p className="text-sm text-sage-700/80 mb-6 leading-relaxed">
+              Tutti i tentativi precedenti vengono cancellati definitivamente. Il Record verrà azzerato.
+              <span className="block mt-2 text-[11px] text-sage-600/70">
+                Lo streak attuale (giorni senza fumo) NON viene toccato.
+              </span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowResetHistoryModal(false)}
+                disabled={resettingHistory}
+                className="flex-1 py-3 border border-sage-200 text-sage-700 rounded-xl-soft font-medium text-sm hover:bg-sage-50 transition-colors active:scale-[0.98]"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleResetHistory}
+                disabled={resettingHistory}
+                className="flex-1 py-3 bg-terracotta-500 text-white rounded-xl-soft font-semibold text-sm hover:bg-terracotta-600 disabled:opacity-60 transition-colors active:scale-[0.98]"
+              >
+                {resettingHistory ? 'Azzero…' : 'Sì, azzera'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-6">

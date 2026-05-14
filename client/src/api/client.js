@@ -51,6 +51,7 @@ export const api = {
     log: () => request('/api/relapse', { method: 'POST' }),
     restart: () => request('/api/relapse/restart', { method: 'POST' }),
     useFreeze: () => request('/api/relapse/freeze', { method: 'POST' }),
+    resetHistory: () => request('/api/relapse/history', { method: 'DELETE' }),
   },
   diary: {
     list: () => request('/api/diary'),

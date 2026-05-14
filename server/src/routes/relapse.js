@@ -49,6 +49,21 @@ router.post('/restart', async (req, res) => {
   }
 });
 
+// DELETE /api/relapse/history — cancella tutti i QuitAttempt dell'utente
+// Azzera Record e i tentativi precedenti (utile dopo test o per pulire).
+// Non tocca quitDate corrente.
+router.delete('/history', async (req, res) => {
+  try {
+    const result = await prisma.quitAttempt.deleteMany({
+      where: { userId: req.user.id },
+    });
+    res.json({ ok: true, deleted: result.count });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Errore durante il reset della cronologia' });
+  }
+});
+
 // POST /api/relapse/freeze — usa un freeze invece di azzerare lo streak
 // Anti-double-spend: ricalcola disponibilità lato server e blocca se 0.
 router.post('/freeze', async (req, res) => {
