@@ -21,6 +21,7 @@ model User {
   smokeFreeSince     DateTime?
   notificationTimes  String[]
   encouragementTime  String?
+  streakFreezesUsed  Int                @default(0)
   cytisineSchedule   Json?
   cigarettePackPrice Float              @default(5.80)
   isPremium          Boolean            @default(false)

@@ -41,6 +41,17 @@ router.get('/', requireAuth, requirePremium, async (req, res) => {
       return d > max ? d : max;
     }, 0);
 
+    // Streak freeze: +1 ogni 7 giorni puliti, max 3 disponibili in contemporanea.
+    // Self-correcting: calcolato on-the-fly da daysSinceQuit + streakFreezesUsed.
+    const FREEZE_EVERY = 7;
+    const FREEZE_CAP = 3;
+    const freezesEarned = Math.floor(daysSinceQuit / FREEZE_EVERY);
+    const freezesUsed = user.streakFreezesUsed || 0;
+    const freezesAvailable = Math.max(0, Math.min(FREEZE_CAP, freezesEarned - freezesUsed));
+    const daysToNextFreeze = freezesAvailable >= FREEZE_CAP
+      ? null
+      : FREEZE_EVERY - (daysSinceQuit % FREEZE_EVERY);
+
     res.json({
       daysSinceQuit,
       cigarettesAvoided,
@@ -59,6 +70,9 @@ router.get('/', requireAuth, requirePremium, async (req, res) => {
           : null,
       })),
       bestDays,
+      freezesAvailable,
+      freezesUsed,
+      daysToNextFreeze,
     });
   } catch (err) {
     console.error(err);

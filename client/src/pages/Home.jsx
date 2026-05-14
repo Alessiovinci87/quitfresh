@@ -98,6 +98,22 @@ export default function Home() {
     }
   }
 
+  async function handleUseFreeze() {
+    setRelapseLoading(true);
+    try {
+      const { user: updated } = await api.relapse.useFreeze();
+      updateUser(updated);
+      // refresh progress per aggiornare freezesAvailable
+      const p = await api.progress.get();
+      setProgress(p);
+      setShowRelapseConfirm(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRelapseLoading(false);
+    }
+  }
+
   async function handleRestart() {
     setRestartLoading(true);
     try {
@@ -226,12 +242,25 @@ export default function Home() {
                 >+</button>
               </div>
 
-              {progress?.bestDays > 0 && (
-                <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-sage-700 bg-sage-50 border border-sage-100 px-2.5 py-1 rounded-full">
-                  <span className="text-terracotta-500">★</span>
-                  Record: {progress.bestDays} {progress.bestDays === 1 ? 'giorno' : 'giorni'}
-                </p>
-              )}
+              <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+                {progress?.bestDays > 0 && (
+                  <p className="inline-flex items-center gap-1.5 text-[11px] text-sage-700 bg-sage-50 border border-sage-100 px-2.5 py-1 rounded-full">
+                    <span className="text-terracotta-500">★</span>
+                    Record: {progress.bestDays} {progress.bestDays === 1 ? 'giorno' : 'giorni'}
+                  </p>
+                )}
+                {progress?.freezesAvailable > 0 && (
+                  <p className="inline-flex items-center gap-1.5 text-[11px] text-sage-800 bg-white border border-sage-200 px-2.5 py-1 rounded-full shadow-soft">
+                    <span>❄</span>
+                    {progress.freezesAvailable} {progress.freezesAvailable === 1 ? 'freeze' : 'freeze disponibili'}
+                  </p>
+                )}
+                {progress?.daysToNextFreeze != null && progress?.freezesAvailable < 3 && (
+                  <p className="inline-flex items-center gap-1.5 text-[10px] text-sage-600/70">
+                    +1 freeze tra {progress.daysToNextFreeze} {progress.daysToNextFreeze === 1 ? 'giorno' : 'giorni'}
+                  </p>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -325,25 +354,68 @@ export default function Home() {
       {showRelapseConfirm && (
         <div className="fixed inset-0 bg-sage-900/40 backdrop-blur-sm flex items-end justify-center z-50 px-4 pb-8 animate-fade-in">
           <div className="bg-white rounded-2xl-soft p-6 w-full max-w-mobile animate-slide-up shadow-lift">
-            <h3 className="font-display text-xl font-semibold text-sage-900 mb-2">Azzerare il contatore?</h3>
-            <p className="text-sm text-sage-700/80 mb-6 leading-relaxed">
-              I giorni precedenti vengono salvati nella cronologia. Puoi ripartire quando sei pronto.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowRelapseConfirm(false)}
-                className="flex-1 py-3 border border-sage-200 text-sage-700 rounded-xl-soft font-medium text-sm hover:bg-sage-50 transition-colors active:scale-[0.98]"
-              >
-                Annulla
-              </button>
-              <button
-                onClick={handleRelapse}
-                disabled={relapseLoading}
-                className="flex-1 py-3 bg-terracotta-500 text-white rounded-xl-soft font-semibold text-sm hover:bg-terracotta-600 disabled:opacity-60 transition-colors active:scale-[0.98]"
-              >
-                {relapseLoading ? 'Azzeramento…' : 'Sì, azzera'}
-              </button>
-            </div>
+            {progress?.freezesAvailable > 0 ? (
+              <>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="w-10 h-10 rounded-full bg-sage-50 flex items-center justify-center text-xl">❄</span>
+                  <div>
+                    <h3 className="font-display text-xl font-semibold text-sage-900 leading-tight">Hai {progress.freezesAvailable} freeze</h3>
+                    <p className="text-[11px] text-sage-600/70 mt-0.5">Proteggi lo streak senza azzerarlo</p>
+                  </div>
+                </div>
+                <p className="text-sm text-sage-700/80 mb-5 leading-relaxed">
+                  Una giornata difficile non deve cancellare tutto il tuo percorso. Usa un freeze per non perdere lo streak.
+                </p>
+                <button
+                  onClick={handleUseFreeze}
+                  disabled={relapseLoading}
+                  className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage disabled:opacity-60 active:scale-[0.98] transition-all mb-2 flex items-center justify-center gap-2"
+                >
+                  <span>❄</span>
+                  {relapseLoading ? 'Uso freeze…' : 'Usa un freeze'}
+                </button>
+                <button
+                  onClick={handleRelapse}
+                  disabled={relapseLoading}
+                  className="w-full py-3 border border-terracotta-200 text-terracotta-700 rounded-xl-soft font-medium text-sm hover:bg-terracotta-50 disabled:opacity-60 transition-colors active:scale-[0.98] mb-2"
+                >
+                  Azzera lo streak
+                </button>
+                <button
+                  onClick={() => setShowRelapseConfirm(false)}
+                  className="w-full py-2 text-xs text-sage-600/70 hover:text-sage-700 transition-colors"
+                >
+                  Annulla
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="font-display text-xl font-semibold text-sage-900 mb-2">Azzerare il contatore?</h3>
+                <p className="text-sm text-sage-700/80 mb-6 leading-relaxed">
+                  I giorni precedenti vengono salvati nella cronologia. Puoi ripartire quando sei pronto.
+                  {progress?.daysToNextFreeze != null && (
+                    <span className="block mt-2 text-[11px] text-sage-600/70">
+                      ❄ Prossimo freeze disponibile tra {progress.daysToNextFreeze} {progress.daysToNextFreeze === 1 ? 'giorno' : 'giorni'} di streak pulito.
+                    </span>
+                  )}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowRelapseConfirm(false)}
+                    className="flex-1 py-3 border border-sage-200 text-sage-700 rounded-xl-soft font-medium text-sm hover:bg-sage-50 transition-colors active:scale-[0.98]"
+                  >
+                    Annulla
+                  </button>
+                  <button
+                    onClick={handleRelapse}
+                    disabled={relapseLoading}
+                    className="flex-1 py-3 bg-terracotta-500 text-white rounded-xl-soft font-semibold text-sm hover:bg-terracotta-600 disabled:opacity-60 transition-colors active:scale-[0.98]"
+                  >
+                    {relapseLoading ? 'Azzeramento…' : 'Sì, azzera'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

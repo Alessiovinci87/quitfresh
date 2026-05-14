@@ -50,6 +50,7 @@ export const api = {
   relapse: {
     log: () => request('/api/relapse', { method: 'POST' }),
     restart: () => request('/api/relapse/restart', { method: 'POST' }),
+    useFreeze: () => request('/api/relapse/freeze', { method: 'POST' }),
   },
   diary: {
     list: () => request('/api/diary'),
