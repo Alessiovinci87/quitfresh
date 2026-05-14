@@ -79,6 +79,9 @@ function AppShell() {
   const location = useLocation();
   const isChat = location.pathname === '/craving';
   const [showSplash, setShowSplash] = useState(true);
+  const [chatHeight, setChatHeight] = useState(
+    typeof window !== 'undefined' ? window.innerHeight : 0
+  );
 
   // Splash screen iniziale: 1.8s al primo mount, poi route normale.
   useEffect(() => {
@@ -86,16 +89,9 @@ function AppShell() {
     return () => clearTimeout(t);
   }, []);
 
-  if (showSplash) return <SplashScreen />;
-
-  // Per la chat usiamo visualViewport.height (sempre aggiornato all'apertura
-  // della tastiera iOS Safari, anche su versioni vecchie che non supportano
-  // 100dvh). Il container shrinka, l'input flex-shrink-0 rimane sopra la
-  // tastiera. Pattern usato da WhatsApp/Telegram web.
-  const [chatHeight, setChatHeight] = useState(
-    typeof window !== 'undefined' ? window.innerHeight : 0
-  );
-
+  // visualViewport.height per la chat: sempre aggiornato all'apertura della
+  // tastiera iOS Safari (universal, anche su versioni vecchie). Pattern
+  // KeyboardAvoidingView replicato su web.
   useEffect(() => {
     if (!isChat) return;
     const vv = window.visualViewport;
@@ -114,9 +110,15 @@ function AppShell() {
     }
   }, [isChat]);
 
+  // IMPORTANTE: tutti gli hook SOPRA, early return SOTTO.
+  // Mai chiamare hook condizionalmente o dopo un return — React error #310.
+  if (showSplash) return <SplashScreen />;
+
+  // Per la chat: position fixed = container ancorato al viewport.
+  // height da visualViewport.height = si adatta alla tastiera iOS.
   const wrapperStyle = isChat ? { height: `${chatHeight}px` } : undefined;
   const wrapperClass = isChat
-    ? "w-full flex flex-col overflow-hidden"
+    ? "fixed top-0 left-0 right-0 flex flex-col overflow-hidden z-50"
     : "min-h-screen bg-gray-100 flex items-start justify-center";
 
   return (

@@ -14,6 +14,41 @@ export default function Craving() {
 
   useEffect(() => { startChat(); }, []);
 
+  // Body scroll lock pattern WhatsApp/Telegram web per iOS Safari:
+  // position fixed su html previene COMPLETAMENTE qualsiasi scroll del
+  // background — nessuna possibilità che la pagina porti via header/input.
+  useEffect(() => {
+    const scrollY = window.scrollY;
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlPos: html.style.position,
+      htmlTop: html.style.top,
+      htmlLeft: html.style.left,
+      htmlRight: html.style.right,
+      htmlWidth: html.style.width,
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+    };
+    html.style.position = 'fixed';
+    html.style.top = `-${scrollY}px`;
+    html.style.left = '0';
+    html.style.right = '0';
+    html.style.width = '100%';
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    return () => {
+      html.style.position = prev.htmlPos;
+      html.style.top = prev.htmlTop;
+      html.style.left = prev.htmlLeft;
+      html.style.right = prev.htmlRight;
+      html.style.width = prev.htmlWidth;
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
