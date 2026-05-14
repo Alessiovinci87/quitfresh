@@ -384,20 +384,15 @@ export default function Profile() {
                       </label>
                     </div>
                     <label className="text-xs block">
-                      <span className="block text-gray-500 mb-0.5">
-                        Orario prima capsula
-                        {!phase.firstDoseTime && firstDoseTime && (
-                          <span className="ml-1 text-gray-400">(usa {firstDoseTime})</span>
-                        )}
-                      </span>
-                      <div className="flex gap-1.5">
-                        <input
-                          type="time"
-                          value={phase.firstDoseTime || ''}
-                          onChange={e => updatePhase(idx, 'firstDoseTime', e.target.value || undefined)}
-                          className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-                        />
-                        {phase.firstDoseTime && (
+                      <span className="block text-gray-500 mb-1">Orario prima capsula di questa fase</span>
+                      {phase.firstDoseTime ? (
+                        <div className="flex gap-1.5">
+                          <input
+                            type="time"
+                            value={phase.firstDoseTime}
+                            onChange={e => updatePhase(idx, 'firstDoseTime', e.target.value || undefined)}
+                            className="flex-1 px-2 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+                          />
                           <button
                             type="button"
                             onClick={() => updatePhase(idx, 'firstDoseTime', undefined)}
@@ -409,8 +404,19 @@ export default function Profile() {
                             </svg>
                             Default
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => updatePhase(idx, 'firstDoseTime', firstDoseTime || '08:00')}
+                          className="w-full px-3 py-2 rounded-lg bg-white border border-sage-200 text-sage-700 text-xs font-medium hover:bg-sage-50 transition-colors text-left flex items-center justify-between"
+                        >
+                          <span>
+                            Usa <strong className="font-semibold">{firstDoseTime || '08:00'}</strong> (default)
+                          </span>
+                          <span className="text-sage-500">Personalizza →</span>
+                        </button>
+                      )}
                     </label>
                   </div>
                 ))}
