@@ -14,41 +14,6 @@ export default function Craving() {
 
   useEffect(() => { startChat(); }, []);
 
-  // Body scroll lock pattern WhatsApp/Telegram web per iOS Safari:
-  // position fixed su html previene COMPLETAMENTE qualsiasi scroll del
-  // background — nessuna possibilità che la pagina porti via header/input.
-  useEffect(() => {
-    const scrollY = window.scrollY;
-    const html = document.documentElement;
-    const body = document.body;
-    const prev = {
-      htmlPos: html.style.position,
-      htmlTop: html.style.top,
-      htmlLeft: html.style.left,
-      htmlRight: html.style.right,
-      htmlWidth: html.style.width,
-      htmlOverflow: html.style.overflow,
-      bodyOverflow: body.style.overflow,
-    };
-    html.style.position = 'fixed';
-    html.style.top = `-${scrollY}px`;
-    html.style.left = '0';
-    html.style.right = '0';
-    html.style.width = '100%';
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    return () => {
-      html.style.position = prev.htmlPos;
-      html.style.top = prev.htmlTop;
-      html.style.left = prev.htmlLeft;
-      html.style.right = prev.htmlRight;
-      html.style.width = prev.htmlWidth;
-      html.style.overflow = prev.htmlOverflow;
-      body.style.overflow = prev.bodyOverflow;
-      window.scrollTo(0, scrollY);
-    };
-  }, []);
-
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
@@ -105,12 +70,18 @@ export default function Craving() {
   }
 
   return (
-    <div className="flex-1 w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden min-h-0">
+    <div
+      className="w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden"
+      style={{ flex: '1 1 0%', minHeight: 0 }}
+    >
 
-      {/* Header in alto — flex-shrink-0 lo tiene fermo */}
+      {/* Header in alto — flexShrink:0 inline per essere robusti */}
       <header
-        className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white shrink-0"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}
+        className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white"
+        style={{
+          flexShrink: 0,
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+        }}
       >
         <button
           onClick={() => navigate('/home')}
@@ -134,11 +105,17 @@ export default function Craving() {
         </button>
       </header>
 
-      {/* Messages — flex-1 + min-h-0 cruciale per scroll dentro flex.
-          overscroll-contain previene scroll chain al body (iOS pull-to-refresh) */}
+      {/* Messages — UNICA zona scrollabile. flex:1 + minHeight:0 inline
+          per essere robusti (Tailwind compila utility ma alcuni SW cache
+          potrebbero servire CSS vecchio). overscroll-contain previene
+          pull-to-refresh iOS. */}
       <div
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 space-y-3 bg-cream-50"
-        style={{ WebkitOverflowScrolling: 'touch' }}
+        className="overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 space-y-3 bg-cream-50"
+        style={{
+          flex: '1 1 0%',
+          minHeight: 0,
+          WebkitOverflowScrolling: 'touch',
+        }}
       >
         {messages.length === 0 && loading && (
           <div className="flex items-center gap-2 text-sage-500/70">
@@ -180,10 +157,13 @@ export default function Craving() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input in basso — flex-shrink-0 lo tiene fermo */}
+      {/* Input in basso — flexShrink:0 inline per essere robusti */}
       <div
-        className="border-t border-sage-100/50 px-4 pt-3 bg-white shrink-0"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
+        className="border-t border-sage-100/50 px-4 pt-3 bg-white"
+        style={{
+          flexShrink: 0,
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+        }}
       >
         <div className="flex items-end gap-2 min-w-0">
           <textarea
