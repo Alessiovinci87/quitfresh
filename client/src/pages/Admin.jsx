@@ -35,8 +35,12 @@ export default function Admin() {
       setCodes(list);
       setAuthed(true);
     } catch (err) {
-      setError(err.message || 'Token non valido');
-      localStorage.removeItem('qf_admin_token');
+      setError(err.message || 'Errore di autenticazione');
+      // Wipe solo se il token è effettivamente invalido (401/403).
+      // Errori di rete o 5xx non devono cancellare un token salvato valido.
+      if (err.status === 401 || err.status === 403) {
+        localStorage.removeItem('qf_admin_token');
+      }
     } finally {
       setLoading(false);
     }
