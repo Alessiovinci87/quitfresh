@@ -70,17 +70,7 @@ export default function Craving() {
   }
 
   return (
-    <div
-      className="chat-root w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden"
-      style={{
-        // triple fallback iOS Safari: vh -> svh -> dvh
-        // dvh si adatta a URL bar dinamico iOS 16.4+. svh fallback per 15.4+.
-        height: '100vh',
-      }}
-    >
-      <style>{`
-        .chat-root { height: 100vh; height: 100svh; height: 100dvh; }
-      `}</style>
+    <div className="flex-1 w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden min-h-0">
 
       {/* Header in alto — flex-shrink-0 lo tiene fermo */}
       <header
