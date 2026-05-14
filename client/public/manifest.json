@@ -1,13 +1,17 @@
 {
+  "id": "/quitfresh/",
   "name": "QuitFresh",
   "short_name": "QuitFresh",
-  "description": "Smetti di fumare con supporto AI contestuale",
+  "description": "Smetti di fumare con supporto AI contestuale, tracker capsule citisina e coach quotidiano.",
   "start_url": "/quitfresh/",
   "scope": "/quitfresh/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#fdfcf9",
   "theme_color": "#6B8F71",
+  "categories": ["health", "lifestyle", "medical"],
+  "lang": "it",
+  "dir": "ltr",
   "icons": [
     {
       "src": "icon-192.png",
