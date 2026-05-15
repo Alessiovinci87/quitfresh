@@ -93,7 +93,13 @@ export default function Craving() {
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const handleResize = () => {
+    // Debounce con requestAnimationFrame: vv.resize triggera ad ogni
+    // frame (~60Hz) durante l'animazione tastiera iOS. Senza debounce
+    // setKbHeight viene chiamato ~15 volte in 250ms → re-render visibili
+    // come "scatti". Con rAF, l'ultimo evento di una raffica viene
+    // processato nel frame successivo: una sola setState per burst.
+    let rafId = null;
+    const compute = () => {
       window.scrollTo(0, 0);
       const kb = window.innerHeight - vv.height;
       const final = Math.max(0, kb);
@@ -104,21 +110,24 @@ export default function Craving() {
         try { localStorage.setItem('chatKbHeight', String(final)); } catch {}
       }
       // Tap lock window: durante i 500ms dopo pointerdown/focusin,
-      // ignora valori INTERMEDI (final < cached - 30). Sono il rumore
-      // dell'animazione tastiera iOS (kb=50, 120, 200, 280...). Lasciamo
-      // passare solo i valori "tastiera completamente aperta" (>= cached)
-      // o "tastiera completamente chiusa" (=0, tap lock scaduto comunque).
-      // Questo approccio basato sul tempo e' affidabile a differenza di
-      // hasInputFocus, che dipende da timing imprevedibile di focus/blur.
+      // ignora valori INTERMEDI (final < cached - 30).
       const inTapLock = Date.now() < tapLockUntilRef.current;
       if (inTapLock && final < cachedKbRef.current - 30) return;
       setKbHeight(final);
       setReady(true);
     };
-    handleResize();
+    const handleResize = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        compute();
+      });
+    };
+    compute(); // primo run sincrono al mount per settare ready=true
     vv.addEventListener('resize', handleResize);
     vv.addEventListener('scroll', handleResize);
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
       vv.removeEventListener('resize', handleResize);
       vv.removeEventListener('scroll', handleResize);
     };
@@ -209,7 +218,10 @@ export default function Craving() {
         style={{
           ...columnBase,
           top: 0,
-          height: HEADER_HEIGHT,
+          // height cresce per includere la safe area iOS (notch/dynamic
+          // island): contenuto disponibile = HEADER_HEIGHT (64) sotto la
+          // status bar, non SCHIACCIATO dentro la safe area.
+          height: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
           zIndex: 20,
           display: 'flex',
           alignItems: 'center',
