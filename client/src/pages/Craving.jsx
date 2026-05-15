@@ -24,6 +24,12 @@ export default function Craving() {
   // non e' avvenuto. Cosi' gli elementi appaiono gia' nella posizione
   // corretta, niente flicker iniziale di "scendere dall'alto".
   const [ready, setReady] = useState(false);
+  // animating: true durante la finestra in cui iOS sta aprendo/chiudendo
+  // la tastiera (~400ms). In quel periodo wrapper opacity:0 → l'utente
+  // vede un fade-out + fade-in invece del jitter di visualViewport che
+  // ricalcola 15 volte in 250ms.
+  const [animating, setAnimating] = useState(false);
+  const animatingTimerRef = useRef(null);
   // Cache: l'altezza reale della tastiera dell'utente, memorizzata in
   // localStorage. Al primo focus della prima sessione usiamo un valore
   // di default; dalla seconda apertura in poi la stima coincide al pixel
@@ -144,6 +150,18 @@ export default function Craving() {
     };
   }, []);
 
+  // Helper: avvia/rilancia la finestra di "animating" che maschera il
+  // jitter durante apertura/chiusura tastiera. Cancella eventuali timer
+  // pendenti per evitare race se piu' eventi rapidi (focus → blur → focus).
+  const startAnimatingWindow = (durationMs = 400) => {
+    setAnimating(true);
+    if (animatingTimerRef.current) clearTimeout(animatingTimerRef.current);
+    animatingTimerRef.current = setTimeout(() => {
+      setAnimating(false);
+      animatingTimerRef.current = null;
+    }, durationMs);
+  };
+
   // Anticipa lo spostamento dell'input. Su iOS PWA, vv.resize non triggera
   // finche' l'animazione tastiera non e' finita (~300ms): nel frattempo
   // l'input resta a bottom:0 e la tastiera lo copre. Con focusin pre-impostiamo
@@ -156,9 +174,20 @@ export default function Craving() {
       if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
       tapLockUntilRef.current = Date.now() + 500;
       setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
+      startAnimatingWindow(400);
+    };
+    const onFocusOut = (e) => {
+      const tag = e.target?.tagName;
+      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
+      startAnimatingWindow(400);
     };
     document.addEventListener('focusin', onFocusIn);
-    return () => document.removeEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+      if (animatingTimerRef.current) clearTimeout(animatingTimerRef.current);
+    };
   }, []);
 
   async function startChat() {
@@ -310,7 +339,11 @@ export default function Craving() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          opacity: ready ? 1 : 0,
+          // opacity: 0 quando non ancora ready OPPURE durante la finestra
+          // di animazione tastiera (400ms da pointerdown/focus/blur). Cosi'
+          // l'utente vede un fade pulito invece del jitter di vv.resize.
+          opacity: ready && !animating ? 1 : 0,
+          transition: 'opacity 120ms ease-out',
         }}
       >
         {/* MESSAGES */}
@@ -396,6 +429,7 @@ export default function Craving() {
                 }
                 tapLockUntilRef.current = Date.now() + 500;
                 setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
+                startAnimatingWindow(400);
               }}
               rows={1}
               placeholder="Scrivi qualcosa…"
