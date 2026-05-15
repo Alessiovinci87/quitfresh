@@ -21,9 +21,11 @@ export default function Craving() {
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(detectMobile);
-  const [kbVh, setKbVh] = useState(
-    typeof window !== 'undefined' ? window.innerHeight : 0
+  const [winHeight, setWinHeight] = useState(
+    typeof window !== 'undefined' ? window.innerHeight : 800
   );
+  // Offset altezza tastiera. 0 = niente tastiera. >0 = altezza occupata.
+  const [kbOffset, setKbOffset] = useState(0);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -33,21 +35,59 @@ export default function Craving() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Mobile-only: segui visualViewport.height. NIENTE offsetTop (e' rumoroso
-  // su iOS standalone), NIENTE scroll listener. Solo l'altezza della zona
-  // visibile sopra la tastiera.
+  // Aggiorna winHeight su rotazione/resize. Anche visualViewport.resize:
+  // su Safari mobile NON standalone e su Android, vv.height < innerHeight
+  // quando appare la tastiera — quello e' il path "pulito".
+  useEffect(() => {
+    const onWinResize = () => setWinHeight(window.innerHeight);
+    window.addEventListener('resize', onWinResize);
+
+    const vv = window.visualViewport;
+    let onVvResize;
+    if (vv) {
+      onVvResize = () => {
+        const diff = window.innerHeight - vv.height;
+        if (diff > 50) setKbOffset(diff);
+        else setKbOffset(0);
+      };
+      vv.addEventListener('resize', onVvResize);
+    }
+    return () => {
+      window.removeEventListener('resize', onWinResize);
+      if (vv && onVvResize) vv.removeEventListener('resize', onVvResize);
+    };
+  }, []);
+
+  // Fallback per PWA standalone iOS: visualViewport NON si aggiorna in
+  // modalita' standalone, quindi usiamo focusin/focusout sulla textarea
+  // con stima fissa (320px ≈ tastiera iOS portrait + QuickType bar).
+  // Se il path visualViewport sopra ha gia' rilevato la tastiera, lui
+  // prevale (diff > 50 → kbOffset reale). Sennò applichiamo 320 stimato.
   useEffect(() => {
     if (!isMobile) return;
-    const vv = window.visualViewport;
-    if (!vv) {
-      const onWinResize = () => setKbVh(window.innerHeight);
-      window.addEventListener('resize', onWinResize);
-      return () => window.removeEventListener('resize', onWinResize);
-    }
-    const onResize = () => setKbVh(vv.height);
-    setKbVh(vv.height);
-    vv.addEventListener('resize', onResize);
-    return () => vv.removeEventListener('resize', onResize);
+    let blurTimer;
+    const onFocusIn = (e) => {
+      const tag = e.target?.tagName;
+      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
+      clearTimeout(blurTimer);
+      setTimeout(() => {
+        const vv = window.visualViewport;
+        const diff = vv ? (window.innerHeight - vv.height) : 0;
+        setKbOffset(diff > 50 ? diff : 320);
+      }, 300);
+    };
+    const onFocusOut = (e) => {
+      const tag = e.target?.tagName;
+      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
+      blurTimer = setTimeout(() => setKbOffset(0), 400);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
+    return () => {
+      document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
+      clearTimeout(blurTimer);
+    };
   }, [isMobile]);
 
   // Aggiorna isMobile su rotazione / resize finestra.
@@ -117,7 +157,7 @@ export default function Craving() {
       }
       style={
         isMobile
-          ? { top: 0, height: `${kbVh}px` }
+          ? { top: 0, height: `${winHeight - kbOffset}px` }
           : { height: '100vh', maxHeight: '100vh' }
       }
     >
