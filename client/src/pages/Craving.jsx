@@ -85,21 +85,24 @@ export default function Craving() {
       window.scrollTo(0, 0);
       const kb = window.innerHeight - vv.height;
       const final = Math.max(0, kb);
-      // Durante l'animazione tastiera iOS triggera vv.resize PIU' VOLTE con
-      // valori intermediari (anche kb≈0). Se sovrascrivessimo lo stato in
-      // quel momento, il valore pre-impostato dal focusin/onPointerDown
-      // verrebbe annullato → l'input ricade in fondo. Quindi: se c'e' ancora
-      // focus su un input e il valore e' "non-tastiera", NON aggiorniamo.
-      const activeTag = document.activeElement?.tagName;
-      const hasInputFocus = activeTag === 'TEXTAREA' || activeTag === 'INPUT';
-      if (final < 50 && hasInputFocus) return;
-      setKbHeight(final);
-      // Memorizza l'altezza reale: la prossima apertura usera' questo valore
-      // come stima iniziale → zero salto.
+      // Aggiorna sempre la cache silenziosamente: la prossima apertura
+      // partira' con il valore esatto del dispositivo.
       if (final > 50) {
         cachedKbRef.current = final;
         try { localStorage.setItem('chatKbHeight', String(final)); } catch {}
       }
+      // Durante l'animazione tastiera iOS, vv.resize triggera ad ogni
+      // frame con valori CRESCENTI (50, 120, 200, 280, 336...). Se
+      // aggiornassimo kbHeight ad ognuno di questi, l'input ballerebbe
+      // su/giu — effetto "yo-yo" percepito come movimento. Quindi:
+      // se c'e' ancora focus su un input, NON aggiorniamo. L'input
+      // resta fermo nella posizione settata da pointerdown (cachedKbRef)
+      // per tutta la durata della digitazione. Solo al blur (kb≈0,
+      // niente focus) aggiorniamo per riportare l'input in fondo.
+      const activeTag = document.activeElement?.tagName;
+      const hasInputFocus = activeTag === 'TEXTAREA' || activeTag === 'INPUT';
+      if (hasInputFocus) return;
+      setKbHeight(final);
     };
     handleResize();
     vv.addEventListener('resize', handleResize);
