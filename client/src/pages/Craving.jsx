@@ -2,6 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 
+// Rileva mobile (touch + viewport stretto). Su mobile usiamo position:fixed
+// con altezza = visualViewport.height, cosi' il container si comprime
+// quando appare la tastiera e l'input flex-shrink:0 resta ancorato sopra
+// di essa. Su desktop niente JS — height:100vh normale dentro il flex flow.
+function detectMobile() {
+  if (typeof window === 'undefined') return false;
+  const narrow = window.matchMedia('(max-width: 768px)').matches;
+  const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  return narrow && touch;
+}
+
 export default function Craving() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
@@ -9,6 +20,10 @@ export default function Craving() {
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
+  const [isMobile, setIsMobile] = useState(detectMobile);
+  const [kbVh, setKbVh] = useState(
+    typeof window !== 'undefined' ? window.innerHeight : 0
+  );
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -17,6 +32,30 @@ export default function Craving() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
+
+  // Mobile-only: segui visualViewport.height. NIENTE offsetTop (e' rumoroso
+  // su iOS standalone), NIENTE scroll listener. Solo l'altezza della zona
+  // visibile sopra la tastiera.
+  useEffect(() => {
+    if (!isMobile) return;
+    const vv = window.visualViewport;
+    if (!vv) {
+      const onWinResize = () => setKbVh(window.innerHeight);
+      window.addEventListener('resize', onWinResize);
+      return () => window.removeEventListener('resize', onWinResize);
+    }
+    const onResize = () => setKbVh(vv.height);
+    setKbVh(vv.height);
+    vv.addEventListener('resize', onResize);
+    return () => vv.removeEventListener('resize', onResize);
+  }, [isMobile]);
+
+  // Aggiorna isMobile su rotazione / resize finestra.
+  useEffect(() => {
+    const onResize = () => setIsMobile(detectMobile());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   async function startChat() {
     setLoading(true);
@@ -71,8 +110,16 @@ export default function Craving() {
 
   return (
     <div
-      className="w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden"
-      style={{ height: '100dvh', maxHeight: '100dvh' }}
+      className={
+        isMobile
+          ? "fixed left-1/2 -translate-x-1/2 w-full max-w-mobile bg-cream-50 flex flex-col overflow-hidden z-50"
+          : "w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden"
+      }
+      style={
+        isMobile
+          ? { top: 0, height: `${kbVh}px` }
+          : { height: '100vh', maxHeight: '100vh' }
+      }
     >
 
       {/* Header in alto — flexShrink:0 inline per essere robusti */}
