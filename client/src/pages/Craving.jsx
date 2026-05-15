@@ -108,8 +108,12 @@ export default function Craving() {
     const compute = () => {
       window.scrollTo(0, 0);
       setVvOffset(vv.offsetTop);
-      const kb = window.innerHeight - vv.height;
-      const final = Math.max(0, kb);
+      const rawKb = window.innerHeight - vv.height;
+      // SOGLIA: su iPhone con notch, innerHeight include la home indicator
+      // (~34px) e safe-area-bottom mentre vv.height le esclude → kb e' ~68
+      // anche senza tastiera. La tastiera iOS piu' piccola e' ~250px
+      // (numerica). Tutto sotto 100 e' "rumore" della safe area.
+      const final = rawKb < 100 ? 0 : rawKb;
       // Aggiorna sempre la cache silenziosamente: la prossima apertura
       // partira' con il valore esatto del dispositivo.
       if (final > 50) {
