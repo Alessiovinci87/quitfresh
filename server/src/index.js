@@ -69,11 +69,16 @@ app.use(helmet({
 // Frontend e backend ora vivono sullo stesso dominio (Railway), quindi
 // le richieste API in produzione sono same-origin e NON passano da CORS.
 // Manteniamo allowedOrigins per: (a) override da env in staging/preview
-// Railway, (b) dev locale Vite su :5173.
+// Railway, (b) dev locale Vite su :5173, (c) PWA installate vecchie che
+// erano hostate su github.io o sul dominio Railway diretto — devono
+// continuare a funzionare durante la transizione finche' gli utenti
+// reinstallano.
 const allowedOrigins = [
   'https://quitfresh.it',
   'https://www.quitfresh.it',
-  'http://localhost:5173',
+  'https://alessiovinci87.github.io', // PWA vecchie installate da GH Pages
+  'https://quitfresh-production.up.railway.app', // se qualcuno ha installato da URL Railway diretto
+  'http://localhost:5173', // dev locale Vite
   process.env.CORS_ORIGIN, // override da env per staging/preview
 ].filter(Boolean);
 
