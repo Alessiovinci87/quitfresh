@@ -1,5 +1,8 @@
 node_modules/
 dist/
+# client/dist e' generato da GitHub Actions (workflow build-and-deploy.yml)
+# e committato nel repo, cosi' Railway lo serve senza buildare Vite.
+!client/dist/
 .env
 *.env.local
 .DS_Store

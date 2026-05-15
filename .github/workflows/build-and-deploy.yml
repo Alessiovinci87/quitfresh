@@ -1,0 +1,61 @@
+name: Build client dist and commit
+
+# Su push al branch default, builda Vite (Actions ha 7GB RAM) e committa
+# client/dist/ nel repo. Railway poi serve i file gia' buildati — niente
+# Vite su Railway (che andava OOM con 512MB).
+#
+# paths-ignore evita il loop: il commit del bot tocca solo client/dist/,
+# che e' escluso dal trigger → non scatena un altro run.
+
+on:
+  push:
+    branches: [claude/quitfresh-app-NsSUP]
+    paths-ignore:
+      - 'client/dist/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: client/package.json
+
+      - name: Install client deps
+        run: npm install --prefix client
+
+      - name: Build client
+        run: npm run build --prefix client
+        env:
+          # In prod il client legge questi a build time. VITE_API_URL non
+          # serve piu' (BASE_URL = '' in produzione, same-origin con
+          # Express). VITE_SENTRY_DSN da repo secret se configurato.
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+
+      - name: Commit dist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add client/dist/
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — dist unchanged."
+          else
+            git commit -m "chore: build client dist [skip ci]"
+            git push
+          fi
