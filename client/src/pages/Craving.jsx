@@ -419,12 +419,17 @@ export default function Craving() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              // NIENTE onPointerDown: qualsiasi manipolazione DOM o setState
-              // durante il touchstart fa "muovere" il content sotto il dito
-              // e iOS interpreta il tap come scroll/swipe → focus cancellato
-              // → tastiera non apre. focusin gestira' tutto dopo che iOS ha
-              // committed al focus (anti-flicker tramite visibility:hidden
-              // in animating window).
+              onPointerDown={() => {
+                // SUBITO: manipola il DOM direttamente — senza aspettare
+                // React render, l'animazione parte nello stesso frame del
+                // touch, prima che iOS inizi ad alzare la tastiera.
+                if (wrapperRef.current) {
+                  wrapperRef.current.style.bottom = `${cachedKbRef.current}px`;
+                }
+                tapLockUntilRef.current = Date.now() + 500;
+                setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
+                startAnimatingWindow(400);
+              }}
               rows={1}
               placeholder="Scrivi qualcosa…"
               className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
