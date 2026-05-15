@@ -445,6 +445,7 @@ export default function Craving() {
               }}
             />
             <button
+              onPointerDown={(e) => e.preventDefault()}
               onClick={sendMessage}
               disabled={!input.trim() || loading}
               className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
