@@ -242,6 +242,7 @@ export default function Craving() {
           padding: '1rem',
           backgroundColor: '#fdfcf9',
           WebkitOverflowScrolling: 'touch',
+          transition: 'bottom 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         <div className="space-y-3">
@@ -299,6 +300,7 @@ export default function Craving() {
             : 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
           borderTop: '1px solid rgba(220, 232, 222, 0.5)',
           backgroundColor: '#ffffff',
+          transition: 'bottom 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         <div className="flex items-end gap-2 min-w-0 h-full">
