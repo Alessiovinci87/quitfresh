@@ -170,6 +170,11 @@ export default function Craving() {
     const onFocusIn = (e) => {
       const tag = e.target?.tagName;
       if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
+      // DOM hack: applica il bottom corretto SUBITO (senza aspettare React
+      // render) per ridurre il flicker iniziale prima dell'animating window.
+      if (wrapperRef.current) {
+        wrapperRef.current.style.bottom = `${cachedKbRef.current}px`;
+      }
       tapLockUntilRef.current = Date.now() + 500;
       setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
       startAnimatingWindow(400);
@@ -414,20 +419,12 @@ export default function Craving() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              onPointerDown={() => {
-                // SUBITO: manipola il DOM direttamente — senza aspettare
-                // React render, il wrapper si posiziona nel frame del touch
-                // prima che iOS inizi ad alzare la tastiera.
-                // NIENTE startAnimatingWindow qui: visibility:hidden
-                // bloccherebbe il focus iOS sull'input → primo tap non
-                // aprirebbe la tastiera. animating parte solo da focusin
-                // (quando iOS ha gia' committed al focus).
-                if (wrapperRef.current) {
-                  wrapperRef.current.style.bottom = `${cachedKbRef.current}px`;
-                }
-                tapLockUntilRef.current = Date.now() + 500;
-                setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
-              }}
+              // NIENTE onPointerDown: qualsiasi manipolazione DOM o setState
+              // durante il touchstart fa "muovere" il content sotto il dito
+              // e iOS interpreta il tap come scroll/swipe → focus cancellato
+              // → tastiera non apre. focusin gestira' tutto dopo che iOS ha
+              // committed al focus (anti-flicker tramite visibility:hidden
+              // in animating window).
               rows={1}
               placeholder="Scrivi qualcosa…"
               className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
