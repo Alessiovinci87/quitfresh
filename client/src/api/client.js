@@ -1,4 +1,10 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// In produzione frontend e backend sono sullo stesso dominio (Railway):
+// BASE_URL = '' → fetch('/api/...') va same-origin all'Express server.
+// In dev locale Vite gira su :5173 e il backend su :3001, quindi usiamo
+// VITE_API_URL (default :3001) per chiamare l'API cross-origin.
+const BASE_URL = import.meta.env.PROD
+  ? ''
+  : (import.meta.env.VITE_API_URL || 'http://localhost:3001');
 
 function getToken() {
   return localStorage.getItem('qf_token');

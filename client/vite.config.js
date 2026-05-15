@@ -25,7 +25,10 @@ export default defineConfig({
       },
     }),
   ],
-  base: '/quitfresh/',
+  // Frontend consolidato su Railway (quitfresh.it serve API+SPA dallo stesso
+  // dominio): base path = root. Prima era '/quitfresh/' perche' GH Pages
+  // serviva sotto alessiovinci87.github.io/quitfresh/.
+  base: '/',
   server: {
     port: 5173,
   },

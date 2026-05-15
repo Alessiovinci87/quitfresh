@@ -28,6 +28,7 @@ if (process.env.SENTRY_DSN) {
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const path = require('path');
 
 const authRoutes = require('./routes/auth');
 const passwordResetRoutes = require('./routes/passwordReset');
@@ -65,9 +66,15 @@ app.use(helmet({
 }));
 
 // ─── CORS ristretto a origini whitelisted ───────────────────────────
+// Frontend e backend ora vivono sullo stesso dominio (Railway), quindi
+// le richieste API in produzione sono same-origin e NON passano da CORS.
+// Manteniamo allowedOrigins per: (a) override da env in staging/preview
+// Railway, (b) dev locale Vite su :5173.
 const allowedOrigins = [
-  'https://alessiovinci87.github.io',
-  process.env.CORS_ORIGIN, // override da env per staging/dev (es. http://localhost:5173)
+  'https://quitfresh.it',
+  'https://www.quitfresh.it',
+  'http://localhost:5173',
+  process.env.CORS_ORIGIN, // override da env per staging/preview
 ].filter(Boolean);
 
 app.use(cors({
@@ -97,7 +104,18 @@ app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
-app.use((req, res) => res.status(404).json({ error: 'Endpoint non trovato' }));
+// 404 JSON SOLO per route API mancanti (es. typo, endpoint rimosso).
+// NON usare catch-all globale, altrimenti lo SPA fallback sotto non scatta.
+app.use('/api', (req, res) => res.status(404).json({ error: 'Endpoint non trovato' }));
+
+// ─── Serve la build React (frontend consolidato su Railway) ─────────
+// Vite genera client/dist/ al build. Express lo serve come asset statici
+// e fa fallback a index.html per le route SPA (react-router).
+const clientDist = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDist));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
 
 // Sentry express error handler — deve venire DOPO le route e PRIMA del nostro
 if (process.env.SENTRY_DSN) {

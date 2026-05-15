@@ -1,8 +1,10 @@
-name: Deploy Frontend to GitHub Pages
+name: Deploy Frontend to GitHub Pages (DISMESSO)
 
+# Frontend consolidato su Railway (quitfresh.it serve API+SPA dallo stesso
+# dominio). GitHub Pages e' deprecato. Lasciamo workflow_dispatch per
+# eventuali rollback di emergenza, ma niente piu' trigger automatico
+# su push (sprecava build minutes inutilmente).
 on:
-  push:
-    branches: [main, claude/quitfresh-app-NsSUP, redesign]
   workflow_dispatch:
 
 permissions:
