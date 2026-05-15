@@ -233,112 +233,125 @@ export default function Craving() {
         </button>
       </header>
 
-      {/* MESSAGES — scrollabile, tra header e (input + tastiera) */}
+      {/* CONTENT WRAPPER — UN solo container che racchiude messaggi + input.
+          Animazione GPU via transform: translateY — molto piu' fluida di
+          animare bottom (che triggera reflow ad ogni frame su iOS Safari).
+          translate(-50%, ...) combina il centramento orizzontale (sostituisce
+          left:50% + translateX(-50%)) e lo slide verticale con la tastiera. */}
       <div
-        className="overscroll-contain"
         style={{
-          ...columnBase,
+          position: 'fixed',
+          left: '50%',
           top: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
-          bottom: `${INPUT_HEIGHT + kbHeight}px`,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          padding: '1rem',
-          backgroundColor: '#fdfcf9',
-          WebkitOverflowScrolling: 'touch',
-          transition: 'bottom 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
+          bottom: 0,
+          width: '100%',
+          maxWidth: `${MAX_WIDTH}px`,
+          transform: `translate(-50%, -${kbHeight}px)`,
+          transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
+          willChange: 'transform',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
-        <div className="space-y-3">
-          {messages.length === 0 && loading && (
-            <div className="flex items-center gap-2 text-sage-500/70">
-              <TypingDots />
-            </div>
-          )}
-
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-            >
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-soft ${
-                  msg.role === 'user'
-                    ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-br-md'
-                    : 'bg-white text-sage-900 rounded-bl-md border border-sage-100/60'
-                }`}
-              >
-                {msg.content}
-              </div>
-            </div>
-          ))}
-
-          {loading && messages.length > 0 && (
-            <div className="flex justify-start animate-fade-in">
-              <div className="bg-white border border-sage-100/60 rounded-2xl rounded-bl-md px-4 py-3 shadow-soft">
+        {/* MESSAGES */}
+        <div
+          className="overscroll-contain"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            padding: '1rem',
+            backgroundColor: '#fdfcf9',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          <div className="space-y-3">
+            {messages.length === 0 && loading && (
+              <div className="flex items-center gap-2 text-sage-500/70">
                 <TypingDots />
               </div>
-            </div>
-          )}
+            )}
 
-          {error && (
-            <p className="text-xs text-terracotta-600 text-center bg-terracotta-50 border border-terracotta-200 rounded-xl-soft px-3 py-2">
-              {error}
-            </p>
-          )}
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-soft ${
+                    msg.role === 'user'
+                      ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-br-md'
+                      : 'bg-white text-sage-900 rounded-bl-md border border-sage-100/60'
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
 
-          <div ref={bottomRef} />
+            {loading && messages.length > 0 && (
+              <div className="flex justify-start animate-fade-in">
+                <div className="bg-white border border-sage-100/60 rounded-2xl rounded-bl-md px-4 py-3 shadow-soft">
+                  <TypingDots />
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <p className="text-xs text-terracotta-600 text-center bg-terracotta-50 border border-terracotta-200 rounded-xl-soft px-3 py-2">
+                {error}
+              </p>
+            )}
+
+            <div ref={bottomRef} />
+          </div>
         </div>
-      </div>
 
-      {/* INPUT — fixed in basso, si solleva con la tastiera (bottom:kbHeight) */}
-      <div
-        style={{
-          ...columnBase,
-          bottom: `${kbHeight}px`,
-          height: INPUT_HEIGHT,
-          zIndex: 20,
-          padding: '0.75rem 1rem',
-          paddingBottom: kbHeight > 0
-            ? '0.75rem'
-            : 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
-          borderTop: '1px solid rgba(220, 232, 222, 0.5)',
-          backgroundColor: '#ffffff',
-          transition: 'bottom 0.25s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
-      >
-        <div className="flex items-end gap-2 min-w-0 h-full">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onPointerDown={() => {
-              // Anticipa lo spostamento al tap, prima del focus event.
-              // Su iOS PWA il focusin a volte ritarda fino a meta'
-              // animazione tastiera: pointerdown e' il primo evento utile.
-              // Apre anche il tap lock window per i prossimi 500ms.
-              tapLockUntilRef.current = Date.now() + 500;
-              setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
-            }}
-            rows={1}
-            placeholder="Scrivi qualcosa…"
-            className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
-            style={{ minHeight: '42px', fontSize: '16px' }}
-            onInput={(e) => {
-              e.target.style.height = 'auto';
-              e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
-            }}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || loading}
-            className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
-            aria-label="Invia"
-          >
-            <svg className="w-4 h-4 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
-            </svg>
-          </button>
+        {/* INPUT — flex-shrink:0 in fondo al wrapper. Si muove con esso. */}
+        <div
+          style={{
+            flexShrink: 0,
+            height: INPUT_HEIGHT,
+            padding: '0.75rem 1rem',
+            paddingBottom: kbHeight > 0
+              ? '0.75rem'
+              : 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+            borderTop: '1px solid rgba(220, 232, 222, 0.5)',
+            backgroundColor: '#ffffff',
+          }}
+        >
+          <div className="flex items-end gap-2 min-w-0 h-full">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onPointerDown={() => {
+                tapLockUntilRef.current = Date.now() + 500;
+                setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
+              }}
+              rows={1}
+              placeholder="Scrivi qualcosa…"
+              className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
+              style={{ minHeight: '42px', fontSize: '16px' }}
+              onInput={(e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
+              }}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || loading}
+              className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
+              aria-label="Invia"
+            >
+              <svg className="w-4 h-4 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </>
