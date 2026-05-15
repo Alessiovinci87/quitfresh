@@ -162,26 +162,30 @@ export default function Craving() {
     }, durationMs);
   };
 
-  // Anticipa lo spostamento dell'input. Solo focusin avvia la finestra di
-  // animating: pointerdown e focusout NON la avviano per non bloccare il
-  // primo tap su input dopo una chiusura tastiera (visibility:hidden in
-  // animating disabilita gli eventi touch sui descendant).
+  // Anticipa lo spostamento dell'input. Su iOS PWA, vv.resize non triggera
+  // finche' l'animazione tastiera non e' finita (~300ms): nel frattempo
+  // l'input resta a bottom:0 e la tastiera lo copre. Con focusin pre-impostiamo
+  // una stima conservativa (290px ≈ tastiera iOS portrait + QuickType bar):
+  // l'input parte su immediatamente, e quando vv.resize arrivera' col valore
+  // esatto l'aggiustamento e' di pochi pixel, smooth grazie alla transition.
   useEffect(() => {
     const onFocusIn = (e) => {
       const tag = e.target?.tagName;
       if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
-      // DOM hack: applica il bottom corretto SUBITO (senza aspettare React
-      // render) per ridurre il flicker iniziale prima dell'animating window.
-      if (wrapperRef.current) {
-        wrapperRef.current.style.bottom = `${cachedKbRef.current}px`;
-      }
       tapLockUntilRef.current = Date.now() + 500;
       setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
       startAnimatingWindow(400);
     };
+    const onFocusOut = (e) => {
+      const tag = e.target?.tagName;
+      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
+      startAnimatingWindow(400);
+    };
     document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
     return () => {
       document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
       if (animatingTimerRef.current) clearTimeout(animatingTimerRef.current);
     };
   }, []);
@@ -335,13 +339,12 @@ export default function Craving() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          // SOLO opacity:0 (non visibility:hidden): visibility:hidden
-          // disabilita gli event listeners sui descendant, iOS cancella
-          // il focus della textarea durante l'animating window e la
-          // tastiera scompare dopo essere apparsa un secondo. opacity:0
-          // mantiene gli event listeners attivi, iOS preserva il focus.
-          // Il jitter sotto e' ridotto al minimo da tap lock + rAF
-          // debounce + soglia kb<100 + cache localStorage.
+          // visibility: hidden + opacity: 0 quando animating: iOS smette
+          // di renderizzare i pixel del wrapper, i 15 re-render React
+          // durante l'animazione tastiera NON producono output visibile.
+          // Quando torna visible, fade-in opacity 120ms per non comparire
+          // a strappo.
+          visibility: ready && !animating ? 'visible' : 'hidden',
           opacity: ready && !animating ? 1 : 0,
           transition: 'opacity 120ms ease-out',
         }}
