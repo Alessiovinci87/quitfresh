@@ -274,6 +274,10 @@ export default function Home() {
         )}
       </div>
 
+      {/* Banner giorno 5 citisina — punto chiave del protocollo.
+          Solo se phase.day === 5 (calcolato da getActivePhase). */}
+      {phase && phase.day === 5 && <Day5Banner />}
+
       {/* Capsule oggi — compatta */}
       <CapsuleCompact user={user} onOpenDetails={() => setShowCapsuleDetails(true)} />
 
@@ -324,6 +328,32 @@ export default function Home() {
           onClose={() => setShowCapsuleDetails(false)}
         />
       )}
+    </div>
+  );
+}
+
+// ── Day5Banner: banner solo il 5° giorno di terapia citisina ──
+// Punto chiave del protocollo Tabex/Sopharma: il foglietto raccomanda
+// di smettere di fumare entro il 5° giorno per massima efficacia.
+// Messaggio caldo + citazione foglietto produttore + invito a consultare
+// il medico per inattaccabilità medico-legale.
+function Day5Banner() {
+  return (
+    <div className="mt-4 mb-2 p-4 rounded-2xl-soft bg-gradient-to-br from-sage-50 to-sage-100 border border-sage-300 shadow-soft">
+      <div className="flex items-start gap-3">
+        <div className="text-2xl shrink-0" aria-hidden>🌱</div>
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-base font-semibold text-sage-900 leading-tight">
+            Giorno 5: punto chiave
+          </p>
+          <p className="mt-2 text-[13px] text-sage-800 leading-relaxed">
+            Sei al 5° giorno: il punto del protocollo in cui la citisina ti dà il massimo aiuto. Da oggi, ogni sigaretta in meno conta di più — è quanto indicato sul foglietto del produttore.
+          </p>
+          <p className="mt-2 text-[12px] text-sage-700/80 leading-relaxed">
+            Hai dubbi? Il tuo medico è la voce giusta a cui chiedere.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
