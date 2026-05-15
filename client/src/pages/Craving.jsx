@@ -405,20 +405,20 @@ export default function Craving() {
           </div>
         </div>
 
-        {/* INPUT — flex-shrink:0 in fondo al wrapper. Si muove con esso. */}
+        {/* INPUT — flex-shrink:0 in fondo al wrapper. Si muove con esso.
+            minHeight (non height fisso) cosi' cresce in altezza con il
+            content della textarea (max 128px tramite onInput handler).
+            Messages (flex:1) si comprime automaticamente. */}
         <div
           style={{
             flexShrink: 0,
-            height: INPUT_HEIGHT,
-            // Padding-bottom fisso: la safe-area-bottom e' gia' rispettata
-            // dal wrapper (bottom: env(safe-area-inset-bottom) quando
-            // tastiera chiusa). Cosi' il content dell'input ha 72px puliti.
+            minHeight: INPUT_HEIGHT,
             padding: '0.75rem 1rem',
             borderTop: '1px solid rgba(220, 232, 222, 0.5)',
             backgroundColor: '#ffffff',
           }}
         >
-          <div className="flex items-end gap-2 min-w-0 h-full">
+          <div className="flex items-end gap-2 min-w-0">
             <textarea
               ref={inputRef}
               value={input}
