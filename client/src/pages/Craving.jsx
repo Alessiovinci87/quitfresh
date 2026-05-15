@@ -29,6 +29,10 @@ export default function Craving() {
   const tapLockUntilRef = useRef(0);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  // Ref al wrapper content per manipolare style direttamente al pointerdown
+  // senza aspettare il render React → animazione parte nello stesso frame
+  // del touch, prima che iOS inizi ad alzare la tastiera.
+  const wrapperRef = useRef(null);
 
   useEffect(() => { startChat(); }, []);
 
@@ -239,6 +243,7 @@ export default function Craving() {
           translate(-50%, ...) combina il centramento orizzontale (sostituisce
           left:50% + translateX(-50%)) e lo slide verticale con la tastiera. */}
       <div
+        ref={wrapperRef}
         style={{
           position: 'fixed',
           left: '50%',
@@ -329,6 +334,13 @@ export default function Craving() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               onPointerDown={() => {
+                // SUBITO: manipola il DOM direttamente — senza aspettare
+                // React render, l'animazione parte nello stesso frame del
+                // touch, prima che iOS inizi ad alzare la tastiera.
+                if (wrapperRef.current) {
+                  wrapperRef.current.style.transform =
+                    `translate(-50%, -${cachedKbRef.current}px)`;
+                }
                 tapLockUntilRef.current = Date.now() + 500;
                 setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
               }}
