@@ -176,14 +176,16 @@ export default function Craving() {
       setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
       startAnimatingWindow(400);
     };
-    // NIENTE startAnimatingWindow su focusout: era la causa del bug
-    // 2-click. Dopo blur, il wrapper restava visibility:hidden per
-    // 400ms e il primo tap sull'input veniva ignorato. Senza mask
-    // alla chiusura, l'utente vede il wrapper scendere smooth (1 frame
-    // per setState grazie a rAF) ma puo' ri-cliccare subito.
+    const onFocusOut = (e) => {
+      const tag = e.target?.tagName;
+      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
+      startAnimatingWindow(400);
+    };
     document.addEventListener('focusin', onFocusIn);
+    document.addEventListener('focusout', onFocusOut);
     return () => {
       document.removeEventListener('focusin', onFocusIn);
+      document.removeEventListener('focusout', onFocusOut);
       if (animatingTimerRef.current) clearTimeout(animatingTimerRef.current);
     };
   }, []);
@@ -216,10 +218,7 @@ export default function Craving() {
       setError(err.message || 'Errore nella risposta AI.');
     } finally {
       setLoading(false);
-      // NIENTE setTimeout focus: il button send ha onPointerDown
-      // preventDefault, quindi la textarea NON perde il focus quando
-      // l'utente clicca send. La tastiera resta aperta naturalmente,
-      // niente ciclo blur→focus→animating che causava il bug 2-click.
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   }
 
@@ -445,7 +444,6 @@ export default function Craving() {
               }}
             />
             <button
-              onPointerDown={(e) => e.preventDefault()}
               onClick={sendMessage}
               disabled={!input.trim() || loading}
               className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
