@@ -14,6 +14,10 @@ export default function Craving() {
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
   const [kbHeight, setKbHeight] = useState(0);
+  // Ready flag: il wrapper resta opacity:0 finche' il primo handleResize
+  // non e' avvenuto. Cosi' gli elementi appaiono gia' nella posizione
+  // corretta, niente flicker iniziale di "scendere dall'alto".
+  const [ready, setReady] = useState(false);
   // Cache: l'altezza reale della tastiera dell'utente, memorizzata in
   // localStorage. Al primo focus della prima sessione usiamo un valore
   // di default; dalla seconda apertura in poi la stima coincide al pixel
@@ -109,6 +113,7 @@ export default function Craving() {
       const inTapLock = Date.now() < tapLockUntilRef.current;
       if (inTapLock && final < cachedKbRef.current - 30) return;
       setKbHeight(final);
+      setReady(true);
     };
     handleResize();
     vv.addEventListener('resize', handleResize);
@@ -252,11 +257,10 @@ export default function Craving() {
           width: '100%',
           maxWidth: `${MAX_WIDTH}px`,
           transform: 'translateX(-50%)',
-          transition: 'bottom 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
-          willChange: 'bottom',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          opacity: ready ? 1 : 0,
         }}
       >
         {/* MESSAGES */}
@@ -282,7 +286,7 @@ export default function Craving() {
             {messages.map((msg, i) => (
               <div
                 key={i}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-soft ${
@@ -297,7 +301,7 @@ export default function Craving() {
             ))}
 
             {loading && messages.length > 0 && (
-              <div className="flex justify-start animate-fade-in">
+              <div className="flex justify-start">
                 <div className="bg-white border border-sage-100/60 rounded-2xl rounded-bl-md px-4 py-3 shadow-soft">
                   <TypingDots />
                 </div>
