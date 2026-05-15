@@ -21,4 +21,23 @@ async function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth };
+// Middleware che blocca route protette se l'email dell'utente non e'
+// verificata. Va DOPO requireAuth nella catena (richiede req.user).
+// Le route auth (/api/auth/*) NON applicano questo middleware: l'utente
+// deve poter accedere a /me per leggere il proprio stato, a /verify-email
+// per cliccare il link, a /resend-verify per richiedere reinvio.
+// Client riconosce code:'EMAIL_NOT_VERIFIED' per mostrare il banner verifica.
+function requireVerifiedEmail(req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Autenticazione richiesta' });
+  }
+  if (!req.user.emailVerified) {
+    return res.status(403).json({
+      error: 'Email non verificata. Controlla la casella di posta.',
+      code: 'EMAIL_NOT_VERIFIED',
+    });
+  }
+  next();
+}
+
+module.exports = { requireAuth, requireVerifiedEmail };

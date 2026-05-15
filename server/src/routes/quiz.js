@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { normalizeSchedule } = require('../lib/cytisine');
 
 // POST /api/quiz — partial update: aggiorna solo i campi forniti
-router.post('/', requireAuth, async (req, res) => {
+router.post('/', requireAuth, requireVerifiedEmail, async (req, res) => {
   const {
     cigarettesPerDay, criticalMoments, dependencyLevel, quitDate,
     cytisineStartDate, firstDoseTime, cytisineSchedule, cigarettePackPrice,
@@ -59,7 +59,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // PATCH /api/quiz/quit-date — aggiorna solo la data di quit
-router.patch('/quit-date', requireAuth, async (req, res) => {
+router.patch('/quit-date', requireAuth, requireVerifiedEmail, async (req, res) => {
   const { quitDate } = req.body;
   if (!quitDate) return res.status(400).json({ error: 'quitDate obbligatoria' });
   try {
@@ -76,7 +76,7 @@ router.patch('/quit-date', requireAuth, async (req, res) => {
 });
 
 // PATCH /api/quiz/smoke-free-since — imposta il momento di inizio astinenza
-router.patch('/smoke-free-since', requireAuth, async (req, res) => {
+router.patch('/smoke-free-since', requireAuth, requireVerifiedEmail, async (req, res) => {
   const { smokeFreeSince } = req.body;
   try {
     const user = await prisma.user.update({

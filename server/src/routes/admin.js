@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const crypto = require('crypto');
 const prisma = require('../lib/prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
 
-router.use(requireAuth, requireAdmin);
+router.use(requireAuth, requireVerifiedEmail, requireAdmin);
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // niente I/O/0/1 per leggibilità
 

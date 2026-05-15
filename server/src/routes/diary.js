@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 
-router.use(requireAuth, requirePremium);
+router.use(requireAuth, requireVerifiedEmail, requirePremium);
 
 function dayStart(date) {
   const d = new Date(date);

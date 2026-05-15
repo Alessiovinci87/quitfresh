@@ -1,11 +1,11 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { cravingLimiter } = require('../middleware/rateLimit');
 const { getCravingResponse } = require('../lib/openai');
 
-router.use(requireAuth, requirePremium);
+router.use(requireAuth, requireVerifiedEmail, requirePremium);
 
 // POST /api/craving
 router.post('/', cravingLimiter, async (req, res) => {

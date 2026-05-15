@@ -1,12 +1,12 @@
 const express = require('express');
 const prisma = require('../lib/prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { stripe, priceId, webhookSecret, isConfigured } = require('../lib/stripe');
 
 const router = express.Router();
 
 // GET /api/payments/status
-router.get('/status', requireAuth, (req, res) => {
+router.get('/status', requireAuth, requireVerifiedEmail, (req, res) => {
   res.json({
     isPremium: Boolean(req.user.isPremium),
     premiumSince: req.user.premiumSince,
@@ -16,7 +16,7 @@ router.get('/status', requireAuth, (req, res) => {
 
 // POST /api/payments/checkout — crea Stripe Checkout Session
 // Caso speciale: codice promo al 100% → bypass Stripe, attivazione diretta.
-router.post('/checkout', requireAuth, async (req, res) => {
+router.post('/checkout', requireAuth, requireVerifiedEmail, async (req, res) => {
   if (req.user.isPremium) {
     return res.status(400).json({ error: 'Già premium' });
   }

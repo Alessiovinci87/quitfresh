@@ -1,11 +1,11 @@
 const router = require('express').Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 const { chatLimiter } = require('../middleware/rateLimit');
 const { getChatResponse } = require('../lib/openai');
 
 // POST /api/chat
-router.post('/', requireAuth, requirePremium, chatLimiter, async (req, res) => {
+router.post('/', requireAuth, requireVerifiedEmail, requirePremium, chatLimiter, async (req, res) => {
   const { messages = [] } = req.body;
 
   try {
