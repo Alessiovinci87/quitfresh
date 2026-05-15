@@ -27,12 +27,14 @@ cleanupOutdatedCaches();
 // Navigation requests (HTML) → NetworkFirst con timeout 3s, fallback cache.
 // Cosi' ogni refresh prova prima il network: se il deploy ha nuovi bundle,
 // il client li scarica immediatamente. Solo se offline cade su cache.
+// NOTA: passare l'instance direttamente, NON .handle — .handle perde il
+// binding "this" e causa "TypeError: this.handleAll is not a function".
 registerRoute(
   new NavigationRoute(
     new NetworkFirst({
       cacheName: 'qf-html',
       networkTimeoutSeconds: 3,
-    }).handle
+    })
   )
 );
 
@@ -65,20 +67,22 @@ registerRoute(
   })
 );
 
-// Aggiornamento immediato del SW quando arriva una nuova versione
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+// NOTA: NIENTE install → skipWaiting() automatico qui. Lo skipWaiting
+// avviene solo via message SKIP_WAITING dal client (banner Aggiorna).
+// Cosi' il SW resta in waiting state finche' l'utente clicca aggiorna.
+// L'activate handler clients.claim e' gia' registrato sopra.
 
-// === PUSH NOTIFICATIONS — preservata dal SW precedente ===
+// === PUSH NOTIFICATIONS — path aggiornati da /quitfresh/ a / per
+//     migrazione GH Pages → quitfresh.it (Railway) ===
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {};
   event.waitUntil(
     self.registration.showNotification(data.title || 'QuitFresh', {
       body: data.body || 'Controlla come stai.',
-      icon: '/quitfresh/icon.svg',
-      badge: '/quitfresh/icon.svg',
+      icon: '/icon.svg',
+      badge: '/icon.svg',
       vibrate: [200, 100, 200],
-      data: { url: '/quitfresh/' },
+      data: { url: '/' },
     })
   );
 });
@@ -88,9 +92,9 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then((list) => {
       for (const client of list) {
-        if (client.url.includes('/quitfresh/') && 'focus' in client) return client.focus();
+        if ('focus' in client) return client.focus();
       }
-      return self.clients.openWindow('/quitfresh/');
+      return self.clients.openWindow('/');
     })
   );
 });
