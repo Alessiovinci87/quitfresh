@@ -5,7 +5,7 @@
     "buildCommand": "cd /app/client && npm install && npm run build"
   },
   "deploy": {
-    "startCommand": "npx prisma generate && npx prisma migrate deploy && node src/index.js",
+    "startCommand": "cd server && npx prisma generate && npx prisma migrate deploy && cd .. && node server/src/index.js",
     "healthcheckPath": "/api/health",
     "restartPolicyType": "ON_FAILURE"
   }

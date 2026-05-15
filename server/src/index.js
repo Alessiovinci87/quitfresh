@@ -111,7 +111,14 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'Endpoint non trovat
 // ─── Serve la build React (frontend consolidato su Railway) ─────────
 // Vite genera client/dist/ al build. Express lo serve come asset statici
 // e fa fallback a index.html per le route SPA (react-router).
-const clientDist = path.join(__dirname, '../../client/dist');
+//
+// Path: process.cwd() = repo root.
+// Su Railway con Root Directory = / il start command e' "node server/
+// src/index.js" lanciato da /app, quindi cwd = /app e clientDist =
+// /app/client/dist. In dev locale il workspace npm parte dalla root del
+// monorepo, stesso risultato. __dirname non funzionerebbe perche'
+// rimanda a server/src che non e' la posizione del client.
+const clientDist = path.join(process.cwd(), 'client/dist');
 app.use(express.static(clientDist));
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
