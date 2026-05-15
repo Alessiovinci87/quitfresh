@@ -542,6 +542,14 @@ function HabitsSubPage({ user, updateUser, onClose }) {
         <div className="pt-2 border-t border-sage-100/60">
           <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold mb-3">Protocollo citisina</p>
 
+          {typeof Notification !== 'undefined' && Notification.permission !== 'granted' && (
+            <div className="mb-4 p-3 bg-terracotta-50 border border-terracotta-200 rounded-xl-soft">
+              <p className="text-xs text-terracotta-700 leading-relaxed">
+                <strong>Promemoria farmaco non ancora attivi.</strong> Gli orari qui sotto da soli non bastano: per ricevere le notifiche di assunzione vai in <strong>Profilo → Notifiche</strong> e premi <em>“Attiva notifiche”</em>.
+              </p>
+            </div>
+          )}
+
           <Field label="Data inizio">
             <input
               type="date"

@@ -20,8 +20,8 @@ export default function Craving() {
   // con la realta' → zero salto. La cache si aggiorna a ogni vv.resize.
   const cachedKbRef = useRef(
     typeof localStorage !== 'undefined'
-      ? parseInt(localStorage.getItem('chatKbHeight') || '320', 10)
-      : 320
+      ? parseInt(localStorage.getItem('chatKbHeight') || '340', 10)
+      : 340
   );
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -296,7 +296,6 @@ export default function Craving() {
             : 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
           borderTop: '1px solid rgba(220, 232, 222, 0.5)',
           backgroundColor: '#ffffff',
-          transition: 'bottom 0.15s ease-out',
         }}
       >
         <div className="flex items-end gap-2 min-w-0 h-full">
