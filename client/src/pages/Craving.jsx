@@ -335,12 +335,13 @@ export default function Craving() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          // visibility: hidden + opacity: 0 quando animating: iOS smette
-          // di renderizzare i pixel del wrapper, i 15 re-render React
-          // durante l'animazione tastiera NON producono output visibile.
-          // Quando torna visible, fade-in opacity 120ms per non comparire
-          // a strappo.
-          visibility: ready && !animating ? 'visible' : 'hidden',
+          // SOLO opacity:0 (non visibility:hidden): visibility:hidden
+          // disabilita gli event listeners sui descendant, iOS cancella
+          // il focus della textarea durante l'animating window e la
+          // tastiera scompare dopo essere apparsa un secondo. opacity:0
+          // mantiene gli event listeners attivi, iOS preserva il focus.
+          // Il jitter sotto e' ridotto al minimo da tap lock + rAF
+          // debounce + soglia kb<100 + cache localStorage.
           opacity: ready && !animating ? 1 : 0,
           transition: 'opacity 120ms ease-out',
         }}
