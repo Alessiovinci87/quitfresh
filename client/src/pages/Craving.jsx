@@ -174,12 +174,12 @@ export default function Craving() {
       if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
       tapLockUntilRef.current = Date.now() + 500;
       setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
-      startAnimatingWindow(400);
+      startAnimatingWindow(200);
     };
     const onFocusOut = (e) => {
       const tag = e.target?.tagName;
       if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
-      startAnimatingWindow(400);
+      startAnimatingWindow(200);
     };
     document.addEventListener('focusin', onFocusIn);
     document.addEventListener('focusout', onFocusOut);
@@ -339,12 +339,13 @@ export default function Craving() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          // visibility: hidden + opacity: 0 quando animating: iOS smette
-          // di renderizzare i pixel del wrapper, i 15 re-render React
-          // durante l'animazione tastiera NON producono output visibile.
-          // Quando torna visible, fade-in opacity 120ms per non comparire
-          // a strappo.
-          visibility: ready && !animating ? 'visible' : 'hidden',
+          // SOLO opacity:0 (NO visibility:hidden): iOS PWA standalone con
+          // SW funzionante interpreta visibility:hidden come "input non
+          // disponibile" → cancella il focus → tastiera non apre. Con
+          // opacity:0 l'input resta interagibile, iOS preserva il focus,
+          // la tastiera si apre regolarmente. Il jitter sottostante puo'
+          // essere ancora leggermente visibile attraverso la trasparenza
+          // ma rAF debounce + tap lock + cache lo riducono molto.
           opacity: ready && !animating ? 1 : 0,
           transition: 'opacity 120ms ease-out',
         }}
@@ -432,7 +433,7 @@ export default function Craving() {
                 }
                 tapLockUntilRef.current = Date.now() + 500;
                 setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
-                startAnimatingWindow(400);
+                startAnimatingWindow(200);
               }}
               rows={1}
               placeholder="Scrivi qualcosa…"
