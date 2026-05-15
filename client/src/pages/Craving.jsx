@@ -433,7 +433,10 @@ export default function Craving() {
                 }
                 tapLockUntilRef.current = Date.now() + 500;
                 setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
-                startAnimatingWindow(200);
+                // NIENTE startAnimatingWindow qui: opacity:0 sull'input al
+                // touch fa rifiutare il focus a iOS → tastiera non apre al
+                // primo click. animating partira' da focusin (quando iOS
+                // ha gia' committed al focus).
               }}
               rows={1}
               placeholder="Scrivi qualcosa…"
