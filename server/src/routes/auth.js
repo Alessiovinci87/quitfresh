@@ -7,8 +7,11 @@ const { requireAuth } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
 const { sendVerifyEmail } = require('../lib/email');
 
-function signToken(userId) {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
+// JWT include tokenVersion (tv). Il middleware requireAuth confronta
+// payload.tv con user.tokenVersion: se differiscono, il token e' stato
+// REVOCATO (cambio password, reset, logout-all) → 401.
+function signToken(userId, tokenVersion = 0) {
+  return jwt.sign({ userId, tv: tokenVersion }, process.env.JWT_SECRET, { expiresIn: '30d' });
 }
 
 function buildVerifyLink(token) {
@@ -54,7 +57,7 @@ router.post('/register', loginLimiter, async (req, res) => {
     sendVerifyEmail(user.email, buildVerifyLink(verifyToken))
       .catch(err => console.error('[register] email error:', err));
 
-    const token = signToken(user.id);
+    const token = signToken(user.id, user.tokenVersion);
     res.status(201).json({ token, user: sanitize(user) });
   } catch (err) {
     console.error(err);
@@ -81,7 +84,7 @@ router.post('/login', loginLimiter, async (req, res) => {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
 
-    const token = signToken(user.id);
+    const token = signToken(user.id, user.tokenVersion);
     res.json({ token, user: sanitize(user) });
   } catch (err) {
     console.error(err);
@@ -125,6 +128,23 @@ router.post('/resend-verify', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('resend-verify error:', err);
     res.status(500).json({ error: 'Errore durante l\'invio del link' });
+  }
+});
+
+// POST /api/auth/logout-all — invalida TUTTI i JWT esistenti dell'utente
+// incrementando tokenVersion. Utile se l'utente sospetta che il proprio
+// account sia stato compromesso o vuole sloggare un dispositivo perso.
+// Logout normale: solo lato client (rimuove qf_token da localStorage).
+router.post('/logout-all', requireAuth, async (req, res) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { tokenVersion: { increment: 1 } },
+    });
+    res.json({ message: 'Sessione chiusa su tutti i dispositivi' });
+  } catch (err) {
+    console.error('logout-all error:', err);
+    res.status(500).json({ error: 'Errore durante il logout globale' });
   }
 });
 

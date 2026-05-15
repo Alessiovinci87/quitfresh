@@ -63,12 +63,16 @@ router.post('/reset-password', async (req, res) => {
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
+    // Increment tokenVersion: invalida TUTTI i JWT esistenti (su tutti
+    // i dispositivi) → se l'account era compromesso, l'attacker viene
+    // sloggato. L'utente deve fare login con la nuova password.
     await prisma.user.update({
       where: { id: user.id },
       data: {
         passwordHash,
         resetToken: null,
         resetTokenExp: null,
+        tokenVersion: { increment: 1 },
       },
     });
 

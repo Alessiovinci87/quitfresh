@@ -14,6 +14,12 @@ async function requireAuth(req, res, next) {
     if (!user) {
       return res.status(401).json({ error: 'Utente non trovato' });
     }
+    // TOKEN REVOCATION CHECK: payload.tv === user.tokenVersion. Se
+    // differiscono, il token e' stato revocato (reset password, logout-all).
+    // Token vecchi/rubati non funzionano piu' dopo l'increment di tokenVersion.
+    if ((payload.tv ?? 0) !== (user.tokenVersion ?? 0)) {
+      return res.status(401).json({ error: 'Sessione revocata. Esegui di nuovo il login.' });
+    }
     req.user = user;
     next();
   } catch {
