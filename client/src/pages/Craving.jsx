@@ -213,6 +213,27 @@ export default function Craving() {
 
   return (
     <>
+      {/* DEBUG OVERLAY temporaneo — fa vedere kbHeight live per capire
+          se il bug "input copre messaggi" e' davvero strutturale o
+          un'illusione ottica. Rimuovere dopo il debug. */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 'calc(env(safe-area-inset-top, 0px) + 4px)',
+          right: 8,
+          zIndex: 30,
+          backgroundColor: 'rgba(220, 38, 38, 0.85)',
+          color: 'white',
+          padding: '2px 6px',
+          fontSize: '10px',
+          fontFamily: 'monospace',
+          borderRadius: 4,
+          pointerEvents: 'none',
+        }}
+      >
+        kb:{kbHeight} r:{ready ? '1' : '0'}
+      </div>
+
       {/* HEADER */}
       <header
         style={{
@@ -232,6 +253,21 @@ export default function Craving() {
           backgroundColor: '#ffffff',
         }}
       >
+        {/* Overlay sage scuro nella zona safe-area (dietro la status bar).
+            Con apple-mobile-web-app-status-bar-style=black-translucent il
+            testo della status bar e' bianco: serve uno sfondo scuro dietro
+            per essere leggibile. aria-hidden perche' puramente decorativo. */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 'env(safe-area-inset-top, 0px)',
+            backgroundColor: '#6B8F71',
+          }}
+        />
         <button
           onClick={() => navigate('/home')}
           className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center text-sage-700 hover:bg-sage-100/60 transition-colors active:scale-95 shrink-0"
