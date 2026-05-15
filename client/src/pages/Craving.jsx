@@ -339,9 +339,12 @@ export default function Craving() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          // opacity: 0 quando non ancora ready OPPURE durante la finestra
-          // di animazione tastiera (400ms da pointerdown/focus/blur). Cosi'
-          // l'utente vede un fade pulito invece del jitter di vv.resize.
+          // visibility: hidden + opacity: 0 quando animating: iOS smette
+          // di renderizzare i pixel del wrapper, i 15 re-render React
+          // durante l'animazione tastiera NON producono output visibile.
+          // Quando torna visible, fade-in opacity 120ms per non comparire
+          // a strappo.
+          visibility: ready && !animating ? 'visible' : 'hidden',
           opacity: ready && !animating ? 1 : 0,
           transition: 'opacity 120ms ease-out',
         }}

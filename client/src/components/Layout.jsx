@@ -5,7 +5,12 @@ export default function Layout({ children }) {
   const { user } = useAuth();
   return (
     <div className="mobile-container bg-cream-50">
-      <main className="flex-1 overflow-y-auto pb-28">{children}</main>
+      <main
+        className="flex-1 overflow-y-auto pb-28"
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+      >
+        {children}
+      </main>
       <nav
         className="
           fixed bottom-0 left-0 right-0 z-10
