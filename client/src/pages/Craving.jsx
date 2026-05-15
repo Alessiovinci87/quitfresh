@@ -63,11 +63,18 @@ export default function Craving() {
   // visualViewport: unica API che riporta l'altezza tastiera in modo
   // affidabile su PWA installata iOS 16.4+, Safari mobile, Chrome Android.
   // Su desktop kbHeight resta 0.
+  //
+  // Su iOS PWA, quando l'input prende focus Safari sposta automaticamente
+  // il visual viewport (vv.offsetTop > 0) per portare l'input "in vista".
+  // Con il nostro layout fixed non serve, e anzi falsifica il calcolo:
+  // window.scrollTo(0, 0) annulla lo scroll automatico ad ogni evento, cosi'
+  // vv.offsetTop torna a 0 e la formula kb = innerHeight - vv.height e' pulita.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
     const handleResize = () => {
-      const kb = window.innerHeight - vv.height - vv.offsetTop;
+      window.scrollTo(0, 0);
+      const kb = window.innerHeight - vv.height;
       setKbHeight(Math.max(0, kb));
     };
     handleResize();
