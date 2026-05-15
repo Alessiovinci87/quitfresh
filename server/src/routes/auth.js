@@ -34,8 +34,8 @@ router.post('/register', loginLimiter, async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: 'Email e password sono obbligatorie' });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'La password deve avere almeno 6 caratteri' });
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'La password deve avere almeno 8 caratteri' });
   }
 
   try {
@@ -44,7 +44,7 @@ router.post('/register', loginLimiter, async (req, res) => {
       return res.status(409).json({ error: 'Email già registrata' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     const verifyToken = crypto.randomUUID();
     const user = await prisma.user.create({
       data: { email, passwordHash, verifyToken },

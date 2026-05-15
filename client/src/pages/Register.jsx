@@ -67,11 +67,11 @@ export default function Register() {
               type="password"
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={8}
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition"
-              placeholder="Almeno 6 caratteri"
+              placeholder="Almeno 8 caratteri"
             />
           </div>
 

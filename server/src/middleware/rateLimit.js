@@ -56,4 +56,21 @@ const forgotPasswordLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { cravingLimiter, chatLimiter, loginLimiter, forgotPasswordLimiter };
+// Rate limit globale di sicurezza per TUTTE le route /api/*. Soglia
+// generosa (300/min per utente o IP) per non disturbare l'uso normale,
+// ma blocca abusi/scraping/DoS. I limiter specifici (chat, craving,
+// login) restano sopra per le route piu' sensibili.
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minuto
+  limit: 300,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: 'Troppe richieste. Riprova tra un minuto.',
+    });
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+module.exports = { cravingLimiter, chatLimiter, loginLimiter, forgotPasswordLimiter, apiLimiter };
