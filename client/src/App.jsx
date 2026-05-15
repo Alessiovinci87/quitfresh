@@ -75,6 +75,55 @@ function SplashScreen() {
   );
 }
 
+function UpdateBanner() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const onReady = () => setReady(true);
+    window.addEventListener('sw-update-ready', onReady);
+    return () => window.removeEventListener('sw-update-ready', onReady);
+  }, []);
+
+  if (!ready) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 'env(safe-area-inset-top, 0px)',
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        backgroundColor: '#6B8F71',
+        color: '#ffffff',
+        padding: '10px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      }}
+    >
+      <span style={{ fontSize: '13px', fontWeight: 500 }}>Nuova versione disponibile</span>
+      <button
+        onClick={() => window.applySwUpdate?.()}
+        style={{
+          padding: '6px 14px',
+          backgroundColor: '#ffffff',
+          color: '#4a6b50',
+          border: 'none',
+          borderRadius: '20px',
+          fontWeight: 700,
+          fontSize: '13px',
+          cursor: 'pointer',
+        }}
+      >
+        Aggiorna
+      </button>
+    </div>
+  );
+}
+
 function AppShell() {
   const [splashVisible, setSplashVisible] = useState(true);
 
@@ -86,6 +135,7 @@ function AppShell() {
   return (
     <>
       {splashVisible && <SplashScreen />}
+      <UpdateBanner />
       <div className="min-h-screen bg-gray-100 flex items-start justify-center">
         <Routes>
           <Route path="/login" element={<Login />} />

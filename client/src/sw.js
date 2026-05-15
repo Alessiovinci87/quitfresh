@@ -3,6 +3,21 @@ import { registerRoute, NavigationRoute } from 'workbox-routing';
 import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
+// SKIP_WAITING handler: il client invia questo message quando l'utente
+// clicca "Aggiorna" sul banner di nuova versione. Il SW chiama
+// skipWaiting() per attivarsi immediatamente, e clients.claim() prende
+// controllo di tutte le pagine aperte. controllerchange nel client
+// triggera il reload.
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 // Precache: app shell (JS, CSS, fonts, icons con hash univoco).
 // NOTA: index.html viene anche precachato ma e' sovrascritto sotto da
 // NavigationRoute con NetworkFirst per garantire sempre l'ultima versione.
