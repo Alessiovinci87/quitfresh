@@ -2,16 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 
-// Rileva mobile (touch + viewport stretto). Su mobile usiamo position:fixed
-// con altezza = visualViewport.height, cosi' il container si comprime
-// quando appare la tastiera e l'input flex-shrink:0 resta ancorato sopra
-// di essa. Su desktop niente JS — height:100vh normale dentro il flex flow.
-function detectMobile() {
-  if (typeof window === 'undefined') return false;
-  const narrow = window.matchMedia('(max-width: 768px)').matches;
-  const touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-  return narrow && touch;
-}
+const HEADER_HEIGHT = 64;
+const INPUT_HEIGHT = 72;
+const MAX_WIDTH = 430;
 
 export default function Craving() {
   const navigate = useNavigate();
@@ -20,12 +13,7 @@ export default function Craving() {
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
-  const [isMobile, setIsMobile] = useState(detectMobile);
-  const [winHeight, setWinHeight] = useState(
-    typeof window !== 'undefined' ? window.innerHeight : 800
-  );
-  // Offset altezza tastiera. 0 = niente tastiera. >0 = altezza occupata.
-  const [kbOffset, setKbOffset] = useState(0);
+  const [kbHeight, setKbHeight] = useState(0);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -35,66 +23,60 @@ export default function Craving() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // Aggiorna winHeight su rotazione/resize. Anche visualViewport.resize:
-  // su Safari mobile NON standalone e su Android, vv.height < innerHeight
-  // quando appare la tastiera — quello e' il path "pulito".
+  // BODY LOCK: senza questo iOS scrolla l'intero documento per portare
+  // l'input in vista quando appare la tastiera, e gli elementi
+  // position:fixed seguono il document — header sparisce, input "schizza".
+  // Si applica solo finche' il componente Craving e' montato.
   useEffect(() => {
-    const onWinResize = () => setWinHeight(window.innerHeight);
-    window.addEventListener('resize', onWinResize);
-
-    const vv = window.visualViewport;
-    let onVvResize;
-    if (vv) {
-      onVvResize = () => {
-        const diff = window.innerHeight - vv.height;
-        if (diff > 50) setKbOffset(diff);
-        else setKbOffset(0);
-      };
-      vv.addEventListener('resize', onVvResize);
-    }
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlPosition: html.style.position,
+      htmlOverflow: html.style.overflow,
+      htmlHeight: html.style.height,
+      htmlWidth: html.style.width,
+      bodyPosition: body.style.position,
+      bodyOverflow: body.style.overflow,
+      bodyHeight: body.style.height,
+      bodyWidth: body.style.width,
+    };
+    html.style.position = 'fixed';
+    html.style.overflow = 'hidden';
+    html.style.height = '100%';
+    html.style.width = '100%';
+    body.style.position = 'fixed';
+    body.style.overflow = 'hidden';
+    body.style.height = '100%';
+    body.style.width = '100%';
     return () => {
-      window.removeEventListener('resize', onWinResize);
-      if (vv && onVvResize) vv.removeEventListener('resize', onVvResize);
+      html.style.position = prev.htmlPosition;
+      html.style.overflow = prev.htmlOverflow;
+      html.style.height = prev.htmlHeight;
+      html.style.width = prev.htmlWidth;
+      body.style.position = prev.bodyPosition;
+      body.style.overflow = prev.bodyOverflow;
+      body.style.height = prev.bodyHeight;
+      body.style.width = prev.bodyWidth;
     };
   }, []);
 
-  // Fallback per PWA standalone iOS: visualViewport NON si aggiorna in
-  // modalita' standalone, quindi usiamo focusin/focusout sulla textarea
-  // con stima fissa (320px ≈ tastiera iOS portrait + QuickType bar).
-  // Se il path visualViewport sopra ha gia' rilevato la tastiera, lui
-  // prevale (diff > 50 → kbOffset reale). Sennò applichiamo 320 stimato.
+  // visualViewport: unica API che riporta l'altezza tastiera in modo
+  // affidabile su PWA installata iOS 16.4+, Safari mobile, Chrome Android.
+  // Su desktop kbHeight resta 0.
   useEffect(() => {
-    if (!isMobile) return;
-    let blurTimer;
-    const onFocusIn = (e) => {
-      const tag = e.target?.tagName;
-      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
-      clearTimeout(blurTimer);
-      setTimeout(() => {
-        const vv = window.visualViewport;
-        const diff = vv ? (window.innerHeight - vv.height) : 0;
-        setKbOffset(diff > 50 ? diff : 320);
-      }, 300);
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handleResize = () => {
+      const kb = window.innerHeight - vv.height - vv.offsetTop;
+      setKbHeight(Math.max(0, kb));
     };
-    const onFocusOut = (e) => {
-      const tag = e.target?.tagName;
-      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
-      blurTimer = setTimeout(() => setKbOffset(0), 400);
-    };
-    document.addEventListener('focusin', onFocusIn);
-    document.addEventListener('focusout', onFocusOut);
+    handleResize();
+    vv.addEventListener('resize', handleResize);
+    vv.addEventListener('scroll', handleResize);
     return () => {
-      document.removeEventListener('focusin', onFocusIn);
-      document.removeEventListener('focusout', onFocusOut);
-      clearTimeout(blurTimer);
+      vv.removeEventListener('resize', handleResize);
+      vv.removeEventListener('scroll', handleResize);
     };
-  }, [isMobile]);
-
-  // Aggiorna isMobile su rotazione / resize finestra.
-  useEffect(() => {
-    const onResize = () => setIsMobile(detectMobile());
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
   }, []);
 
   async function startChat() {
@@ -148,26 +130,32 @@ export default function Craving() {
     }
   }
 
-  return (
-    <div
-      className={
-        isMobile
-          ? "fixed left-1/2 -translate-x-1/2 w-full max-w-mobile bg-cream-50 flex flex-col overflow-hidden z-50"
-          : "w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden"
-      }
-      style={
-        isMobile
-          ? { top: 0, height: `${winHeight - kbOffset}px` }
-          : { height: '100vh', maxHeight: '100vh' }
-      }
-    >
+  // Colonna centrata: su mobile occupa tutta la larghezza (max 430).
+  // Su desktop e' una colonna 430px centrata orizzontalmente.
+  const columnBase = {
+    position: 'fixed',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '100%',
+    maxWidth: `${MAX_WIDTH}px`,
+  };
 
-      {/* Header in alto — flexShrink:0 inline per essere robusti */}
+  return (
+    <>
+      {/* HEADER */}
       <header
-        className="flex items-center gap-3 px-4 pb-3 border-b border-sage-100/50 bg-white"
         style={{
-          flexShrink: 0,
-          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)',
+          ...columnBase,
+          top: 0,
+          height: HEADER_HEIGHT,
+          zIndex: 20,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          padding: '0 1rem',
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          borderBottom: '1px solid rgba(220, 232, 222, 0.5)',
+          backgroundColor: '#ffffff',
         }}
       >
         <button
@@ -192,67 +180,79 @@ export default function Craving() {
         </button>
       </header>
 
-      {/* Messages — UNICA zona scrollabile. flex:1 + minHeight:0 inline
-          per essere robusti (Tailwind compila utility ma alcuni SW cache
-          potrebbero servire CSS vecchio). overscroll-contain previene
-          pull-to-refresh iOS. */}
+      {/* MESSAGES — scrollabile, tra header e (input + tastiera) */}
       <div
-        className="overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4 space-y-3 bg-cream-50"
+        className="overscroll-contain"
         style={{
-          flex: '1 1 0%',
-          minHeight: 0,
+          ...columnBase,
+          top: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
+          bottom: `${INPUT_HEIGHT + kbHeight}px`,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          padding: '1rem',
+          backgroundColor: '#fdfcf9',
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {messages.length === 0 && loading && (
-          <div className="flex items-center gap-2 text-sage-500/70">
-            <TypingDots />
-          </div>
-        )}
-
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
-          >
-            <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-soft ${
-                msg.role === 'user'
-                  ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-br-md'
-                  : 'bg-white text-sage-900 rounded-bl-md border border-sage-100/60'
-              }`}
-            >
-              {msg.content}
-            </div>
-          </div>
-        ))}
-
-        {loading && messages.length > 0 && (
-          <div className="flex justify-start animate-fade-in">
-            <div className="bg-white border border-sage-100/60 rounded-2xl rounded-bl-md px-4 py-3 shadow-soft">
+        <div className="space-y-3">
+          {messages.length === 0 && loading && (
+            <div className="flex items-center gap-2 text-sage-500/70">
               <TypingDots />
             </div>
-          </div>
-        )}
+          )}
 
-        {error && (
-          <p className="text-xs text-terracotta-600 text-center bg-terracotta-50 border border-terracotta-200 rounded-xl-soft px-3 py-2">
-            {error}
-          </p>
-        )}
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+            >
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-soft ${
+                  msg.role === 'user'
+                    ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-br-md'
+                    : 'bg-white text-sage-900 rounded-bl-md border border-sage-100/60'
+                }`}
+              >
+                {msg.content}
+              </div>
+            </div>
+          ))}
 
-        <div ref={bottomRef} />
+          {loading && messages.length > 0 && (
+            <div className="flex justify-start animate-fade-in">
+              <div className="bg-white border border-sage-100/60 rounded-2xl rounded-bl-md px-4 py-3 shadow-soft">
+                <TypingDots />
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <p className="text-xs text-terracotta-600 text-center bg-terracotta-50 border border-terracotta-200 rounded-xl-soft px-3 py-2">
+              {error}
+            </p>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
       </div>
 
-      {/* Input in basso — flexShrink:0 inline per essere robusti */}
+      {/* INPUT — fixed in basso, si solleva con la tastiera (bottom:kbHeight) */}
       <div
-        className="border-t border-sage-100/50 px-4 pt-3 bg-white"
         style={{
-          flexShrink: 0,
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+          ...columnBase,
+          bottom: `${kbHeight}px`,
+          height: INPUT_HEIGHT,
+          zIndex: 20,
+          padding: '0.75rem 1rem',
+          paddingBottom: kbHeight > 0
+            ? '0.75rem'
+            : 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
+          borderTop: '1px solid rgba(220, 232, 222, 0.5)',
+          backgroundColor: '#ffffff',
+          transition: 'bottom 0.15s ease-out',
         }}
       >
-        <div className="flex items-end gap-2 min-w-0">
+        <div className="flex items-end gap-2 min-w-0 h-full">
           <textarea
             ref={inputRef}
             value={input}
@@ -262,9 +262,6 @@ export default function Craving() {
             placeholder="Scrivi qualcosa…"
             className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
             style={{ minHeight: '42px', fontSize: '16px' }}
-            onFocus={() => {
-              setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 300);
-            }}
             onInput={(e) => {
               e.target.style.height = 'auto';
               e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
@@ -282,7 +279,7 @@ export default function Craving() {
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
