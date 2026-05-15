@@ -13,6 +13,13 @@ export default function Craving() {
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
+  // iOS PWA standalone: applichiamo lo stack visualViewport + body lock +
+  // animating. Su Android Chrome (e desktop) il viewport rifluisce
+  // nativamente con interactive-widget=resizes-content → layout flex
+  // semplice 100dvh, niente body lock (lo blocchera' il rifluire), niente
+  // visualViewport hack.
+  const isIOS = typeof navigator !== 'undefined' &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent);
   const [kbHeight, setKbHeight] = useState(0);
   // vvOffset traccia visualViewport.offsetTop: in PWA standalone iOS,
   // quando la tastiera apre il visual viewport "shifts" in alto per
@@ -56,11 +63,11 @@ export default function Craving() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading]);
 
-  // BODY LOCK: senza questo iOS scrolla l'intero documento per portare
-  // l'input in vista quando appare la tastiera, e gli elementi
-  // position:fixed seguono il document — header sparisce, input "schizza".
-  // Si applica solo finche' il componente Craving e' montato.
+  // BODY LOCK: SOLO su iOS PWA. Su Android impedirebbe il rifluire
+  // naturale del viewport quando appare la tastiera → spazio bianco
+  // enorme sopra la tastiera.
   useEffect(() => {
+    if (!isIOS) return;
     const html = document.documentElement;
     const body = document.body;
     const prev = {
@@ -91,7 +98,7 @@ export default function Craving() {
       body.style.height = prev.bodyHeight;
       body.style.width = prev.bodyWidth;
     };
-  }, []);
+  }, [isIOS]);
 
   // visualViewport: unica API che riporta l'altezza tastiera in modo
   // affidabile su PWA installata iOS 16.4+, Safari mobile, Chrome Android.
@@ -251,30 +258,71 @@ export default function Craving() {
     maxWidth: `${MAX_WIDTH}px`,
   };
 
-  return (
+  // Style condizionato per iOS PWA vs Android/desktop
+  const outerWrapperStyle = isIOS ? null : {
+    height: '100dvh',
+    maxHeight: '100dvh',
+    width: '100%',
+    maxWidth: `${MAX_WIDTH}px`,
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  };
+
+  const headerStyle = isIOS ? {
+    ...columnBase,
+    top: `${vvOffset}px`,
+    height: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
+    zIndex: 20,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    padding: '0 1rem',
+    paddingTop: 'env(safe-area-inset-top, 0px)',
+    borderBottom: '1px solid rgba(220, 232, 222, 0.5)',
+    backgroundColor: '#ffffff',
+  } : {
+    flexShrink: 0,
+    height: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
+    zIndex: 20,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    padding: '0 1rem',
+    paddingTop: 'env(safe-area-inset-top, 0px)',
+    borderBottom: '1px solid rgba(220, 232, 222, 0.5)',
+    backgroundColor: '#ffffff',
+    position: 'relative',
+  };
+
+  const contentWrapperStyle = isIOS ? {
+    position: 'fixed',
+    left: '50%',
+    top: `calc(${vvOffset}px + ${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
+    bottom: kbHeight > 0
+      ? `${kbHeight}px`
+      : 'env(safe-area-inset-bottom, 0px)',
+    width: '100%',
+    maxWidth: `${MAX_WIDTH}px`,
+    transform: 'translateX(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    opacity: ready && !animating ? 1 : 0,
+    transition: 'opacity 120ms ease-out',
+  } : {
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  };
+
+  const contentBody = (
     <>
-      {/* HEADER */}
-      <header
-        style={{
-          ...columnBase,
-          // top dinamico per compensare lo shift del visual viewport iOS
-          // quando la tastiera apre. Senza, l'header puo' finire sopra
-          // il top visibile e sparire dallo schermo.
-          top: `${vvOffset}px`,
-          // height cresce per includere la safe area iOS (notch/dynamic
-          // island): contenuto disponibile = HEADER_HEIGHT (64) sotto la
-          // status bar, non SCHIACCIATO dentro la safe area.
-          height: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
-          zIndex: 20,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          padding: '0 1rem',
-          paddingTop: 'env(safe-area-inset-top, 0px)',
-          borderBottom: '1px solid rgba(220, 232, 222, 0.5)',
-          backgroundColor: '#ffffff',
-        }}
-      >
+      <header style={headerStyle}>
         {/* Overlay sage scuro nella zona safe-area (dietro la status bar).
             Con apple-mobile-web-app-status-bar-style=black-translucent il
             testo della status bar e' bianco: serve uno sfondo scuro dietro
@@ -312,44 +360,9 @@ export default function Craving() {
         </button>
       </header>
 
-      {/* CONTENT WRAPPER — UN solo container che racchiude messaggi + input.
-          Animazione GPU via transform: translateY — molto piu' fluida di
-          animare bottom (che triggera reflow ad ogni frame su iOS Safari).
-          translate(-50%, ...) combina il centramento orizzontale (sostituisce
-          left:50% + translateX(-50%)) e lo slide verticale con la tastiera. */}
-      <div
-        ref={wrapperRef}
-        style={{
-          position: 'fixed',
-          left: '50%',
-          top: `calc(${vvOffset}px + ${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
-          // Quando kbHeight=0 (tastiera chiusa), bottom NON e' 0 ma
-          // env(safe-area-inset-bottom): la zona home indicator iOS non e'
-          // davvero "schermo utile" e il sistema non riconosce tap li'.
-          // Senza questo, l'input flex-shrink:0 cadeva nella zona home
-          // indicator → sembra "a metà" e iOS richiedeva 2 click per
-          // focusarlo. Quando kbHeight>0 la tastiera copre quella zona,
-          // niente safe-area extra.
-          bottom: kbHeight > 0
-            ? `${kbHeight}px`
-            : 'env(safe-area-inset-bottom, 0px)',
-          width: '100%',
-          maxWidth: `${MAX_WIDTH}px`,
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          // SOLO opacity:0 (NO visibility:hidden): iOS PWA standalone con
-          // SW funzionante interpreta visibility:hidden come "input non
-          // disponibile" → cancella il focus → tastiera non apre. Con
-          // opacity:0 l'input resta interagibile, iOS preserva il focus,
-          // la tastiera si apre regolarmente. Il jitter sottostante puo'
-          // essere ancora leggermente visibile attraverso la trasparenza
-          // ma rAF debounce + tap lock + cache lo riducono molto.
-          opacity: ready && !animating ? 1 : 0,
-          transition: 'opacity 120ms ease-out',
-        }}
-      >
+      {/* CONTENT WRAPPER — iOS PWA: position:fixed con bottom dinamico.
+          Android/desktop: flex:1 dentro outer 100dvh flex column. */}
+      <div ref={wrapperRef} style={contentWrapperStyle}>
         {/* MESSAGES */}
         <div
           className="overscroll-contain"
@@ -459,6 +472,10 @@ export default function Craving() {
       </div>
     </>
   );
+
+  // iOS: render diretto (header e wrapper sono entrambi position:fixed).
+  // Android/desktop: avvolgi in un outer container 100dvh flex column.
+  return isIOS ? contentBody : <div style={outerWrapperStyle}>{contentBody}</div>;
 }
 
 function TypingDots() {
