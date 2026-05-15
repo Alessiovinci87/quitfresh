@@ -23,6 +23,10 @@ export default function Craving() {
       ? parseInt(localStorage.getItem('chatKbHeight') || '340', 10)
       : 340
   );
+  // Tap lock: timestamp fino al quale ignorare valori vv.resize bassi.
+  // Si imposta al pointerdown/focusin per 500ms — copre l'animazione
+  // tastiera iOS (~250ms) + margine.
+  const tapLockUntilRef = useRef(0);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -91,17 +95,15 @@ export default function Craving() {
         cachedKbRef.current = final;
         try { localStorage.setItem('chatKbHeight', String(final)); } catch {}
       }
-      // Durante l'animazione tastiera iOS, vv.resize triggera ad ogni
-      // frame con valori CRESCENTI (50, 120, 200, 280, 336...). Se
-      // aggiornassimo kbHeight ad ognuno di questi, l'input ballerebbe
-      // su/giu — effetto "yo-yo" percepito come movimento. Quindi:
-      // se c'e' ancora focus su un input, NON aggiorniamo. L'input
-      // resta fermo nella posizione settata da pointerdown (cachedKbRef)
-      // per tutta la durata della digitazione. Solo al blur (kb≈0,
-      // niente focus) aggiorniamo per riportare l'input in fondo.
-      const activeTag = document.activeElement?.tagName;
-      const hasInputFocus = activeTag === 'TEXTAREA' || activeTag === 'INPUT';
-      if (hasInputFocus) return;
+      // Tap lock window: durante i 500ms dopo pointerdown/focusin,
+      // ignora valori INTERMEDI (final < cached - 30). Sono il rumore
+      // dell'animazione tastiera iOS (kb=50, 120, 200, 280...). Lasciamo
+      // passare solo i valori "tastiera completamente aperta" (>= cached)
+      // o "tastiera completamente chiusa" (=0, tap lock scaduto comunque).
+      // Questo approccio basato sul tempo e' affidabile a differenza di
+      // hasInputFocus, che dipende da timing imprevedibile di focus/blur.
+      const inTapLock = Date.now() < tapLockUntilRef.current;
+      if (inTapLock && final < cachedKbRef.current - 30) return;
       setKbHeight(final);
     };
     handleResize();
@@ -123,6 +125,7 @@ export default function Craving() {
     const onFocusIn = (e) => {
       const tag = e.target?.tagName;
       if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
+      tapLockUntilRef.current = Date.now() + 500;
       setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
     };
     document.addEventListener('focusin', onFocusIn);
@@ -313,6 +316,8 @@ export default function Craving() {
               // Anticipa lo spostamento al tap, prima del focus event.
               // Su iOS PWA il focusin a volte ritarda fino a meta'
               // animazione tastiera: pointerdown e' il primo evento utile.
+              // Apre anche il tap lock window per i prossimi 500ms.
+              tapLockUntilRef.current = Date.now() + 500;
               setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
             }}
             rows={1}
