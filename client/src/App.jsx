@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
@@ -76,12 +76,6 @@ function SplashScreen() {
 }
 
 function AppShell() {
-  const location = useLocation();
-  const isChat = location.pathname === '/craving';
-  const [chatVp, setChatVp] = useState({
-    height: typeof window !== 'undefined' ? window.innerHeight : 0,
-    offsetTop: 0,
-  });
   const [splashVisible, setSplashVisible] = useState(true);
 
   useEffect(() => {
@@ -89,59 +83,10 @@ function AppShell() {
     return () => clearTimeout(t);
   }, []);
 
-  // Pattern WhatsApp/Telegram Web per iOS Safari + tastiera virtuale:
-  // il wrapper segue ESATTAMENTE height e offsetTop di visualViewport.
-  // Quando la tastiera si apre, vv.height diminuisce (zona visibile shrinka)
-  // e vv.offsetTop aumenta (iOS sposta la pagina in alto). Il container si
-  // restringe E si alza, l'input fixed-shrink-0 coincide con il bordo della
-  // tastiera — incollato esattamente sopra di essa.
-  useEffect(() => {
-    if (!isChat) return;
-    const vv = window.visualViewport;
-    const update = () => {
-      if (vv) {
-        setChatVp({ height: vv.height, offsetTop: vv.offsetTop });
-      } else {
-        setChatVp({ height: window.innerHeight, offsetTop: 0 });
-      }
-    };
-    update();
-    if (vv) {
-      vv.addEventListener('resize', update);
-      vv.addEventListener('scroll', update);
-      return () => {
-        vv.removeEventListener('resize', update);
-        vv.removeEventListener('scroll', update);
-      };
-    } else {
-      window.addEventListener('resize', update);
-      return () => window.removeEventListener('resize', update);
-    }
-  }, [isChat]);
-
-  // Per la chat: TUTTO inline (no Tailwind class) per bypassare qualsiasi
-  // cache CSS del SW PWA. Il wrapper segue visualViewport.height + offsetTop
-  // — il container coincide ESATTAMENTE con la zona visibile sopra la tastiera.
-  const wrapperStyle = isChat
-    ? {
-        position: 'fixed',
-        top: `${chatVp.offsetTop}px`,
-        left: 0,
-        right: 0,
-        height: `${chatVp.height}px`,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        zIndex: 50,
-        backgroundColor: '#fdfcf9', // cream-50 fallback
-      }
-    : undefined;
-  const wrapperClass = isChat ? "" : "min-h-screen bg-gray-100 flex items-start justify-center";
-
   return (
     <>
       {splashVisible && <SplashScreen />}
-      <div className={wrapperClass} style={wrapperStyle}>
+      <div className="min-h-screen bg-gray-100 flex items-start justify-center">
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

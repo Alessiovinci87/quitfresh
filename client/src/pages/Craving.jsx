@@ -72,7 +72,7 @@ export default function Craving() {
   return (
     <div
       className="w-full max-w-mobile mx-auto bg-cream-50 flex flex-col overflow-hidden"
-      style={{ flex: '1 1 0%', minHeight: 0 }}
+      style={{ height: '100dvh', maxHeight: '100dvh' }}
     >
 
       {/* Header in alto — flexShrink:0 inline per essere robusti */}
