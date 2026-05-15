@@ -14,6 +14,12 @@ export default function Craving() {
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
   const [kbHeight, setKbHeight] = useState(0);
+  // vvOffset traccia visualViewport.offsetTop: in PWA standalone iOS,
+  // quando la tastiera apre il visual viewport "shifts" in alto per
+  // portare l'input in vista. Anche con body lock, position:fixed top:0
+  // puo' finire SOPRA il top del visual viewport (header sparisce).
+  // Settando top: vvOffset compensiamo lo shift e l'header resta visibile.
+  const [vvOffset, setVvOffset] = useState(0);
   // Ready flag: il wrapper resta opacity:0 finche' il primo handleResize
   // non e' avvenuto. Cosi' gli elementi appaiono gia' nella posizione
   // corretta, niente flicker iniziale di "scendere dall'alto".
@@ -101,6 +107,7 @@ export default function Craving() {
     let rafId = null;
     const compute = () => {
       window.scrollTo(0, 0);
+      setVvOffset(vv.offsetTop);
       const kb = window.innerHeight - vv.height;
       const final = Math.max(0, kb);
       // Aggiorna sempre la cache silenziosamente: la prossima apertura
@@ -231,14 +238,17 @@ export default function Craving() {
           pointerEvents: 'none',
         }}
       >
-        kb:{kbHeight} r:{ready ? '1' : '0'}
+        kb:{kbHeight} vv:{vvOffset} r:{ready ? '1' : '0'}
       </div>
 
       {/* HEADER */}
       <header
         style={{
           ...columnBase,
-          top: 0,
+          // top dinamico per compensare lo shift del visual viewport iOS
+          // quando la tastiera apre. Senza, l'header puo' finire sopra
+          // il top visibile e sparire dallo schermo.
+          top: `${vvOffset}px`,
           // height cresce per includere la safe area iOS (notch/dynamic
           // island): contenuto disponibile = HEADER_HEIGHT (64) sotto la
           // status bar, non SCHIACCIATO dentro la safe area.
@@ -300,7 +310,7 @@ export default function Craving() {
         style={{
           position: 'fixed',
           left: '50%',
-          top: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
+          top: `calc(${vvOffset}px + ${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
           bottom: `${kbHeight}px`,
           width: '100%',
           maxWidth: `${MAX_WIDTH}px`,
