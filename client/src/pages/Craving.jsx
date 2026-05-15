@@ -162,12 +162,10 @@ export default function Craving() {
     }, durationMs);
   };
 
-  // Anticipa lo spostamento dell'input. Su iOS PWA, vv.resize non triggera
-  // finche' l'animazione tastiera non e' finita (~300ms): nel frattempo
-  // l'input resta a bottom:0 e la tastiera lo copre. Con focusin pre-impostiamo
-  // una stima conservativa (290px ≈ tastiera iOS portrait + QuickType bar):
-  // l'input parte su immediatamente, e quando vv.resize arrivera' col valore
-  // esatto l'aggiustamento e' di pochi pixel, smooth grazie alla transition.
+  // Anticipa lo spostamento dell'input. Solo focusin avvia la finestra di
+  // animating: pointerdown e focusout NON la avviano per non bloccare il
+  // primo tap su input dopo una chiusura tastiera (visibility:hidden in
+  // animating disabilita gli eventi touch sui descendant).
   useEffect(() => {
     const onFocusIn = (e) => {
       const tag = e.target?.tagName;
@@ -176,16 +174,9 @@ export default function Craving() {
       setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
       startAnimatingWindow(400);
     };
-    const onFocusOut = (e) => {
-      const tag = e.target?.tagName;
-      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
-      startAnimatingWindow(400);
-    };
     document.addEventListener('focusin', onFocusIn);
-    document.addEventListener('focusout', onFocusOut);
     return () => {
       document.removeEventListener('focusin', onFocusIn);
-      document.removeEventListener('focusout', onFocusOut);
       if (animatingTimerRef.current) clearTimeout(animatingTimerRef.current);
     };
   }, []);
@@ -425,14 +416,17 @@ export default function Craving() {
               onKeyDown={handleKeyDown}
               onPointerDown={() => {
                 // SUBITO: manipola il DOM direttamente — senza aspettare
-                // React render, l'animazione parte nello stesso frame del
-                // touch, prima che iOS inizi ad alzare la tastiera.
+                // React render, il wrapper si posiziona nel frame del touch
+                // prima che iOS inizi ad alzare la tastiera.
+                // NIENTE startAnimatingWindow qui: visibility:hidden
+                // bloccherebbe il focus iOS sull'input → primo tap non
+                // aprirebbe la tastiera. animating parte solo da focusin
+                // (quando iOS ha gia' committed al focus).
                 if (wrapperRef.current) {
                   wrapperRef.current.style.bottom = `${cachedKbRef.current}px`;
                 }
                 tapLockUntilRef.current = Date.now() + 500;
                 setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
-                startAnimatingWindow(400);
               }}
               rows={1}
               placeholder="Scrivi qualcosa…"

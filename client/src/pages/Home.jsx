@@ -132,7 +132,10 @@ export default function Home() {
   // ── Stato: nessuna data di quit impostata ──────────────────
   if (!user.quitDate && !loading) {
     return (
-      <div className="min-h-[calc(100dvh-7rem)] flex flex-col px-6 pt-6 animate-fade-in">
+      <div
+        className="min-h-[calc(100dvh-7rem)] flex flex-col px-6 pt-6 animate-fade-in"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.5rem)' }}
+      >
         {verifyBanner}
         <header className="mb-4">
           <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Oggi</p>
@@ -178,7 +181,10 @@ export default function Home() {
   const ringTarget = nextBadge?.days ?? Math.max(days + 1, 30);
 
   return (
-    <div className="min-h-[calc(100dvh-7rem)] flex flex-col px-6 pt-6 animate-fade-in">
+    <div
+      className="min-h-[calc(100dvh-7rem)] flex flex-col px-6 pt-6 animate-fade-in"
+      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.5rem)' }}
+    >
       {verifyBanner}
 
       {/* Header compatto */}
