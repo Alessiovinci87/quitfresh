@@ -86,6 +86,22 @@ export default function Craving() {
     };
   }, []);
 
+  // Anticipa lo spostamento dell'input. Su iOS PWA, vv.resize non triggera
+  // finche' l'animazione tastiera non e' finita (~300ms): nel frattempo
+  // l'input resta a bottom:0 e la tastiera lo copre. Con focusin pre-impostiamo
+  // una stima conservativa (290px ≈ tastiera iOS portrait + QuickType bar):
+  // l'input parte su immediatamente, e quando vv.resize arrivera' col valore
+  // esatto l'aggiustamento e' di pochi pixel, smooth grazie alla transition.
+  useEffect(() => {
+    const onFocusIn = (e) => {
+      const tag = e.target?.tagName;
+      if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
+      setKbHeight(prev => prev > 0 ? prev : 290);
+    };
+    document.addEventListener('focusin', onFocusIn);
+    return () => document.removeEventListener('focusin', onFocusIn);
+  }, []);
+
   async function startChat() {
     setLoading(true);
     try {
