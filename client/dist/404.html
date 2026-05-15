@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <script>
+    // Redirect SPA routes to index.html on GitHub Pages.
+    // pathSegmentsToKeep=1 preserves the /quitfresh/ base path.
+    var l = window.location;
+    l.replace(
+      l.protocol + '//' + l.host + '/' +
+      l.pathname.slice(1).split('/').slice(0, 1).join('/') + '/?/' +
+      l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
+      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+      l.hash
+    );
+  </script>
+</head>
+<body></body>
+</html>
