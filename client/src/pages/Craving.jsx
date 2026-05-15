@@ -224,27 +224,6 @@ export default function Craving() {
 
   return (
     <>
-      {/* DEBUG OVERLAY temporaneo — fa vedere kbHeight live per capire
-          se il bug "input copre messaggi" e' davvero strutturale o
-          un'illusione ottica. Rimuovere dopo il debug. */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 'calc(env(safe-area-inset-top, 0px) + 4px)',
-          right: 8,
-          zIndex: 30,
-          backgroundColor: 'rgba(220, 38, 38, 0.85)',
-          color: 'white',
-          padding: '2px 6px',
-          fontSize: '10px',
-          fontFamily: 'monospace',
-          borderRadius: 4,
-          pointerEvents: 'none',
-        }}
-      >
-        kb:{kbHeight} vv:{vvOffset} r:{ready ? '1' : '0'}
-      </div>
-
       {/* HEADER */}
       <header
         style={{
