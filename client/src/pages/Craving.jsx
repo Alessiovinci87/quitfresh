@@ -85,6 +85,14 @@ export default function Craving() {
       window.scrollTo(0, 0);
       const kb = window.innerHeight - vv.height;
       const final = Math.max(0, kb);
+      // Durante l'animazione tastiera iOS triggera vv.resize PIU' VOLTE con
+      // valori intermediari (anche kb≈0). Se sovrascrivessimo lo stato in
+      // quel momento, il valore pre-impostato dal focusin/onPointerDown
+      // verrebbe annullato → l'input ricade in fondo. Quindi: se c'e' ancora
+      // focus su un input e il valore e' "non-tastiera", NON aggiorniamo.
+      const activeTag = document.activeElement?.tagName;
+      const hasInputFocus = activeTag === 'TEXTAREA' || activeTag === 'INPUT';
+      if (final < 50 && hasInputFocus) return;
       setKbHeight(final);
       // Memorizza l'altezza reale: la prossima apertura usera' questo valore
       // come stima iniziale → zero salto.
@@ -297,6 +305,12 @@ export default function Craving() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPointerDown={() => {
+              // Anticipa lo spostamento al tap, prima del focus event.
+              // Su iOS PWA il focusin a volte ritarda fino a meta'
+              // animazione tastiera: pointerdown e' il primo evento utile.
+              setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
+            }}
             rows={1}
             placeholder="Scrivi qualcosa…"
             className="flex-1 min-w-0 resize-none px-4 py-2.5 border border-sage-200/70 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-400 focus:border-transparent transition max-h-32 overflow-y-auto bg-cream-50"
