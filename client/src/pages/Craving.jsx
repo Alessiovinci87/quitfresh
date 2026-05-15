@@ -216,7 +216,10 @@ export default function Craving() {
       setError(err.message || 'Errore nella risposta AI.');
     } finally {
       setLoading(false);
-      setTimeout(() => inputRef.current?.focus(), 100);
+      // NIENTE setTimeout focus: il button send ha onPointerDown
+      // preventDefault, quindi la textarea NON perde il focus quando
+      // l'utente clicca send. La tastiera resta aperta naturalmente,
+      // niente ciclo blur→focus→animating che causava il bug 2-click.
     }
   }
 
