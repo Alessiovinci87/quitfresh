@@ -14,6 +14,15 @@ export default function Craving() {
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
   const [kbHeight, setKbHeight] = useState(0);
+  // Cache: l'altezza reale della tastiera dell'utente, memorizzata in
+  // localStorage. Al primo focus della prima sessione usiamo un valore
+  // di default; dalla seconda apertura in poi la stima coincide al pixel
+  // con la realta' → zero salto. La cache si aggiorna a ogni vv.resize.
+  const cachedKbRef = useRef(
+    typeof localStorage !== 'undefined'
+      ? parseInt(localStorage.getItem('chatKbHeight') || '320', 10)
+      : 320
+  );
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -75,7 +84,14 @@ export default function Craving() {
     const handleResize = () => {
       window.scrollTo(0, 0);
       const kb = window.innerHeight - vv.height;
-      setKbHeight(Math.max(0, kb));
+      const final = Math.max(0, kb);
+      setKbHeight(final);
+      // Memorizza l'altezza reale: la prossima apertura usera' questo valore
+      // come stima iniziale → zero salto.
+      if (final > 50) {
+        cachedKbRef.current = final;
+        try { localStorage.setItem('chatKbHeight', String(final)); } catch {}
+      }
     };
     handleResize();
     vv.addEventListener('resize', handleResize);
@@ -96,7 +112,7 @@ export default function Craving() {
     const onFocusIn = (e) => {
       const tag = e.target?.tagName;
       if (tag !== 'TEXTAREA' && tag !== 'INPUT') return;
-      setKbHeight(prev => prev > 0 ? prev : 290);
+      setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
     };
     document.addEventListener('focusin', onFocusIn);
     return () => document.removeEventListener('focusin', onFocusIn);
