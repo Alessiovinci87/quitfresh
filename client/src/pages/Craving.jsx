@@ -294,7 +294,16 @@ export default function Craving() {
           position: 'fixed',
           left: '50%',
           top: `calc(${vvOffset}px + ${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
-          bottom: `${kbHeight}px`,
+          // Quando kbHeight=0 (tastiera chiusa), bottom NON e' 0 ma
+          // env(safe-area-inset-bottom): la zona home indicator iOS non e'
+          // davvero "schermo utile" e il sistema non riconosce tap li'.
+          // Senza questo, l'input flex-shrink:0 cadeva nella zona home
+          // indicator → sembra "a metà" e iOS richiedeva 2 click per
+          // focusarlo. Quando kbHeight>0 la tastiera copre quella zona,
+          // niente safe-area extra.
+          bottom: kbHeight > 0
+            ? `${kbHeight}px`
+            : 'env(safe-area-inset-bottom, 0px)',
           width: '100%',
           maxWidth: `${MAX_WIDTH}px`,
           transform: 'translateX(-50%)',
@@ -364,10 +373,10 @@ export default function Craving() {
           style={{
             flexShrink: 0,
             height: INPUT_HEIGHT,
+            // Padding-bottom fisso: la safe-area-bottom e' gia' rispettata
+            // dal wrapper (bottom: env(safe-area-inset-bottom) quando
+            // tastiera chiusa). Cosi' il content dell'input ha 72px puliti.
             padding: '0.75rem 1rem',
-            paddingBottom: kbHeight > 0
-              ? '0.75rem'
-              : 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)',
             borderTop: '1px solid rgba(220, 232, 222, 0.5)',
             backgroundColor: '#ffffff',
           }}
