@@ -248,12 +248,12 @@ export default function Craving() {
           position: 'fixed',
           left: '50%',
           top: `calc(${HEADER_HEIGHT}px + env(safe-area-inset-top, 0px))`,
-          bottom: 0,
+          bottom: `${kbHeight}px`,
           width: '100%',
           maxWidth: `${MAX_WIDTH}px`,
-          transform: `translate(-50%, -${kbHeight}px)`,
-          transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1)',
-          willChange: 'transform',
+          transform: 'translateX(-50%)',
+          transition: 'bottom 0.22s cubic-bezier(0.22, 1, 0.36, 1)',
+          willChange: 'bottom',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -338,8 +338,7 @@ export default function Craving() {
                 // React render, l'animazione parte nello stesso frame del
                 // touch, prima che iOS inizi ad alzare la tastiera.
                 if (wrapperRef.current) {
-                  wrapperRef.current.style.transform =
-                    `translate(-50%, -${cachedKbRef.current}px)`;
+                  wrapperRef.current.style.bottom = `${cachedKbRef.current}px`;
                 }
                 tapLockUntilRef.current = Date.now() + 500;
                 setKbHeight(prev => prev > 0 ? prev : cachedKbRef.current);
