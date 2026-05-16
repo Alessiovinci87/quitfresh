@@ -34,7 +34,7 @@ export default function TermsOfService() {
 
         <Section title="3. Pagamento e accesso premium">
           L'accesso completo a QuitFresh richiede un pagamento unico di{' '}
-          <strong>€2,99</strong> (IVA inclusa ove applicabile). Il pagamento è
+          <strong>€4,99</strong> (IVA inclusa ove applicabile). Il pagamento è
           processato in modo sicuro tramite Stripe. Non sono previsti
           abbonamenti, rinnovi automatici o costi aggiuntivi nascosti. Il
           pagamento sblocca l'accesso permanente all'account su cui è stato

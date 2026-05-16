@@ -83,4 +83,61 @@ function sendResetEmail(to, link) {
   return send({ to, subject: 'Reimposta la password QuitFresh', html });
 }
 
-module.exports = { sendVerifyEmail, sendResetEmail, isEnabled };
+// Welcome email: inviata dopo che l'utente verifica l'email. Tono caldo,
+// 3 funzioni principali spiegate. Niente claim medici (P.S. rinvia al
+// medico per dubbi sul protocollo citisina, coerente con Terms).
+function sendWelcomeEmail(to) {
+  const appLink = (process.env.CLIENT_BASE_URL || 'https://quitfresh.it').replace(/\/$/, '') + '/home';
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px;">
+        <tr><td>
+          <p style="margin:0 0 8px;color:#84a98c;font-size:13px;font-weight:600;letter-spacing:0.5px;">QUITFRESH</p>
+          <h1 style="margin:0 0 16px;font-size:22px;color:#111827;">Benvenuto, il tuo percorso inizia ora 🌱</h1>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#4b5563;">
+            La tua email è confermata e tutto è pronto. Smettere di fumare è un percorso personale, ma da oggi non sei solo.
+          </p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#4b5563;">
+            Ecco le 3 cose che troverai più utili nell'app:
+          </p>
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+            <tr><td style="padding:0 0 16px;">
+              <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#111827;">🌱 Il tuo contatore</p>
+              <p style="margin:0;font-size:14px;line-height:1.5;color:#6b7280;">Ogni giorno senza fumo viene contato. Vedi i progressi, i soldi risparmiati e i traguardi raggiunti, tutto in tempo reale nella home.</p>
+            </td></tr>
+            <tr><td style="padding:0 0 16px;">
+              <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#111827;">💊 Promemoria citisina</p>
+              <p style="margin:0;font-size:14px;line-height:1.5;color:#6b7280;">Se segui il protocollo Tabex/Sopharma, ti avvisiamo per ogni capsula. Niente più orologi da controllare, ci pensiamo noi.</p>
+            </td></tr>
+            <tr><td style="padding:0;">
+              <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#111827;">💬 Coach AI sempre con te</p>
+              <p style="margin:0;font-size:14px;line-height:1.5;color:#6b7280;">Quando arriva il craving, apri la chat. Un coach intelligente ti aiuta a superare il momento, senza giudizio, sempre disponibile.</p>
+            </td></tr>
+          </table>
+
+          <p style="margin:0 0 28px;">
+            <a href="${appLink}" style="display:inline-block;background:#84a98c;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:15px;">Apri QuitFresh</a>
+          </p>
+
+          <p style="margin:0 0 8px;font-size:13px;color:#4b5563;">Buon inizio,</p>
+          <p style="margin:0 0 24px;font-size:13px;color:#4b5563;">il team di QuitFresh</p>
+
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;border-top:1px solid #e5e7eb;padding-top:16px;">
+            <strong>P.S.</strong> Per dubbi sul protocollo farmacologico, parlane sempre con il tuo medico. Noi ti aiutiamo a ricordare, lui sa cosa fare.
+          </p>
+        </td></tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:11px;color:#9ca3af;">© QuitFresh — il tuo coach per smettere di fumare</p>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  return send({ to, subject: 'Benvenuto in QuitFresh 🌱', html });
+}
+
+module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, isEnabled };

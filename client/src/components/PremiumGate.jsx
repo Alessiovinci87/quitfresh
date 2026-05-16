@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
-const BASE_PRICE = 2.99;
+const BASE_PRICE = 4.99;
 
 export default function PremiumGate({ onCancel }) {
   const navigate = useNavigate();

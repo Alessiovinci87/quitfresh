@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
-const { sendVerifyEmail } = require('../lib/email');
+const { sendVerifyEmail, sendWelcomeEmail } = require('../lib/email');
 
 // JWT include tokenVersion (tv). Il middleware requireAuth confronta
 // payload.tv con user.tokenVersion: se differiscono, il token e' stato
@@ -120,6 +120,12 @@ router.get('/verify-email', async (req, res) => {
       where: { id: user.id },
       data: { emailVerified: true, verifyToken: null },
     });
+    // Welcome email in background — best effort, non blocca la response.
+    // Idempotency garantita dal verifyToken: la prima volta che si clicca
+    // il link, verifyToken viene azzerato, click successivi falliscono
+    // con "Token non valido" prima di arrivare qui.
+    sendWelcomeEmail(user.email)
+      .catch(err => console.error('[verify] welcome email error:', err));
     res.json({ message: 'Email verificata' });
   } catch (err) {
     console.error('verify-email error:', err);

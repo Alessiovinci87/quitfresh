@@ -123,7 +123,7 @@ export default function Profile() {
         >
           <div className="text-left">
             <p className="text-sm font-semibold">Sblocca QuitFresh</p>
-            <p className="text-xs text-sage-100">€2.99 una tantum — accesso completo</p>
+            <p className="text-xs text-sage-100">€4.99 una tantum — accesso completo</p>
           </div>
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
