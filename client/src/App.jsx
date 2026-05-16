@@ -52,24 +52,16 @@ function SplashScreen() {
           50% { opacity: 1; transform: scale(1.02); }
           100% { opacity: 1; transform: scale(1); }
         }
-        @keyframes qfTitleEnter {
-          0%, 30% { opacity: 0; transform: translateY(8px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
       `}</style>
       <div className="text-center">
+        {/* Il logo include gia' la scritta "QuitFresh" nel design, niente
+            <p> sotto per evitare ripetizione. */}
         <img
           src={`${baseUrl}apple-touch-icon.png`}
           alt="QuitFresh"
-          className="w-56 h-56 sm:w-64 sm:h-64 rounded-[2.25rem] shadow-card mx-auto mb-6"
+          className="w-64 h-64 sm:w-72 sm:h-72 rounded-[2.25rem] shadow-card mx-auto"
           style={{ animation: 'qfLogoEnter 600ms cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
         />
-        <p
-          className="font-display text-3xl font-semibold text-sage-900"
-          style={{ animation: 'qfTitleEnter 800ms ease-out forwards' }}
-        >
-          QuitFresh
-        </p>
       </div>
     </div>
   );
