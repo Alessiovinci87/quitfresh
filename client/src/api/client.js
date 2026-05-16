@@ -37,6 +37,25 @@ export const api = {
     resetPassword: (token, newPassword) => request('/api/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
     verifyEmail: (token) => request(`/api/auth/verify-email?token=${encodeURIComponent(token)}`),
     resendVerify: () => request('/api/auth/resend-verify', { method: 'POST' }),
+    exportData: async () => {
+      const token = getToken();
+      const res = await fetch(`${BASE_URL}/api/auth/export`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Export fallito');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `quitfresh-export-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    },
   },
   quiz: {
     save: (body) => request('/api/quiz', { method: 'POST', body: JSON.stringify(body) }),

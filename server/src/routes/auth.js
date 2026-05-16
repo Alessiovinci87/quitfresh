@@ -138,6 +138,53 @@ router.post('/resend-verify', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/auth/export — Diritto alla portabilita' dei dati (GDPR art. 20).
+// Ritorna un JSON scaricabile con tutti i dati personali dell'utente:
+// profilo, diary, craving, quit attempts, push subscriptions.
+// Esclude passwordHash, token, sessione (dati sensibili che NON sono
+// "dati personali" GDPR).
+router.get('/export', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [user, diaryEntries, cravingLogs, quitAttempts, pushSubscriptions] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true, email: true, createdAt: true,
+          cigarettesPerDay: true, cigarettePackPrice: true,
+          criticalMoments: true, dependencyLevel: true,
+          quitDate: true, smokeFreeSince: true,
+          cytisineStartDate: true, firstDoseTime: true, cytisineSchedule: true,
+          notificationTimes: true, encouragementTime: true,
+          isPremium: true, premiumSince: true, promoCodeUsed: true,
+          emailVerified: true, streakFreezesUsed: true,
+        },
+      }),
+      prisma.diaryEntry.findMany({ where: { userId }, orderBy: { date: 'asc' } }),
+      prisma.cravingLog.findMany({ where: { userId }, orderBy: { timestamp: 'asc' } }),
+      prisma.quitAttempt.findMany({ where: { userId }, orderBy: { startDate: 'asc' } }),
+      prisma.pushSubscription.findMany({
+        where: { userId },
+        select: { endpoint: true, createdAt: true },
+      }),
+    ]);
+    res.setHeader('Content-Disposition', `attachment; filename=quitfresh-export-${userId}.json`);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.json({
+      exportedAt: new Date().toISOString(),
+      gdprNote: 'Dati personali ai sensi del GDPR art. 20 (portabilita\'). passwordHash, token e dati sessione esclusi.',
+      user,
+      diaryEntries,
+      cravingLogs,
+      quitAttempts,
+      pushSubscriptions,
+    });
+  } catch (err) {
+    console.error('GDPR export error:', err);
+    res.status(500).json({ error: 'Errore durante l\'export dei dati' });
+  }
+});
+
 // DELETE /api/auth/me — cancellazione account (GDPR).
 // Lo schema ha onDelete: Cascade su CravingLog, QuitAttempt, DiaryEntry,
 // PushSubscription — Prisma cancella in cascata in un'unica operazione.

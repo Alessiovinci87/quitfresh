@@ -198,6 +198,12 @@ export default function Profile() {
           Esci dall'account
         </button>
         <button
+          onClick={() => api.auth.exportData().catch(err => alert('Errore export: ' + err.message))}
+          className="w-full py-2 text-[11px] text-sage-600/70 hover:text-sage-800 transition-colors underline underline-offset-2"
+        >
+          Esporta i miei dati (GDPR)
+        </button>
+        <button
           onClick={() => { setShowDeleteModal(true); setDeleteConfirmEmail(''); setDeleteError(''); }}
           className="w-full py-2 text-[11px] text-sage-500/70 hover:text-terracotta-600 transition-colors underline underline-offset-2"
         >
