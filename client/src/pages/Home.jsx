@@ -417,7 +417,7 @@ function CapsuleCompact({ user, onOpenDetails }) {
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="text-[10px] font-medium text-sage-700 bg-sage-50 px-2 py-0.5 rounded-full tabular-nums">
-            G{phase.day} · F{phase.index + 1}
+            Giorno {phase.day} · Fase {phase.index + 1}
           </span>
           <svg className="w-4 h-4 text-sage-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
