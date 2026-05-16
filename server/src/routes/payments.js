@@ -39,20 +39,26 @@ router.post('/checkout', requireAuth, async (req, res) => {
     // 100% di sconto → niente Stripe, attivazione gratuita immediata.
     if (promo.discountPct >= 100) {
       try {
-        await prisma.$transaction([
-          prisma.user.update({
-            where: { id: req.user.id },
-            data: {
-              isPremium: true,
-              premiumSince: new Date(),
-              promoCodeUsed: promo.code,
-            },
-          }),
-          prisma.promoCode.update({
-            where: { id: promo.id },
-            data: { usageCount: { increment: 1 } },
-          }),
-        ]);
+        // RACE CONDITION FIX: increment ATOMIC con WHERE che garantisce
+        // usageCount < maxUses al momento del commit. Se 0 righe aggiornate,
+        // due richieste concorrenti hanno consumato l'ultima quota → rifiuta.
+        const consumed = await prisma.$executeRaw`
+          UPDATE "PromoCode"
+          SET "usageCount" = "usageCount" + 1
+          WHERE "id" = ${promo.id}
+          AND ("maxUses" IS NULL OR "usageCount" < "maxUses")
+        `;
+        if (consumed === 0) {
+          return res.status(400).json({ error: 'Codice esaurito' });
+        }
+        await prisma.user.update({
+          where: { id: req.user.id },
+          data: {
+            isPremium: true,
+            premiumSince: new Date(),
+            promoCodeUsed: promo.code,
+          },
+        });
         return res.json({ url: null, freeActivated: true });
       } catch (err) {
         console.error('Free activation error:', err);
@@ -142,6 +148,18 @@ router.post('/webhook', async (req, res) => {
 
     if (userId) {
       try {
+        // IDEMPOTENCY: Stripe puo' inviare lo stesso evento piu' volte
+        // (retry su 5xx). Se l'utente e' gia' premium, l'evento e' gia'
+        // stato processato → skip silenzioso, niente doppi increment.
+        const existing = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { isPremium: true },
+        });
+        if (existing?.isPremium) {
+          console.log(`[payments] Webhook duplicato ignorato per user ${userId}`);
+          return res.json({ received: true, alreadyProcessed: true });
+        }
+
         await prisma.user.update({
           where: { id: userId },
           data: {
@@ -153,10 +171,14 @@ router.post('/webhook', async (req, res) => {
         });
 
         if (promoCode) {
-          await prisma.promoCode.update({
-            where: { code: promoCode },
-            data: { usageCount: { increment: 1 } },
-          }).catch(() => {});
+          // RACE CONDITION FIX: increment ATOMIC con WHERE che blocca
+          // overage del codice (stesso pattern del free activation).
+          await prisma.$executeRaw`
+            UPDATE "PromoCode"
+            SET "usageCount" = "usageCount" + 1
+            WHERE "code" = ${promoCode}
+            AND ("maxUses" IS NULL OR "usageCount" < "maxUses")
+          `.catch(() => {});
         }
 
         console.log(`[payments] Premium attivato per user ${userId}${promoCode ? ` (codice ${promoCode})` : ''}`);
