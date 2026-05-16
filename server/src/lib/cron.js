@@ -115,6 +115,25 @@ function startCron() {
           body: buildEncouragementMessage(days),
         });
       }
+
+      // 4. Notifica "giorno 5 citisina" — punto chiave del protocollo.
+      // Il foglietto Sopharma/Tabex indica il 5° giorno come deadline
+      // raccomandata per smettere di fumare. Una push al firstDoseTime
+      // (= mattino prima capsula) di quel giorno. Messaggio caldo +
+      // cita il foglietto + indirizza al medico (inattaccabilità).
+      for (const user of cytisineUsers) {
+        const start = new Date(new Date(user.cytisineStartDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+        const phase = getActivePhase(user.cytisineSchedule, start, romeNow);
+        if (!phase || phase.day !== 5) continue;
+
+        const targetTime = user.firstDoseTime || '09:00';
+        if (timeStr !== targetTime) continue;
+
+        await dispatchToUser(user, {
+          title: 'Giorno 5: punto chiave 🌱',
+          body: 'Sei al 5° giorno: il punto del protocollo in cui la citisina ti dà il massimo aiuto. Da oggi, ogni sigaretta in meno conta di più — è quanto indicato sul foglietto del produttore. Hai dubbi? Il tuo medico è la voce giusta a cui chiedere.',
+        });
+      }
     } catch (err) {
       console.error('[cron] errore:', err.message);
     }
