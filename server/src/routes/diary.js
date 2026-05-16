@@ -33,6 +33,20 @@ router.post('/', async (req, res) => {
   if (pillsTaken === undefined) {
     return res.status(400).json({ error: 'pillsTaken è obbligatorio' });
   }
+  // Validation hardening: range + length limits per evitare DB pollution
+  // o payload anomali.
+  const pills = parseInt(pillsTaken);
+  if (!Number.isFinite(pills) || pills < 0 || pills > 20) {
+    return res.status(400).json({ error: 'pillsTaken fuori range (0-20)' });
+  }
+  const cigs = parseInt(cigarettesToday ?? 0);
+  if (!Number.isFinite(cigs) || cigs < 0 || cigs > 200) {
+    return res.status(400).json({ error: 'cigarettesToday fuori range (0-200)' });
+  }
+  const safeSideEffects = Array.isArray(sideEffects)
+    ? sideEffects.filter(s => typeof s === 'string' && s.length <= 100).slice(0, 20)
+    : [];
+  const safeNotes = typeof notes === 'string' ? notes.slice(0, 2000) : '';
 
   try {
     const entryDate = dayStart(date || new Date());
@@ -40,18 +54,18 @@ router.post('/', async (req, res) => {
     const entry = await prisma.diaryEntry.upsert({
       where: { userId_date: { userId: req.user.id, date: entryDate } },
       update: {
-        pillsTaken: parseInt(pillsTaken),
-        cigarettesToday: parseInt(cigarettesToday ?? 0),
-        sideEffects: Array.isArray(sideEffects) ? sideEffects : [],
-        notes: notes ?? '',
+        pillsTaken: pills,
+        cigarettesToday: cigs,
+        sideEffects: safeSideEffects,
+        notes: safeNotes,
       },
       create: {
         userId: req.user.id,
         date: entryDate,
-        pillsTaken: parseInt(pillsTaken),
-        cigarettesToday: parseInt(cigarettesToday ?? 0),
-        sideEffects: Array.isArray(sideEffects) ? sideEffects : [],
-        notes: notes ?? '',
+        pillsTaken: pills,
+        cigarettesToday: cigs,
+        sideEffects: safeSideEffects,
+        notes: safeNotes,
       },
     });
     res.json(entry);
