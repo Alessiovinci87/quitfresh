@@ -62,7 +62,7 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ error: 'Token non valido o scaduto' });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(newPassword, 12);
     await prisma.user.update({
       where: { id: user.id },
       data: {

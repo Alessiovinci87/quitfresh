@@ -27,27 +27,36 @@ async function generateAndSendVerifyToken(user) {
   return token;
 }
 
+// Email regex semplice ma sufficiente per validation lato server (controllo
+// formato + lunghezza max). Validation server-side e' safety net contro
+// bypass client.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 // POST /api/auth/register
 router.post('/register', loginLimiter, async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
+  if (typeof email !== 'string' || typeof password !== 'string') {
     return res.status(400).json({ error: 'Email e password sono obbligatorie' });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'La password deve avere almeno 6 caratteri' });
+  const normalizedEmail = email.trim().toLowerCase();
+  if (normalizedEmail.length === 0 || normalizedEmail.length > 254 || !EMAIL_RE.test(normalizedEmail)) {
+    return res.status(400).json({ error: 'Email non valida' });
+  }
+  if (password.length < 8 || password.length > 256) {
+    return res.status(400).json({ error: 'La password deve avere tra 8 e 256 caratteri' });
   }
 
   try {
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       return res.status(409).json({ error: 'Email già registrata' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt.hash(password, 12);
     const verifyToken = crypto.randomUUID();
     const user = await prisma.user.create({
-      data: { email, passwordHash, verifyToken },
+      data: { email: normalizedEmail, passwordHash, verifyToken },
     });
 
     // Invio email in background — un fallimento non deve bloccare la registrazione.
@@ -66,12 +75,13 @@ router.post('/register', loginLimiter, async (req, res) => {
 router.post('/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
+  if (typeof email !== 'string' || typeof password !== 'string') {
     return res.status(400).json({ error: 'Email e password sono obbligatorie' });
   }
+  const normalizedEmail = email.trim().toLowerCase();
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       return res.status(401).json({ error: 'Credenziali non valide' });
     }
