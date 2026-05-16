@@ -1,9 +1,11 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
-const { requirePremium } = require('../middleware/premium');
 
-router.use(requireAuth, requireVerifiedEmail, requirePremium);
+// L'endpoint resta aperto (anche utenti free): la Home usa /api/diary per
+// segnare le capsule citisina di oggi, feature inclusa nel free. La pagina
+// /diary (note giornaliere) rimane gated lato client via PrivateRoute.
+router.use(requireAuth, requireVerifiedEmail);
 
 function dayStart(date) {
   const d = new Date(date);

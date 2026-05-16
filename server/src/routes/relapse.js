@@ -1,9 +1,11 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
-const { requirePremium } = require('../middleware/premium');
 
-router.use(requireAuth, requireVerifiedEmail, requirePremium);
+// Free: azzerare il contatore quando si ricade deve essere sempre possibile,
+// altrimenti il contatore free perde di senso. Le funzioni premium (chat,
+// diary, craving) restano gated altrove.
+router.use(requireAuth, requireVerifiedEmail);
 
 // POST /api/relapse — registra una ricaduta e azzera il contatore
 router.post('/', async (req, res) => {

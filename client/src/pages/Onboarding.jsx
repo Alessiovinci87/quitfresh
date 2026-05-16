@@ -1,12 +1,22 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+
+const TOTAL_STEPS = 6;
 
 const CRITICAL_MOMENTS_OPTIONS = [
   'Caffè', 'Stress', 'Pausa lavoro', 'Dopo i pasti', 'Guida',
   'Alcol', 'Noia', 'Telefonate', 'Mattino al risveglio', 'Socialità',
 ];
+
+function todayISO() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 export default function Onboarding() {
   const { updateUser } = useAuth();
@@ -16,9 +26,13 @@ export default function Onboarding() {
   const [loading, setLoading] = useState(false);
 
   const [cigarettesPerDay, setCigarettesPerDay] = useState('');
+  const [packPrice, setPackPrice] = useState('5.80');
   const [selectedMoments, setSelectedMoments] = useState([]);
   const [customMoment, setCustomMoment] = useState('');
   const [dependencyLevel, setDependencyLevel] = useState(null);
+  const [usesCytisine, setUsesCytisine] = useState(null);
+  const [cytisineStartDate, setCytisineStartDate] = useState(todayISO());
+  const [firstDoseTime, setFirstDoseTime] = useState('08:00');
 
   function toggleMoment(m) {
     setSelectedMoments((prev) =>
@@ -34,9 +48,35 @@ export default function Onboarding() {
     setCustomMoment('');
   }
 
+  function validateStep(s) {
+    if (s === 1) {
+      if (!cigarettesPerDay || parseInt(cigarettesPerDay) < 1) {
+        return 'Inserisci un numero valido di sigarette';
+      }
+    }
+    if (s === 2) {
+      const p = parseFloat(packPrice);
+      if (!Number.isFinite(p) || p <= 0 || p >= 100) {
+        return 'Inserisci un prezzo valido (tra 0 e 100 €)';
+      }
+    }
+    if (s === 4) {
+      if (!dependencyLevel) return 'Seleziona il livello di dipendenza';
+    }
+    if (s === 5) {
+      if (usesCytisine === null) return 'Scegli se stai usando la citisina';
+      if (usesCytisine === true) {
+        if (!cytisineStartDate) return 'Imposta la data di inizio';
+        if (!firstDoseTime) return 'Imposta l\'orario della prima dose';
+      }
+    }
+    return '';
+  }
+
   async function handleFinish() {
-    if (!dependencyLevel) {
-      setError('Seleziona il livello di dipendenza');
+    const err = validateStep(4) || validateStep(5);
+    if (err) {
+      setError(err);
       return;
     }
     setError('');
@@ -44,12 +84,15 @@ export default function Onboarding() {
     try {
       const { user } = await api.quiz.save({
         cigarettesPerDay: parseInt(cigarettesPerDay),
+        cigarettePackPrice: parseFloat(packPrice),
         criticalMoments: selectedMoments,
         dependencyLevel,
         quitDate: new Date().toISOString(),
+        cytisineStartDate: usesCytisine ? cytisineStartDate : null,
+        firstDoseTime: usesCytisine ? firstDoseTime : null,
       });
       updateUser(user);
-      navigate(user.isPremium ? '/home' : '/paywall', { replace: true });
+      navigate('/home', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -63,7 +106,7 @@ export default function Onboarding() {
         {/* Progress bar segmentata */}
         <div className="flex items-center gap-2 mb-10">
           <div className="flex gap-1.5 flex-1">
-            {[1, 2, 3].map((s) => (
+            {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
               <div
                 key={s}
                 className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${
@@ -73,7 +116,7 @@ export default function Onboarding() {
             ))}
           </div>
           <span className="text-[11px] font-semibold text-sage-700 tabular-nums shrink-0">
-            {step}/3
+            {step}/{TOTAL_STEPS}
           </span>
         </div>
 
@@ -86,6 +129,13 @@ export default function Onboarding() {
           )}
           {step === 2 && (
             <Step2
+              packPrice={packPrice}
+              onPackPriceChange={setPackPrice}
+              cigarettesPerDay={cigarettesPerDay}
+            />
+          )}
+          {step === 3 && (
+            <Step3
               selected={selectedMoments}
               onToggle={toggleMoment}
               customMoment={customMoment}
@@ -93,11 +143,24 @@ export default function Onboarding() {
               onAddCustom={addCustomMoment}
             />
           )}
-          {step === 3 && (
-            <Step3
+          {step === 4 && (
+            <Step4
               value={dependencyLevel}
               onChange={setDependencyLevel}
             />
+          )}
+          {step === 5 && (
+            <Step5
+              uses={usesCytisine}
+              onUsesChange={setUsesCytisine}
+              startDate={cytisineStartDate}
+              onStartDateChange={setCytisineStartDate}
+              firstDoseTime={firstDoseTime}
+              onFirstDoseChange={setFirstDoseTime}
+            />
+          )}
+          {step === 6 && (
+            <Step6 usesCytisine={!!usesCytisine} />
           )}
         </div>
 
@@ -108,19 +171,17 @@ export default function Onboarding() {
         <div className="flex gap-3 mt-6">
           {step > 1 && (
             <button
-              onClick={() => setStep((s) => s - 1)}
+              onClick={() => { setError(''); setStep((s) => s - 1); }}
               className="flex-1 py-3.5 border border-sage-200 text-sage-700 rounded-xl-soft font-medium text-sm hover:bg-sage-50 active:scale-[0.98] transition-all"
             >
               Indietro
             </button>
           )}
-          {step < 3 ? (
+          {step < TOTAL_STEPS ? (
             <button
               onClick={() => {
-                if (step === 1 && (!cigarettesPerDay || parseInt(cigarettesPerDay) < 1)) {
-                  setError('Inserisci un numero valido di sigarette');
-                  return;
-                }
+                const err = validateStep(step);
+                if (err) { setError(err); return; }
                 setError('');
                 setStep((s) => s + 1);
               }}
@@ -146,7 +207,7 @@ export default function Onboarding() {
 function StepHeader({ step, title, sub }) {
   return (
     <>
-      <p className="text-[10px] font-semibold text-sage-600/70 uppercase tracking-[0.2em] mb-2">Passo {step} di 3</p>
+      <p className="text-[10px] font-semibold text-sage-600/70 uppercase tracking-[0.2em] mb-2">Passo {step} di {TOTAL_STEPS}</p>
       <h2 className="font-display text-3xl font-semibold text-sage-900 leading-tight mb-2">{title}</h2>
       <p className="text-sage-700/80 text-sm mb-8 leading-relaxed">{sub}</p>
     </>
@@ -190,10 +251,54 @@ function Step1({ value, onChange }) {
   );
 }
 
-function Step2({ selected, onToggle, customMoment, onCustomChange, onAddCustom }) {
+function Step2({ packPrice, onPackPriceChange, cigarettesPerDay }) {
+  const yearlySaving = useMemo(() => {
+    const cigs = parseInt(cigarettesPerDay) || 0;
+    const price = parseFloat(packPrice) || 0;
+    return (cigs * 365 / 20) * price;
+  }, [packPrice, cigarettesPerDay]);
+
   return (
     <div>
-      <StepHeader step={2} title="Quando hai più voglia?" sub="Seleziona tutti i momenti che riconosci. L'AI userà questi indizi nei suoi consigli." />
+      <StepHeader step={2} title="Quanto costa un pacchetto?" sub="Lo useremo per calcolare i tuoi risparmi reali." />
+      <div className="relative bg-white rounded-2xl-soft border border-sage-100/60 shadow-soft p-6 mb-4">
+        <div className="absolute inset-0 pointer-events-none opacity-50 bg-[radial-gradient(circle_at_50%_30%,rgba(104,131,97,0.08),transparent_60%)] rounded-2xl-soft" />
+        <div className="relative flex items-center justify-center gap-2">
+          <input
+            type="number"
+            min="0.5"
+            max="99"
+            step="0.10"
+            inputMode="decimal"
+            value={packPrice}
+            onChange={(e) => onPackPriceChange(e.target.value)}
+            className="w-32 text-center font-display text-5xl font-semibold text-sage-900 tabular-nums border-0 focus:outline-none focus:ring-0 bg-transparent leading-none"
+            placeholder="5.80"
+          />
+          <span className="font-display text-4xl text-sage-700/70 font-semibold">€</span>
+        </div>
+        <p className="relative text-[11px] text-sage-600/60 text-center mt-2">a pacchetto (20 sigarette)</p>
+      </div>
+
+      {yearlySaving > 0 && (
+        <div className="bg-gradient-to-br from-sage-50 to-sage-100/60 border border-sage-200/70 rounded-2xl-soft px-5 py-4 text-center">
+          <p className="text-[11px] uppercase tracking-wider text-sage-700/70 font-semibold mb-1">
+            Potresti risparmiare
+          </p>
+          <p className="font-display text-3xl font-semibold text-sage-800 tabular-nums">
+            {yearlySaving.toLocaleString('it-IT', { maximumFractionDigits: 0 })} €
+          </p>
+          <p className="text-xs text-sage-700/70 mt-1">nel primo anno senza fumo</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Step3({ selected, onToggle, customMoment, onCustomChange, onAddCustom }) {
+  return (
+    <div>
+      <StepHeader step={3} title="Quando hai più voglia?" sub="Seleziona tutti i momenti che riconosci. L'AI userà questi indizi nei suoi consigli." />
       <div className="flex flex-wrap gap-2 mb-4">
         {CRITICAL_MOMENTS_OPTIONS.map((m) => (
           <button
@@ -248,10 +353,10 @@ const DEPENDENCY_LABELS = {
   5: 'Molto alta — fumo appena sveglio, non riesco a smettere',
 };
 
-function Step3({ value, onChange }) {
+function Step4({ value, onChange }) {
   return (
     <div>
-      <StepHeader step={3} title="Quanto è forte la dipendenza?" sub="Sii onesto — aiuta l'AI a darti risposte più utili." />
+      <StepHeader step={4} title="Quanto è forte la dipendenza?" sub="Sii onesto — aiuta l'AI a darti risposte più utili." />
       <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 overflow-hidden divide-y divide-sage-100/60">
         {[1, 2, 3, 4, 5].map((level) => {
           const active = value === level;
@@ -276,6 +381,126 @@ function Step3({ value, onChange }) {
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function Step5({ uses, onUsesChange, startDate, onStartDateChange, firstDoseTime, onFirstDoseChange }) {
+  return (
+    <div>
+      <StepHeader step={5} title="Stai usando la citisina?" sub="Tabex, Sopharma o equivalenti. Se sì, ti aiuteremo a ricordare ogni capsula." />
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <button
+          onClick={() => onUsesChange(true)}
+          className={`px-4 py-5 rounded-2xl-soft border text-sm font-semibold transition-all active:scale-[0.98] ${
+            uses === true
+              ? 'bg-gradient-to-br from-sage-500 to-sage-700 border-transparent text-white shadow-sage'
+              : 'border-sage-200 text-sage-700 bg-white hover:bg-sage-50'
+          }`}
+        >
+          <div className="text-2xl mb-1">💊</div>
+          Sì
+        </button>
+        <button
+          onClick={() => onUsesChange(false)}
+          className={`px-4 py-5 rounded-2xl-soft border text-sm font-semibold transition-all active:scale-[0.98] ${
+            uses === false
+              ? 'bg-gradient-to-br from-sage-500 to-sage-700 border-transparent text-white shadow-sage'
+              : 'border-sage-200 text-sage-700 bg-white hover:bg-sage-50'
+          }`}
+        >
+          <div className="text-2xl mb-1">🌱</div>
+          No, smetto senza
+        </button>
+      </div>
+
+      {uses === true && (
+        <div className="bg-white rounded-2xl-soft border border-sage-100/60 shadow-soft p-5 space-y-4 animate-fade-in">
+          <div>
+            <label className="block text-xs font-semibold text-sage-700/80 uppercase tracking-wider mb-2">
+              Giorno di inizio
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => onStartDateChange(e.target.value)}
+              className="w-full px-4 py-3 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-sage-700/80 uppercase tracking-wider mb-2">
+              Orario prima capsula
+            </label>
+            <input
+              type="time"
+              value={firstDoseTime}
+              onChange={(e) => onFirstDoseChange(e.target.value)}
+              className="w-full px-4 py-3 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+            />
+            <p className="text-[11px] text-sage-600/70 mt-2 leading-relaxed">
+              Le capsule successive vengono calcolate automaticamente in base al protocollo Sopharma.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {uses === false && (
+        <div className="bg-sage-50 border border-sage-100 rounded-2xl-soft px-4 py-3 text-sm text-sage-700/90 animate-fade-in">
+          Nessun problema. QuitFresh funziona benissimo anche senza farmaci — useremo solo i promemoria e il coach AI.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Step6({ usesCytisine }) {
+  return (
+    <div>
+      <StepHeader step={6} title="Tutto pronto." sub="Ecco cosa troverai dentro l'app dal primo giorno." />
+      <div className="space-y-3">
+        <TourCard
+          icon="🌱"
+          title="Il tuo contatore"
+          text="Giorni senza fumo, soldi risparmiati e badge sbloccati, in tempo reale nella home."
+        />
+        {usesCytisine && (
+          <TourCard
+            icon="💊"
+            title="Promemoria citisina"
+            text="Ti avvisiamo a ogni capsula, secondo il protocollo Sopharma. Niente più orologio da controllare."
+          />
+        )}
+        <TourCard
+          icon="💬"
+          title="Coach AI nei craving"
+          text="Quando arriva la voglia, apri la chat: un coach intelligente ti aiuta a superare il momento."
+        />
+        {!usesCytisine && (
+          <TourCard
+            icon="📔"
+            title="Diario e statistiche"
+            text="Annota stati d'animo e momenti difficili. L'app impara da te per consigliarti meglio."
+          />
+        )}
+      </div>
+      <p className="text-[11px] text-sage-600/60 text-center mt-6 leading-relaxed">
+        Alcune funzioni avanzate (coach AI, diario) sono parte del piano premium.
+        Puoi sbloccarle quando vuoi.
+      </p>
+    </div>
+  );
+}
+
+function TourCard({ icon, title, text }) {
+  return (
+    <div className="bg-white rounded-2xl-soft border border-sage-100/60 shadow-soft p-4 flex items-start gap-3">
+      <div className="w-11 h-11 rounded-full bg-sage-50 flex items-center justify-center text-2xl shrink-0">
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-sage-900 mb-0.5">{title}</p>
+        <p className="text-[13px] text-sage-700/80 leading-relaxed">{text}</p>
       </div>
     </div>
   );

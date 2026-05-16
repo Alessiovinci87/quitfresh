@@ -1,10 +1,11 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
-const { requirePremium } = require('../middleware/premium');
 
-// GET /api/progress
-router.get('/', requireAuth, requireVerifiedEmail, requirePremium, async (req, res) => {
+// GET /api/progress — accessibile a tutti gli utenti verificati (anche free).
+// Strategia "freemium": contatore, badge e risparmio sono il valore percepito
+// gratis; il paywall scatta solo su chat AI, diario, craving log dettagli.
+router.get('/', requireAuth, requireVerifiedEmail, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user) return res.status(404).json({ error: 'Utente non trovato' });

@@ -17,23 +17,63 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
-    <script type="module" crossorigin src="/assets/index-CdhqOPis.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BKwk9SQu.css">
+    <script type="module" crossorigin src="/assets/index-BzERa8H2.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-Cv8Yhlsg.css">
   </head>
   <body>
-    <script>
-      // Restore path encoded by 404.html redirect for GitHub Pages SPA routing.
-      (function(l) {
-        if (l.search[1] === '/') {
-          var decoded = l.search.slice(1).split('&').map(function(s) {
-            return s.replace(/~and~/g, '&');
-          }).join('?');
-          window.history.replaceState(null, null,
-            l.pathname.slice(0, -1) + decoded + l.hash
-          );
-        }
-      }(window.location));
-    </script>
     <div id="root"></div>
+    <div id="qf-recovery" style="display:none;position:fixed;inset:0;background:#fdfcf9;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#2d3a31;padding:24px;align-items:center;justify-content:center;text-align:center;flex-direction:column;">
+      <div style="max-width:320px;">
+        <div style="font-size:48px;margin-bottom:12px;">🔄</div>
+        <h1 style="font-size:20px;margin:0 0 8px;font-weight:600;">L'app non si avvia</h1>
+        <p style="font-size:14px;line-height:1.5;color:#5a6b62;margin:0 0 24px;">
+          Una versione precedente è bloccata in cache. Tocca il bottone per pulire e ricaricare.
+        </p>
+        <button id="qf-recovery-btn" style="background:linear-gradient(135deg,#84a98c,#6b8f71);color:#fff;border:0;padding:14px 28px;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(107,143,113,0.3);">
+          Pulisci e ricarica
+        </button>
+      </div>
+    </div>
+    <script>
+      // Recovery net: se React non monta entro 8s (= SW vecchio rotto serve
+      // HTML zombi senza bundle valido), mostra UI di self-heal che fa
+      // unregister + clear cache + reload. Senza questa rete l'utente resta
+      // bloccato su schermata bianca e deve cancellare i dati Safari a mano.
+      (function() {
+        var bootedAt = Date.now();
+        var recovery = document.getElementById('qf-recovery');
+        var btn = document.getElementById('qf-recovery-btn');
+
+        async function resetAll() {
+          btn.textContent = 'Pulizia in corso…';
+          btn.disabled = true;
+          try {
+            if ('serviceWorker' in navigator) {
+              var regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map(function(r) { return r.unregister(); }));
+            }
+            if ('caches' in window) {
+              var keys = await caches.keys();
+              await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+            }
+          } catch (e) {}
+          // Hard reload con cache-bust per saltare anche HTTP cache.
+          location.replace(location.pathname + '?_=' + Date.now());
+        }
+
+        btn.addEventListener('click', resetAll);
+
+        function checkMounted() {
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) return;
+          if (Date.now() - bootedAt < 8000) {
+            setTimeout(checkMounted, 500);
+            return;
+          }
+          recovery.style.display = 'flex';
+        }
+        setTimeout(checkMounted, 8000);
+      })();
+    </script>
   </body>
 </html>
