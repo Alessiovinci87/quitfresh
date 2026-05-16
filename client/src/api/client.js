@@ -21,6 +21,7 @@ async function request(path, options = {}) {
   if (!res.ok) {
     const err = new Error(data.error || 'Errore sconosciuto');
     err.status = res.status;
+    err.code = data.code; // es. 'EMAIL_NOT_VERIFIED' per gating UI
     throw err;
   }
   return data;
