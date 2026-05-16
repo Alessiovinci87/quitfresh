@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const prisma = require('./prisma');
 const { sendPush, isEnabled } = require('./push');
 const { getActivePhase, getDoseTimes } = require('./cytisine');
+const { runScheduledBackup } = require('./backup');
 
 function getRomeTime() {
   const romeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
@@ -44,7 +45,21 @@ async function dispatchToUser(user, msg) {
 }
 
 function startCron() {
-  if (!isEnabled()) return;
+  // Backup DB giornaliero 08:00 Europe/Rome — INDIPENDENTE da push.
+  // Lo schedulo PRIMA della guard isEnabled() così funziona anche se
+  // VAPID/web-push non è configurato.
+  cron.schedule('0 8 * * *', async () => {
+    try {
+      await runScheduledBackup({ trigger: 'cron' });
+    } catch (err) {
+      console.error('[backup-cron] errore:', err.message);
+    }
+  }, { timezone: 'Europe/Rome' });
+
+  if (!isEnabled()) {
+    console.log('[cron] scheduler backup avviato (push disabilitato)');
+    return;
+  }
 
   cron.schedule('* * * * *', async () => {
     const { timeStr, date: romeNow } = getRomeTime();
@@ -208,7 +223,7 @@ function startCron() {
     }
   }, { timezone: 'Europe/Rome' });
 
-  console.log('[cron] scheduler notifiche avviato');
+  console.log('[cron] scheduler notifiche + backup avviato');
 }
 
 module.exports = { startCron };

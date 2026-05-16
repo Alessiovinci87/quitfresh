@@ -1,0 +1,6 @@
+# Aggiunge postgresql-client al runtime Railway così pg_dump è disponibile
+# per il job di backup giornaliero (server/src/lib/backup.js).
+# Il resto della build (Node.js detection, prisma, ecc.) resta autodetect.
+
+[phases.setup]
+aptPkgs = ['postgresql-client']

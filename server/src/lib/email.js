@@ -147,4 +147,74 @@ function sendWelcomeEmail(to) {
   return send({ to, subject: 'Benvenuto in QuitFresh 🌱', html });
 }
 
-module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, isEnabled };
+// Backup email: invia il dump .sql.gz come allegato a un indirizzo
+// admin. Subject con data ISO per filtraggio facile in Gmail.
+function sendBackupEmail(to, buffer, meta) {
+  const today = new Date();
+  const isoDate = today.toISOString().split('T')[0];
+  const filename = `quitfresh-backup-${isoDate}.sql.gz`;
+  const sizeKb = (buffer.length / 1024).toFixed(0);
+  const durationS = ((meta.durationMs || 0) / 1000).toFixed(1);
+  const localDate = today.toLocaleString('it-IT', {
+    timeZone: 'Europe/Rome',
+    dateStyle: 'full',
+    timeStyle: 'short',
+  });
+
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:28px;">
+        <tr><td>
+          <p style="margin:0 0 8px;color:#84a98c;font-size:13px;font-weight:600;letter-spacing:0.5px;">QUITFRESH · BACKUP DB</p>
+          <h1 style="margin:0 0 16px;font-size:20px;color:#111827;">Backup completato</h1>
+          <p style="margin:0 0 16px;font-size:14px;color:#4b5563;">
+            ${localDate}<br>
+            <span style="color:#9ca3af;">Trigger: ${meta.trigger || 'cron'} · Durata: ${durationS}s · Dump: ${sizeKb} KB</span>
+          </p>
+
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 16px;background:#f5f5f4;border-radius:12px;padding:14px 16px;font-size:13px;color:#374151;">
+            <tr><td>Utenti</td><td style="text-align:right;font-weight:600;">${meta.users}</td></tr>
+            <tr><td>Diary entries</td><td style="text-align:right;font-weight:600;">${meta.diary}</td></tr>
+            <tr><td>Craving logs</td><td style="text-align:right;font-weight:600;">${meta.craving}</td></tr>
+            <tr><td>Quit attempts</td><td style="text-align:right;font-weight:600;">${meta.attempts}</td></tr>
+            <tr><td>Promo codes</td><td style="text-align:right;font-weight:600;">${meta.promos}</td></tr>
+          </table>
+
+          <p style="margin:0;font-size:12px;line-height:1.5;color:#6b7280;">
+            <strong>Restore:</strong> <code style="background:#f5f5f4;padding:2px 4px;border-radius:4px;">gunzip -c ${filename} | psql $DATABASE_URL</code>
+          </p>
+        </td></tr>
+      </table>
+      <p style="margin:12px 0 0;font-size:11px;color:#9ca3af;">© QuitFresh — backup automatico</p>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  if (!isEnabled()) {
+    console.log(`[email] backup skipped (Resend non configurato) → ${to}`);
+    return { skipped: true };
+  }
+  return resend.emails.send({
+    from: fromEmail,
+    to,
+    subject: `QuitFresh — Backup DB · ${isoDate}`,
+    html,
+    attachments: [{ filename, content: buffer }],
+  }).then((result) => {
+    if (result.error) {
+      console.error('[email] backup error:', result.error);
+      return { error: result.error };
+    }
+    return { id: result.data?.id };
+  }).catch((err) => {
+    console.error('[email] backup exception:', err.message);
+    return { error: err };
+  });
+}
+
+module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, isEnabled };

@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
+const { runScheduledBackup } = require('../lib/backup');
 
 router.use(requireAuth, requireVerifiedEmail, requireAdmin);
 
@@ -118,6 +119,24 @@ router.delete('/promo-codes/:id', async (req, res) => {
   }
   await prisma.promoCode.delete({ where: { id: promo.id } });
   res.status(204).end();
+});
+
+// POST /api/admin/backup — trigger manuale del backup DB (admin-only).
+// Risponde 202 subito e fa il dump in background per evitare timeout HTTP
+// se il dump è grande. L'admin riceve l'email di conferma poco dopo.
+router.post('/backup', (req, res) => {
+  res.status(202).json({
+    ok: true,
+    message: 'Backup in corso. Riceverai l\'email tra qualche istante.',
+  });
+
+  runScheduledBackup({ trigger: 'manual' })
+    .then((result) => {
+      console.log('[admin] backup manuale completato:', result);
+    })
+    .catch((err) => {
+      console.error('[admin] backup manuale fallito:', err.message);
+    });
 });
 
 module.exports = router;
