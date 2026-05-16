@@ -33,6 +33,10 @@ model User {
   emailVerified      Boolean            @default(false)
   verifyToken        String?            @unique
   isAdmin            Boolean            @default(false)
+  // tokenVersion: incrementato al reset password e a logout-all per
+  // invalidare TUTTI i JWT esistenti dell'utente. Middleware requireAuth
+  // compara payload.tv === user.tokenVersion.
+  tokenVersion       Int                @default(0)
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]
   diaryEntries      DiaryEntry[]

@@ -37,6 +37,7 @@ export const api = {
     resetPassword: (token, newPassword) => request('/api/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) }),
     verifyEmail: (token) => request(`/api/auth/verify-email?token=${encodeURIComponent(token)}`),
     resendVerify: () => request('/api/auth/resend-verify', { method: 'POST' }),
+    logoutAll: () => request('/api/auth/logout-all', { method: 'POST' }),
     exportData: async () => {
       const token = getToken();
       const res = await fetch(`${BASE_URL}/api/auth/export`, {
