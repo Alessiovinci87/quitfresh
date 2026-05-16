@@ -116,6 +116,61 @@ function UpdateBanner() {
   );
 }
 
+function CookieBanner() {
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    if (typeof localStorage === 'undefined') return;
+    const accepted = localStorage.getItem('qf_cookieConsent');
+    if (!accepted) setShown(true);
+  }, []);
+
+  if (!shown) return null;
+
+  const accept = () => {
+    try { localStorage.setItem('qf_cookieConsent', new Date().toISOString()); } catch {}
+    setShown(false);
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 90,
+        backgroundColor: '#1f2d22',
+        color: '#ffffff',
+        padding: 'calc(env(safe-area-inset-bottom, 0px) + 12px) 16px 12px',
+        boxShadow: '0 -2px 12px rgba(0,0,0,0.15)',
+      }}
+    >
+      <div style={{ maxWidth: '430px', margin: '0 auto', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <p style={{ flex: 1, minWidth: '180px', fontSize: '12px', lineHeight: 1.4, margin: 0 }}>
+          Usiamo localStorage tecnico per il login e le preferenze. Nessun tracking pubblicitario. Vedi la{' '}
+          <a href="/privacy" style={{ color: '#a8c2ac', textDecoration: 'underline' }}>privacy policy</a>.
+        </p>
+        <button
+          onClick={accept}
+          style={{
+            padding: '8px 18px',
+            backgroundColor: '#6B8F71',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '20px',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          Ho capito
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppShell() {
   const [splashVisible, setSplashVisible] = useState(true);
 
@@ -128,6 +183,7 @@ function AppShell() {
     <>
       {splashVisible && <SplashScreen />}
       <UpdateBanner />
+      <CookieBanner />
       <div className="min-h-screen bg-gray-100 flex items-start justify-center">
         <Routes>
           <Route path="/login" element={<Login />} />
