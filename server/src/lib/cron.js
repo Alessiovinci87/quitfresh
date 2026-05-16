@@ -63,18 +63,53 @@ function startCron() {
         include: { pushSubscriptions: true },
       });
 
+      // Pre-calcolo bounds di oggi in Europe/Rome per query pillsTaken.
+      const todayStart = new Date(romeNow);
+      todayStart.setHours(0, 0, 0, 0);
+      const tomorrowStart = new Date(todayStart);
+      tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+
       for (const user of cytisineUsers) {
         const start = new Date(new Date(user.cytisineStartDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
         const phase = getActivePhase(user.cytisineSchedule, start, romeNow);
         if (!phase) continue;
 
         const doseTimes = getDoseTimes(user.firstDoseTime, phase);
+
+        // 1a. Notifica PRIMARIA al dose time
         const doseIndex = doseTimes.indexOf(timeStr);
-        if (doseIndex === -1) continue;
+        if (doseIndex !== -1) {
+          await dispatchToUser(user, {
+            title: `QuitFresh · Giorno ${phase.day}`,
+            body: `Capsula ${doseIndex + 1} di ${phase.pills} · Fase ${phase.index + 1}. Prendila ora!`,
+          });
+          continue;
+        }
+
+        // 1b. REMINDER RICORRENTE: se l'ultimo dose time e' passato ed
+        //     e' multiplo di 10 minuti dopo, e l'utente non ha ancora
+        //     segnato la capsula nella card "Capsule oggi" della Home
+        //     (pillsTaken < expected), re-invia. Cap a 60 min: oltre,
+        //     l'utente ha probabilmente saltato.
+        const passedDoses = doseTimes.filter(t => t < timeStr);
+        if (passedDoses.length === 0) continue;
+        const lastDose = passedDoses[passedDoses.length - 1];
+        const [lh, lm] = lastDose.split(':').map(Number);
+        const [ch, cm] = timeStr.split(':').map(Number);
+        const minutesSinceDose = (ch * 60 + cm) - (lh * 60 + lm);
+        if (minutesSinceDose < 10 || minutesSinceDose > 60) continue;
+        if (minutesSinceDose % 10 !== 0) continue;
+
+        const expectedTaken = doseTimes.indexOf(lastDose) + 1;
+        const diary = await prisma.diaryEntry.findFirst({
+          where: { userId: user.id, date: { gte: todayStart, lt: tomorrowStart } },
+        });
+        const actualTaken = diary?.pillsTaken ?? 0;
+        if (actualTaken >= expectedTaken) continue; // confermato, stop
 
         await dispatchToUser(user, {
-          title: `QuitFresh · Giorno ${phase.day}`,
-          body: `Capsula ${doseIndex + 1} di ${phase.pills} · Fase ${phase.index + 1}. Prendila ora!`,
+          title: `Promemoria capsula ${expectedTaken} di ${phase.pills}`,
+          body: `Se l'hai gia' presa, segnala nella sezione "Capsule oggi" della home — il reminder si ferma quando aggiorni.`,
         });
       }
 
