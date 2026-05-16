@@ -1,10 +1,10 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requirePremium } = require('../middleware/premium');
 
 // GET /api/progress
-router.get('/', requireAuth, requirePremium, async (req, res) => {
+router.get('/', requireAuth, requireVerifiedEmail, requirePremium, async (req, res) => {
   try {
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
     if (!user) return res.status(404).json({ error: 'Utente non trovato' });

@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
 const { isEnabled, sendPush } = require('../lib/push');
 const webpush = require('web-push');
@@ -14,7 +14,7 @@ router.get('/vapid-key', (_req, res) => {
 });
 
 // POST /api/notifications/subscribe
-router.post('/subscribe', requireAuth, async (req, res) => {
+router.post('/subscribe', requireAuth, requireVerifiedEmail, async (req, res) => {
   const { endpoint, keys } = req.body;
   if (!endpoint || !keys?.p256dh || !keys?.auth) {
     return res.status(400).json({ error: 'Dati subscription non validi' });
@@ -34,7 +34,7 @@ router.post('/subscribe', requireAuth, async (req, res) => {
 });
 
 // DELETE /api/notifications/subscribe
-router.delete('/subscribe', requireAuth, async (req, res) => {
+router.delete('/subscribe', requireAuth, requireVerifiedEmail, async (req, res) => {
   const { endpoint } = req.body;
   if (!endpoint) return res.status(400).json({ error: 'endpoint mancante' });
 
@@ -50,7 +50,7 @@ router.delete('/subscribe', requireAuth, async (req, res) => {
 });
 
 // PUT /api/notifications/times — salva orari promemoria
-router.put('/times', requireAuth, async (req, res) => {
+router.put('/times', requireAuth, requireVerifiedEmail, async (req, res) => {
   const { times } = req.body;
   if (!Array.isArray(times)) {
     return res.status(400).json({ error: 'times deve essere un array di stringhe HH:MM' });
@@ -73,7 +73,7 @@ router.put('/times', requireAuth, async (req, res) => {
 
 // PUT /api/notifications/encouragement — orario incoraggiamento giornaliero
 // body: { time: "HH:MM" } per attivare, { time: null } per disattivare
-router.put('/encouragement', requireAuth, async (req, res) => {
+router.put('/encouragement', requireAuth, requireVerifiedEmail, async (req, res) => {
   const { time } = req.body;
   if (time !== null && !/^\d{2}:\d{2}$/.test(time || '')) {
     return res.status(400).json({ error: 'time deve essere HH:MM o null' });
@@ -93,7 +93,7 @@ router.put('/encouragement', requireAuth, async (req, res) => {
 });
 
 // GET /api/notifications/debug — diagnostica (solo autenticati)
-router.get('/debug', requireAuth, requireAdmin, async (req, res) => {
+router.get('/debug', requireAuth, requireVerifiedEmail, requireAdmin, async (req, res) => {
   const pub = process.env.VAPID_PUBLIC_KEY;
   const priv = process.env.VAPID_PRIVATE_KEY;
   const email = process.env.VAPID_EMAIL;
@@ -119,7 +119,7 @@ router.get('/debug', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // POST /api/notifications/test — invia push di test immediata
-router.post('/test', requireAuth, async (req, res) => {
+router.post('/test', requireAuth, requireVerifiedEmail, async (req, res) => {
   const pub = (process.env.VAPID_PUBLIC_KEY || '').trim().replace(/[^A-Za-z0-9\-_]/g, '');
   const priv = (process.env.VAPID_PRIVATE_KEY || '').trim().replace(/[^A-Za-z0-9\-_]/g, '');
   const email = (process.env.VAPID_EMAIL || 'mailto:admin@quitfresh.app').trim();
