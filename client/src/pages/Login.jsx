@@ -11,7 +11,9 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   if (user) {
-    navigate(user.quitDate ? '/home' : '/onboarding', { replace: true });
+    if (!user.emailVerified) navigate('/check-email', { replace: true });
+    else if (!user.quitDate) navigate('/onboarding', { replace: true });
+    else navigate('/home', { replace: true });
     return null;
   }
 
@@ -22,7 +24,9 @@ export default function Login() {
     try {
       const { token, user: userData } = await api.auth.login(form);
       login(token, userData);
-      navigate(userData.quitDate ? '/home' : '/onboarding', { replace: true });
+      if (!userData.emailVerified) navigate('/check-email', { replace: true });
+      else if (!userData.quitDate) navigate('/onboarding', { replace: true });
+      else navigate('/home', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

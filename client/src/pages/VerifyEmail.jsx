@@ -59,7 +59,7 @@ export default function VerifyEmail() {
           <>
             <h1 className="text-xl font-bold text-gray-900 mb-2">Link non valido</h1>
             <p className="text-sm text-red-600 mb-6">Token mancante nel link.</p>
-            <Link to="/home" className="inline-block px-6 py-3 bg-sage-500 text-white rounded-2xl font-semibold text-sm hover:bg-sage-600">
+            <Link to="/login" className="inline-block px-6 py-3 bg-sage-500 text-white rounded-2xl font-semibold text-sm hover:bg-sage-600">
               Torna all'app
             </Link>
           </>
@@ -73,9 +73,15 @@ export default function VerifyEmail() {
               </svg>
             </div>
             <h1 className="text-xl font-bold text-gray-900 mb-2">Email verificata</h1>
-            <p className="text-sm text-gray-500 mb-6">Grazie. Il tuo account è ora completo.</p>
-            <Link to="/home" className="inline-block px-6 py-3 bg-sage-500 text-white rounded-2xl font-semibold text-sm hover:bg-sage-600">
-              Vai all'app
+            <p className="text-sm text-gray-500 leading-relaxed mb-2">
+              Perfetto. Ti stiamo inviando subito una <strong>mail di benvenuto</strong>
+              {' '}con il bottone per iniziare le 6 brevi domande del percorso.
+            </p>
+            <p className="text-xs text-gray-400 mb-6">
+              Controlla la casella (anche spam/promozioni) tra qualche istante.
+            </p>
+            <Link to="/onboarding" className="inline-block px-6 py-3 bg-sage-500 text-white rounded-2xl font-semibold text-sm hover:bg-sage-600">
+              Inizia subito le domande
             </Link>
           </>
         )}
@@ -84,8 +90,8 @@ export default function VerifyEmail() {
           <>
             <h1 className="text-xl font-bold text-gray-900 mb-2">Verifica fallita</h1>
             <p className="text-sm text-red-600 mb-6">{errorMsg}</p>
-            <Link to="/home" className="inline-block px-6 py-3 bg-sage-500 text-white rounded-2xl font-semibold text-sm hover:bg-sage-600">
-              Torna all'app
+            <Link to="/check-email" className="inline-block px-6 py-3 bg-sage-500 text-white rounded-2xl font-semibold text-sm hover:bg-sage-600">
+              Richiedi un nuovo link
             </Link>
           </>
         )}

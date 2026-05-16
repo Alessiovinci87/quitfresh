@@ -87,7 +87,10 @@ function sendResetEmail(to, link) {
 // 3 funzioni principali spiegate. Niente claim medici (P.S. rinvia al
 // medico per dubbi sul protocollo citisina, coerente con Terms).
 function sendWelcomeEmail(to) {
-  const appLink = (process.env.CLIENT_BASE_URL || 'https://quitfresh.it').replace(/\/$/, '') + '/home';
+  // Welcome mail: il tasto porta DIRETTAMENTE alle 6 domande di onboarding,
+  // non alla home. Così evitiamo che chi clicca da Safari/desktop salti il
+  // setup iniziale finendo in una home vuota.
+  const appLink = (process.env.CLIENT_BASE_URL || 'https://quitfresh.it').replace(/\/$/, '') + '/onboarding';
   const html = `<!DOCTYPE html>
 <html lang="it">
 <head><meta charset="UTF-8"></head>
@@ -121,7 +124,11 @@ function sendWelcomeEmail(to) {
           </table>
 
           <p style="margin:0 0 28px;">
-            <a href="${appLink}" style="display:inline-block;background:#84a98c;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:15px;">Apri QuitFresh</a>
+            <a href="${appLink}" style="display:inline-block;background:#84a98c;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:15px;">Inizia il percorso</a>
+          </p>
+
+          <p style="margin:0 0 24px;font-size:13px;line-height:1.5;color:#4b5563;">
+            Ti faremo 6 brevi domande per personalizzare il tuo percorso (sigarette, dipendenza, citisina). Dura meno di un minuto.
           </p>
 
           <p style="margin:0 0 8px;font-size:13px;color:#4b5563;">Buon inizio,</p>

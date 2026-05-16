@@ -11,7 +11,9 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
 
   if (user) {
-    navigate(user.quitDate ? '/home' : '/onboarding', { replace: true });
+    if (!user.emailVerified) navigate('/check-email', { replace: true });
+    else if (!user.quitDate) navigate('/onboarding', { replace: true });
+    else navigate('/home', { replace: true });
     return null;
   }
 
@@ -31,7 +33,7 @@ export default function Register() {
         password: form.password,
       });
       login(token, userData);
-      navigate('/onboarding', { replace: true });
+      navigate('/check-email', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

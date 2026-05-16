@@ -9,6 +9,7 @@ const PAYWALL_EXEMPT = new Set([
   '/paywall',
   '/premium-success',
   '/onboarding',
+  '/check-email',
   '/home',
   '/profile',
   '/privacy',
@@ -22,10 +23,20 @@ const PAYWALL_EXEMPT = new Set([
 // non possa saltarle.
 const ONBOARDING_EXEMPT = new Set([
   '/onboarding',
+  '/check-email',
   '/profile',
   '/privacy',
   '/terms',
   '/admin/promo-codes',
+]);
+
+// Route accessibili anche se l'utente NON ha ancora verificato l'email.
+// Tutto il resto va prima a /check-email (sblocco solo dopo verify).
+const EMAIL_VERIFY_EXEMPT = new Set([
+  '/check-email',
+  '/profile',
+  '/privacy',
+  '/terms',
 ]);
 
 export default function PrivateRoute({ children }) {
@@ -41,6 +52,11 @@ export default function PrivateRoute({ children }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+
+  // Email non verificata → schermata di attesa con possibilità di reinvio.
+  if (user.emailVerified === false && !EMAIL_VERIFY_EXEMPT.has(location.pathname)) {
+    return <Navigate to="/check-email" replace />;
+  }
 
   // Onboarding incompleto → forza il completamento prima di tutto.
   if (!user.quitDate && !ONBOARDING_EXEMPT.has(location.pathname)) {
