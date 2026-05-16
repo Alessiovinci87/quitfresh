@@ -93,7 +93,15 @@ app.use(cors({
 
 // Stripe webhook deve ricevere il body raw per verificare la firma — montato PRIMA di express.json
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
-app.use(express.json());
+// Body size limit 100kb: previene DoS via payload enormi. Ampio per
+// qualsiasi POST legittimo (testo chat, diario, settings).
+app.use(express.json({ limit: '100kb' }));
+
+// Rate limit globale su /api/* (300/min per utente/IP). I limiter
+// specifici nelle route sensibili (login, chat, craving, forgotPassword)
+// si sommano sopra.
+const { apiLimiter } = require('./middleware/rateLimit');
+app.use('/api', apiLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', passwordResetRoutes);
