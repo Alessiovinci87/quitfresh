@@ -14,7 +14,7 @@ export default function TermsOfService() {
         </button>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Termini di Servizio</h1>
-        <p className="text-xs text-gray-400 mb-8">Ultimo aggiornamento: 14 maggio 2026</p>
+        <p className="text-xs text-gray-400 mb-8">Ultimo aggiornamento: 16 maggio 2026</p>
 
         <Section title="1. Accettazione">
           Utilizzando QuitFresh accetti integralmente i presenti Termini di
@@ -61,19 +61,30 @@ export default function TermsOfService() {
           </p>
         </Section>
 
-        <Section title="5. Limitazione di responsabilità">
+        <Section title="5. Disclaimer medico e protocollo citisina">
           <p className="mb-2">
-            QuitFresh è uno strumento di supporto e non garantisce il
-            raggiungimento di specifici risultati (ad esempio smettere
-            definitivamente di fumare). La chat AI fornisce indicazioni di
-            carattere generale e non sostituisce in alcun caso la consulenza
-            di un medico. In caso di problemi di salute consulta sempre un
-            professionista sanitario.
+            <strong>La citisina è un farmaco soggetto a prescrizione
+            medica.</strong> QuitFresh fornisce solo strumenti di monitoraggio
+            e promemoria del protocollo di assunzione (es. Tabex / Sopharma):
+            non prescrive farmaci e non sostituisce in alcun caso il consulto
+            medico.
+          </p>
+          <p className="mb-2">
+            Gli orari, le dosi e le indicazioni del protocollo mostrati in
+            QuitFresh seguono il foglietto illustrativo del produttore. In
+            caso di effetti collaterali, dubbi sull'assunzione, condizioni
+            mediche preesistenti, gravidanza/allattamento o assunzione di
+            altri farmaci, <strong>consulta il tuo medico</strong> prima di
+            iniziare o modificare il protocollo.
           </p>
           <p>
-            Il titolare non è responsabile per danni diretti o indiretti
-            derivanti dall'uso o dall'impossibilità di usare il servizio, nei
-            limiti consentiti dalla legge applicabile.
+            QuitFresh non garantisce il raggiungimento di specifici risultati
+            (ad esempio smettere definitivamente di fumare). La chat AI
+            fornisce indicazioni di carattere generale e non sostituisce in
+            alcun caso la consulenza di un medico o di un professionista
+            sanitario. Il titolare non è responsabile per danni diretti o
+            indiretti derivanti dall'uso o dall'impossibilità di usare il
+            servizio, nei limiti consentiti dalla legge applicabile.
           </p>
         </Section>
 

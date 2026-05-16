@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
         </button>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-        <p className="text-xs text-gray-400 mb-8">Ultimo aggiornamento: 14 maggio 2026</p>
+        <p className="text-xs text-gray-400 mb-8">Ultimo aggiornamento: 16 maggio 2026</p>
 
         <Section title="1. Titolare del trattamento">
           Alessio Vinci, P.IVA IT03014680908<br />
@@ -102,10 +102,13 @@ export default function PrivacyPolicy() {
               propria privacy policy.
             </li>
             <li>
-              <strong>Railway</strong> (hosting backend): server in EU.
+              <strong>Railway</strong> (hosting full-stack, frontend + backend
+              + database PostgreSQL): server in EU.
             </li>
             <li>
-              <strong>GitHub Pages</strong> (hosting frontend).
+              <strong>Sentry</strong> (error tracking): cattura errori
+              tecnici per debug. Configurato per escludere dati personali
+              dell'utente nelle stack trace.
             </li>
           </ul>
         </Section>
@@ -119,30 +122,64 @@ export default function PrivacyPolicy() {
         </Section>
 
         <Section title="6. Diritti dell'interessato">
-          Ai sensi del GDPR hai diritto di: accesso, rettifica, cancellazione,
-          limitazione del trattamento, portabilità, opposizione. Per esercitare
-          i tuoi diritti scrivi a{' '}
-          <a href="mailto:info@quitfresh.it" className="text-sage-600 underline">
-            info@quitfresh.it
-          </a>
-          . Hai inoltre il diritto di proporre reclamo al Garante per la
-          Protezione dei Dati Personali (
-          <a
-            href="https://www.garanteprivacy.it"
-            target="_blank"
-            rel="noreferrer"
-            className="text-sage-600 underline"
-          >
-            garanteprivacy.it
-          </a>
-          ).
+          <p className="mb-2">
+            Ai sensi del GDPR hai diritto di: accesso, rettifica, cancellazione,
+            limitazione del trattamento, portabilità, opposizione.
+          </p>
+          <p className="mb-2">
+            <strong>Esercizio automatico nell'app:</strong>
+          </p>
+          <ul className="space-y-1 list-disc list-inside mb-3">
+            <li>
+              <strong>Portabilità</strong> (art. 20): Profilo → "Esporta i miei
+              dati (GDPR)" scarica un file JSON con tutti i tuoi dati.
+            </li>
+            <li>
+              <strong>Cancellazione</strong> (art. 17): Profilo → "Elimina
+              account" cancella in cascata tutti i tuoi dati associati.
+            </li>
+            <li>
+              <strong>Rettifica</strong> (art. 16): Profilo → Gestione abitudini
+              per aggiornare i dati del profilo fumatore.
+            </li>
+          </ul>
+          <p>
+            Per gli altri diritti scrivi a{' '}
+            <a href="mailto:info@quitfresh.it" className="text-sage-600 underline">
+              info@quitfresh.it
+            </a>
+            . Hai inoltre il diritto di proporre reclamo al Garante per la
+            Protezione dei Dati Personali (
+            <a
+              href="https://www.garanteprivacy.it"
+              target="_blank"
+              rel="noreferrer"
+              className="text-sage-600 underline"
+            >
+              garanteprivacy.it
+            </a>
+            ).
+          </p>
         </Section>
 
-        <Section title="7. Cookie e tracciamento">
-          QuitFresh non utilizza cookie di profilazione o di tracciamento
-          pubblicitario. Vengono utilizzati esclusivamente token tecnici (JWT)
-          per mantenere la sessione di accesso, conservati in memoria del
-          browser.
+        <Section title="7. Cookie e localStorage">
+          QuitFresh <strong>non utilizza cookie di profilazione o di tracciamento
+          pubblicitario</strong>. Vengono utilizzati esclusivamente:
+          <ul className="space-y-1 list-disc list-inside mt-2">
+            <li>
+              <strong>localStorage tecnico</strong>: token JWT di sessione,
+              consenso cookie, cache altezza tastiera per UX. Non condiviso
+              con terzi.
+            </li>
+            <li>
+              <strong>Cookie di Stripe</strong>: solo durante il processo di
+              pagamento, gestiti da Stripe per la prevenzione frodi.
+            </li>
+          </ul>
+          <p className="mt-2">
+            Al primo accesso viene mostrato un banner informativo con tasto
+            "Ho capito" che salva il consenso in localStorage.
+          </p>
         </Section>
 
         <Section title="8. Modifiche">
