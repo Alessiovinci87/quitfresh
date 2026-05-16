@@ -23,6 +23,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import CheckEmail from './pages/CheckEmail';
+import InstallBanner from './components/InstallBanner';
 
 export default function App() {
   return (
@@ -185,6 +186,7 @@ function AppShell() {
       {splashVisible && <SplashScreen />}
       <UpdateBanner />
       <CookieBanner />
+      <InstallBanner />
       <div className="min-h-screen bg-gray-100 flex items-start justify-center">
         <Routes>
           <Route path="/login" element={<Login />} />
