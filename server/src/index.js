@@ -54,15 +54,29 @@ const PORT = process.env.PORT || 3001;
 app.set('trust proxy', 1);
 
 // Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, ecc.).
-// CSP allenta font-src e style-src per Google Fonts (Inter caricato da index.html).
+// CSP MODERATA: stringe object/base/frame/connect ma mantiene
+// 'unsafe-inline' e 'unsafe-eval' su script-src perche' il bundle prod
+// (Sentry SDK + vite-plugin-pwa workbox) richiede entrambi. Senza,
+// l'app va in ErrorBoundary al boot (testato il 15 maggio, vedi tag
+// pre-final-security-batch).
+// Per recuperare protezione XSS in futuro: migrare a nonce-based CSP3.
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      'font-src': ["'self'", 'fonts.gstatic.com'],
+      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'js.stripe.com'],
       'style-src': ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+      'font-src': ["'self'", 'fonts.gstatic.com', 'data:'],
+      'img-src': ["'self'", 'data:', 'blob:', 'https:'],
+      'connect-src': ["'self'", 'https://*.sentry.io', 'https://*.ingest.sentry.io', 'https://api.stripe.com', 'https://m.stripe.com'],
+      'frame-src': ['js.stripe.com', 'hooks.stripe.com'],
+      'worker-src': ["'self'", 'blob:'],
+      'object-src': ["'none'"],
+      'base-uri': ["'self'"],
+      'form-action': ["'self'"],
     },
   },
+  crossOriginEmbedderPolicy: false, // Necessario per service worker PWA
 }));
 
 // ─── CORS ristretto a origini whitelisted ───────────────────────────
