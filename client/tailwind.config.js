@@ -34,6 +34,18 @@ export default {
           100: '#faf8f2',
           200: '#f3eee2',
         },
+        // [design-v2 / Premium Wellness] Champagne/gold per accenti raffinati.
+        // Usato solo dove l'esperimento di redesign è attivo (per ora solo Home).
+        gold: {
+          50:  '#fbf6ea',
+          100: '#f5ebd5',
+          200: '#ecdcb0',
+          300: '#dcc385',
+          400: '#c9a96e', // accent primary del preview
+          500: '#b3934f',
+          600: '#92763f',
+          700: '#735c33',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
@@ -52,6 +64,10 @@ export default {
         'card': '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.06)',
         'lift': '0 4px 8px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.08)',
         'sage': '0 8px 24px rgba(104, 131, 97, 0.25)',
+        // [design-v2] glow verde scuro + glow gold per il look "premium"
+        'glow': '0 10px 30px -10px rgba(65, 85, 62, 0.45)',
+        'glow-gold': '0 8px 24px -8px rgba(201, 169, 110, 0.45)',
+        'glass': 'inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 3px rgba(30,58,50,0.04), 0 12px 32px rgba(30,58,50,0.08)',
       },
       spacing: {
         'safe-bottom': 'env(safe-area-inset-bottom, 0px)',
