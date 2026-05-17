@@ -4,6 +4,22 @@ const { sendPush, isEnabled } = require('./push');
 const { getActivePhase, getDoseTimes } = require('./cytisine');
 const { runScheduledBackup } = require('./backup');
 
+// Dedup cache primaria citisina (chiave: userId_YYYYMMDD_doseIndex).
+// Vive in memoria: al restart del container si svuota — accettabile perché
+// la primaria scatta nei primi 9 minuti dopo il dose time, finestra piccola
+// abbastanza che un restart non causi spam doppio nel caso peggiore.
+const sentPrimaryCache = new Map();
+
+function pruneCacheOldEntries(currentYMD) {
+  for (const key of sentPrimaryCache.keys()) {
+    if (!key.includes(`_${currentYMD}_`)) sentPrimaryCache.delete(key);
+  }
+}
+
+function ymdOf(romeDate) {
+  return `${romeDate.getFullYear()}${String(romeDate.getMonth() + 1).padStart(2, '0')}${String(romeDate.getDate()).padStart(2, '0')}`;
+}
+
 function getRomeTime() {
   const romeDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
   return {
@@ -84,16 +100,45 @@ function startCron() {
       const tomorrowStart = new Date(todayStart);
       tomorrowStart.setDate(tomorrowStart.getDate() + 1);
 
+      const todayYMD = ymdOf(romeNow);
+      pruneCacheOldEntries(todayYMD);
+
       for (const user of cytisineUsers) {
         const start = new Date(new Date(user.cytisineStartDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
         const phase = getActivePhase(user.cytisineSchedule, start, romeNow);
         if (!phase) continue;
 
         const doseTimes = getDoseTimes(user.firstDoseTime, phase);
+        if (doseTimes.length === 0) continue;
 
-        // 1a. Notifica PRIMARIA al dose time
-        const doseIndex = doseTimes.indexOf(timeStr);
-        if (doseIndex !== -1) {
+        // Trova l'ultima dose il cui orario è già arrivato (incluso quello
+        // corrente). Se nessuna ha ancora il via, skip — il primo dose del
+        // giorno arriverà in un tick successivo.
+        const passedOrCurrent = doseTimes.filter(t => t <= timeStr);
+        if (passedOrCurrent.length === 0) continue;
+
+        const lastDose = passedOrCurrent[passedOrCurrent.length - 1];
+        const doseIndex = doseTimes.indexOf(lastDose);
+        const [lh, lm] = lastDose.split(':').map(Number);
+        const [ch, cm] = timeStr.split(':').map(Number);
+        const minutesSinceDose = (ch * 60 + cm) - (lh * 60 + lm);
+
+        // Capsula gia' confermata dall'utente? Stop reminder per questa dose.
+        const expectedTaken = doseIndex + 1;
+        const diary = await prisma.diaryEntry.findFirst({
+          where: { userId: user.id, date: { gte: todayStart, lt: tomorrowStart } },
+        });
+        const actualTaken = diary?.pillsTaken ?? 0;
+        if (actualTaken >= expectedTaken) continue;
+
+        const primaryKey = `${user.id}_${todayYMD}_${doseIndex}`;
+
+        // 1a. PRIMARIA: scatta nei primi 9 minuti dopo il dose time. La
+        //     finestra ampia (vs match esatto al minuto) tollera drift di
+        //     node-cron, restart container, carico CPU. Dedup via cache in
+        //     memoria così non spamma a ogni tick dentro la finestra.
+        if (minutesSinceDose <= 9 && !sentPrimaryCache.has(primaryKey)) {
+          sentPrimaryCache.set(primaryKey, true);
           await dispatchToUser(user, {
             title: `QuitFresh · Giorno ${phase.day}`,
             body: `Capsula ${doseIndex + 1} di ${phase.pills} · Fase ${phase.index + 1}. Prendila ora!`,
@@ -101,31 +146,15 @@ function startCron() {
           continue;
         }
 
-        // 1b. REMINDER RICORRENTE: se l'ultimo dose time e' passato ed
-        //     e' multiplo di 10 minuti dopo, e l'utente non ha ancora
-        //     segnato la capsula nella card "Capsule oggi" della Home
-        //     (pillsTaken < expected), re-invia. Cap a 60 min: oltre,
-        //     l'utente ha probabilmente saltato.
-        const passedDoses = doseTimes.filter(t => t < timeStr);
-        if (passedDoses.length === 0) continue;
-        const lastDose = passedDoses[passedDoses.length - 1];
-        const [lh, lm] = lastDose.split(':').map(Number);
-        const [ch, cm] = timeStr.split(':').map(Number);
-        const minutesSinceDose = (ch * 60 + cm) - (lh * 60 + lm);
-        if (minutesSinceDose < 10 || minutesSinceDose > 60) continue;
-        if (minutesSinceDose % 10 !== 0) continue;
-
-        const expectedTaken = doseTimes.indexOf(lastDose) + 1;
-        const diary = await prisma.diaryEntry.findFirst({
-          where: { userId: user.id, date: { gte: todayStart, lt: tomorrowStart } },
-        });
-        const actualTaken = diary?.pillsTaken ?? 0;
-        if (actualTaken >= expectedTaken) continue; // confermato, stop
-
-        await dispatchToUser(user, {
-          title: `Promemoria capsula ${expectedTaken} di ${phase.pills}`,
-          body: `Se l'hai gia' presa, segnala nella sezione "Capsule oggi" della home — il reminder si ferma quando aggiorni.`,
-        });
+        // 1b. RICORRENTE: ogni 10 minuti dopo il dose time, cap a 60.
+        //     L'utente l'ha vista una volta (primaria) ma non ha confermato:
+        //     ricorda finché conferma o passa l'ora.
+        if (minutesSinceDose >= 10 && minutesSinceDose <= 60 && minutesSinceDose % 10 === 0) {
+          await dispatchToUser(user, {
+            title: `Promemoria capsula ${expectedTaken} di ${phase.pills}`,
+            body: `Se l'hai gia' presa, segnala nella sezione "Capsule oggi" della home — il reminder si ferma quando aggiorni.`,
+          });
+        }
       }
 
       // 2. Promemoria anti-craving manuali — filtra per orario corrente + push attivi
