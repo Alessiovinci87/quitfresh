@@ -57,4 +57,83 @@
   .pb-safe {
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
   }
+
+  /* === [design-v3 Eclipse] dark cinematic utilities ===================
+     Usate solo nelle pagine in dark mode (per ora solo Home in v3).
+     Non hanno effetto sul resto dell'app. */
+
+  /* Sfondo "mesh": 3 blob colorati con blur enorme posizionati ai vertici
+     e animati con animate-mesh-drift. Sotto un noise SVG sottile per
+     spezzare il banding. */
+  .eclipse-bg {
+    background-color: #070a09;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .eclipse-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    will-change: transform;
+    pointer-events: none;
+  }
+
+  .eclipse-blob-1 {
+    top: -15%;
+    left: -10%;
+    width: 60%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(34,255,136,0.28), transparent 70%);
+  }
+  .eclipse-blob-2 {
+    bottom: -20%;
+    right: -15%;
+    width: 70%;
+    height: 70%;
+    background: radial-gradient(circle, rgba(94,234,212,0.22), transparent 70%);
+  }
+  .eclipse-blob-3 {
+    top: 30%;
+    right: -25%;
+    width: 55%;
+    height: 55%;
+    background: radial-gradient(circle, rgba(16,185,129,0.20), transparent 70%);
+  }
+
+  /* Noise overlay molto sottile per romper il banding del gradient */
+  .eclipse-noise {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.5 0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Testo con gradient neon (giorni grande) */
+  .eclipse-text-neon {
+    background: linear-gradient(135deg, #ffffff 0%, #22ff88 60%, #5eead4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Glass card scura: bg semitrasparente, blur forte, bordo neon sottile */
+  .eclipse-glass {
+    background: rgba(18, 26, 23, 0.55);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(34, 255, 136, 0.10);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 48px rgba(0,0,0,0.4);
+  }
+
+  /* Variante più chiara per elementi attivi */
+  .eclipse-glass-bright {
+    background: rgba(34, 255, 136, 0.08);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(34, 255, 136, 0.30);
+  }
 }
