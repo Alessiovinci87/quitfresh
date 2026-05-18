@@ -129,14 +129,17 @@ export default function Stats() {
   const todayCalEntry = diaryEntries.find(e => toDateStr(new Date(e.date)) === todayStr);
 
   // === Metriche periodo selezionato (tab pill) ===
-  // Giorni effettivamente coperti dal periodo: min(periodo, giorni dal quit-date).
-  // Sigarette evitate = baseline pre-quit × giorni - sigarette fumate nel periodo.
+  // Backend calcola daysSinceQuit da user.quitDate (vedi progress.js:14),
+  // quindi prendiamo il valore già autorevole invece di ricalcolarlo da
+  // smokeFreeSince (che è un campo diverso: ultima sigaretta dopo ricaduta).
   const periodCfg = PERIODS.find(p => p.id === period) ?? PERIODS[1];
   const baselineCigsPerDay = user?.cigarettesPerDay ?? 0;
-  const daysSinceQuit = smokeFreeSince
-    ? Math.max(0, Math.floor((Date.now() - smokeFreeSince.getTime()) / 86_400_000))
-    : 0;
-  const periodDays = smokeFreeSince ? Math.min(periodCfg.days, daysSinceQuit + 1) : 0;
+  const quitRefDate = progress?.quitDate
+    ? new Date(progress.quitDate)
+    : smokeFreeSince;
+  const daysSinceQuit = progress?.daysSinceQuit ?? 0;
+  const hasQuitData = !!quitRefDate;
+  const periodDays = hasQuitData ? Math.min(periodCfg.days, daysSinceQuit + 1) : 0;
 
   const periodStart = new Date();
   periodStart.setHours(0, 0, 0, 0);
@@ -148,8 +151,8 @@ export default function Stats() {
   const packsAvoidedPeriod = Math.floor(cigsAvoidedPeriod / 20);
   const savedPeriod = (cigsAvoidedPeriod / 20) * packPrice;
 
-  const quitDateLabel = smokeFreeSince
-    ? smokeFreeSince.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })
+  const quitDateLabel = quitRefDate
+    ? quitRefDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })
     : null;
 
   return (
@@ -184,13 +187,13 @@ export default function Stats() {
         <div className="flex items-end justify-between">
           <div>
             <p className="font-display text-6xl font-semibold text-sage-900 tabular-nums leading-none">
-              {smokeFreeSince ? daysSinceQuit : '—'}
+              {hasQuitData ? daysSinceQuit : '—'}
             </p>
             {quitDateLabel && (
               <p className="text-xs text-sage-600/70 mt-2">dal {quitDateLabel}</p>
             )}
-            {!smokeFreeSince && (
-              <p className="text-xs text-sage-600/70 mt-2">imposta data di quit in “Salute nel tempo”</p>
+            {!hasQuitData && (
+              <p className="text-xs text-sage-600/70 mt-2">imposta data di quit dalla Home</p>
             )}
           </div>
           <svg viewBox="0 0 64 64" className="w-16 h-16 shrink-0" aria-hidden="true">
@@ -215,9 +218,9 @@ export default function Stats() {
             Sigarette non fumate
           </p>
           <p className="font-display text-3xl font-semibold text-sage-900 tabular-nums leading-tight">
-            {smokeFreeSince ? cigsAvoidedPeriod : '—'}
+            {hasQuitData ? cigsAvoidedPeriod : '—'}
           </p>
-          {smokeFreeSince && packsAvoidedPeriod > 0 && (
+          {hasQuitData && packsAvoidedPeriod > 0 && (
             <p className="text-[11px] text-sage-600/70 mt-1">
               ≈ {packsAvoidedPeriod} {packsAvoidedPeriod === 1 ? 'pacchetto' : 'pacchetti'}
             </p>
@@ -228,9 +231,9 @@ export default function Stats() {
             Soldi risparmiati
           </p>
           <p className="font-display text-3xl font-semibold text-sage-900 tabular-nums leading-tight">
-            {smokeFreeSince ? `${savedPeriod.toFixed(0)} €` : '—'}
+            {hasQuitData ? `${savedPeriod.toFixed(0)} €` : '—'}
           </p>
-          {smokeFreeSince && savedPeriod > 0 && (
+          {hasQuitData && savedPeriod > 0 && (
             <p className="text-[11px] text-sage-600/70 mt-1">{moneyEquivalent(savedPeriod)}</p>
           )}
         </div>
