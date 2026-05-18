@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 import SubPage from '../components/SubPage';
+import { useAuth } from '../context/AuthContext';
 
 const DEFAULT_PACK_PRICE = 5.80;
 
@@ -41,12 +42,31 @@ function formatHoursLeft(h) {
   return `${Math.ceil(h / 24)} giorni`;
 }
 
+const PERIODS = [
+  { id: 'week',    label: 'Settimana', days: 7 },
+  { id: 'month',   label: 'Mese',      days: 30 },
+  { id: '3months', label: '3 Mesi',    days: 90 },
+  { id: 'year',    label: 'Anno',      days: 365 },
+];
+
+function moneyEquivalent(eur) {
+  if (eur < 4)   return '≈ 1 caffè';
+  if (eur < 12)  return '≈ 1 aperitivo';
+  if (eur < 30)  return '≈ 1 pranzo fuori';
+  if (eur < 80)  return '≈ 1 cena fuori';
+  if (eur < 250) return '≈ 1 weekend fuori porta';
+  if (eur < 800) return '≈ 1 corso online';
+  return '≈ 1 viaggio';
+}
+
 export default function Stats() {
+  const { user } = useAuth();
   const [progress, setProgress] = useState(null);
   const [diaryEntries, setDiaryEntries] = useState([]);
   const [todayCigs, setTodayCigs] = useState(null);
   const [savingCigs, setSavingCigs] = useState(false);
   const [subPage, setSubPage] = useState(null); // 'calendar' | 'health' | 'savings'
+  const [period, setPeriod] = useState('month');
 
   const [goal, setGoal] = useState(() => parseFloat(localStorage.getItem('qf_savings_goal') || '0'));
   const [showQuitForm, setShowQuitForm] = useState(false);
@@ -108,12 +128,113 @@ export default function Stats() {
   const monthName = new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
   const todayCalEntry = diaryEntries.find(e => toDateStr(new Date(e.date)) === todayStr);
 
+  // === Metriche periodo selezionato (tab pill) ===
+  // Giorni effettivamente coperti dal periodo: min(periodo, giorni dal quit-date).
+  // Sigarette evitate = baseline pre-quit × giorni - sigarette fumate nel periodo.
+  const periodCfg = PERIODS.find(p => p.id === period) ?? PERIODS[1];
+  const baselineCigsPerDay = user?.cigarettesPerDay ?? 0;
+  const daysSinceQuit = smokeFreeSince
+    ? Math.max(0, Math.floor((Date.now() - smokeFreeSince.getTime()) / 86_400_000))
+    : 0;
+  const periodDays = smokeFreeSince ? Math.min(periodCfg.days, daysSinceQuit + 1) : 0;
+
+  const periodStart = new Date();
+  periodStart.setHours(0, 0, 0, 0);
+  periodStart.setDate(periodStart.getDate() - (periodDays - 1));
+  const cigsSmokedInPeriod = diaryEntries
+    .filter(e => new Date(e.date) >= periodStart)
+    .reduce((sum, e) => sum + (e.cigarettesToday ?? 0), 0);
+  const cigsAvoidedPeriod = Math.max(0, baselineCigsPerDay * periodDays - cigsSmokedInPeriod);
+  const packsAvoidedPeriod = Math.floor(cigsAvoidedPeriod / 20);
+  const savedPeriod = (cigsAvoidedPeriod / 20) * packPrice;
+
+  const quitDateLabel = smokeFreeSince
+    ? smokeFreeSince.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })
+    : null;
+
   return (
     <div className="min-h-[calc(100dvh-7rem)] flex flex-col px-6 pt-6 animate-fade-in">
       <header className="mb-4">
         <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">Andamento</p>
         <h1 className="font-display text-3xl font-semibold text-sage-900 leading-tight mt-0.5">Statistiche</h1>
       </header>
+
+      {/* Tab pill periodo */}
+      <div className="inline-flex p-1 bg-sage-50/80 rounded-full mb-4 self-start">
+        {PERIODS.map(p => (
+          <button
+            key={p.id}
+            onClick={() => setPeriod(p.id)}
+            className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-all ${
+              period === p.id
+                ? 'bg-white text-sage-900 shadow-sm'
+                : 'text-sage-600/70 hover:text-sage-700'
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Hero: giorni senza fumo */}
+      <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-5 mb-3 relative overflow-hidden">
+        <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold mb-2">
+          Giorni senza fumo
+        </p>
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="font-display text-6xl font-semibold text-sage-900 tabular-nums leading-none">
+              {smokeFreeSince ? daysSinceQuit : '—'}
+            </p>
+            {quitDateLabel && (
+              <p className="text-xs text-sage-600/70 mt-2">dal {quitDateLabel}</p>
+            )}
+            {!smokeFreeSince && (
+              <p className="text-xs text-sage-600/70 mt-2">imposta data di quit in “Salute nel tempo”</p>
+            )}
+          </div>
+          <svg viewBox="0 0 64 64" className="w-16 h-16 shrink-0" aria-hidden="true">
+            <path
+              d="M32 56 Q32 36 22 28 Q12 22 14 12 Q26 14 32 26"
+              fill="#aec1aa" stroke="#516a4c" strokeWidth="1.4" strokeLinejoin="round"
+            />
+            <path
+              d="M32 56 Q32 38 42 32 Q52 28 52 18 Q42 18 36 28"
+              fill="#aec1aa" stroke="#516a4c" strokeWidth="1.4" strokeLinejoin="round"
+            />
+            <path d="M32 56 L32 38" stroke="#516a4c" strokeWidth="1.6" strokeLinecap="round" />
+            <path d="M28 60 H36" stroke="#6b5c3e" strokeWidth="2.4" strokeLinecap="round" />
+          </svg>
+        </div>
+      </div>
+
+      {/* Grid 2 metriche periodo */}
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4">
+          <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold mb-1.5">
+            Sigarette non fumate
+          </p>
+          <p className="font-display text-3xl font-semibold text-sage-900 tabular-nums leading-tight">
+            {smokeFreeSince ? cigsAvoidedPeriod : '—'}
+          </p>
+          {smokeFreeSince && packsAvoidedPeriod > 0 && (
+            <p className="text-[11px] text-sage-600/70 mt-1">
+              ≈ {packsAvoidedPeriod} {packsAvoidedPeriod === 1 ? 'pacchetto' : 'pacchetti'}
+            </p>
+          )}
+        </div>
+        <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4">
+          <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold mb-1.5">
+            Soldi risparmiati
+          </p>
+          <p className="font-display text-3xl font-semibold text-sage-900 tabular-nums leading-tight">
+            {smokeFreeSince ? `${savedPeriod.toFixed(0)} €` : '—'}
+          </p>
+          {smokeFreeSince && savedPeriod > 0 && (
+            <p className="text-[11px] text-sage-600/70 mt-1">{moneyEquivalent(savedPeriod)}</p>
+          )}
+        </div>
+      </div>
 
       {/* Hero: tracker sigarette oggi */}
       <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4 mb-3">
