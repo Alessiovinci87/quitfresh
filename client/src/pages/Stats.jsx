@@ -108,11 +108,11 @@ export default function Stats() {
     } finally { setSavingCigs(false); }
   }
 
-  // Fonte unica per "ho smesso": progress.quitDate (gestito da Home + HealthSubPage).
-  // smokeFreeSince è un campo legacy: lo accettiamo solo come fallback display.
-  const quitRefDate = progress?.quitDate
-    ? new Date(progress.quitDate)
-    : (progress?.smokeFreeSince ? new Date(progress.smokeFreeSince) : null);
+  // Fonte unica per "ho smesso": progress.quitDate. Niente fallback su
+  // smokeFreeSince perché il backend calcola daysSinceQuit/moneySaved
+  // solo da quitDate — se accettiamo smokeFreeSince come "ha smesso" ma
+  // backend ritorna 0 giorni, le card calcolano metriche fantasma.
+  const quitRefDate = progress?.quitDate ? new Date(progress.quitDate) : null;
   const hoursFree = quitRefDate ? (Date.now() - quitRefDate.getTime()) / (1000 * 60 * 60) : 0;
   const nextMilestone = HEALTH_MILESTONES.find(m => m.hours > hoursFree);
   const nextHoursLeft = nextMilestone ? nextMilestone.hours - hoursFree : 0;
@@ -214,7 +214,7 @@ export default function Stats() {
             Sigarette non fumate
           </p>
           <p className="font-display text-3xl font-semibold text-sage-900 tabular-nums leading-tight">
-            {hasQuitData ? cigsAvoidedPeriod : '—'}
+            {hasQuitData ? cigsAvoidedPeriod : 0}
           </p>
           {hasQuitData && packsAvoidedPeriod > 0 && (
             <p className="text-[11px] text-sage-600/70 mt-1">
@@ -227,7 +227,7 @@ export default function Stats() {
             Soldi risparmiati
           </p>
           <p className="font-display text-3xl font-semibold text-sage-900 tabular-nums leading-tight">
-            {hasQuitData ? `${savedPeriod.toFixed(0)} €` : '—'}
+            {hasQuitData ? `${savedPeriod.toFixed(0)} €` : '0 €'}
           </p>
           {hasQuitData && savedPeriod > 0 && (
             <p className="text-[11px] text-sage-600/70 mt-1">{moneyEquivalent(savedPeriod)}</p>
