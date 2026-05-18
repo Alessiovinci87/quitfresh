@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#688361" />
+  <title>QuitFresh — App citisina per smettere di fumare</title>
+  <meta name="description" content="QuitFresh è l'app pensata per chi usa la citisina per smettere di fumare. Promemoria dosi, chat AI nei momenti di crisi, tracker giorni, diario. €4.99 una tantum." />
+  <meta name="keywords" content="citisina, smettere di fumare con citisina, app citisina, promemoria citisina, piano citisina 25 giorni, smettere di fumare, tabagismo, terapia citisina" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="QuitFresh — App citisina per smettere di fumare" />
+  <meta property="og:description" content="L'app pensata per chi usa la citisina: promemoria dosi, chat AI nei momenti critici, tracker giorni. €4.99 una tantum." />
+  <meta property="og:url" content="https://quitfresh.com" />
+  <meta property="og:image" content="https://quitfresh.com/logo.png" />
+  <meta property="og:locale" content="it_IT" />
+
+  <!-- Favicon: stesso PNG dell'app (icon-192.png copiato in /favicon.png) -->
+  <link rel="icon" type="image/png" href="./favicon.png" />
+  <link rel="apple-touch-icon" href="./favicon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ===== Reset minimale ===== */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-feature-settings: 'ss01', 'cv01', 'cv02', 'cv03';
+      background: #faf8f2; /* cream-100 */
+      color: #1f2937;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      overflow-x: hidden;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; }
+    ::selection { background: #d2dccf; color: #2c372c; }
+
+    /* ===== Palette QuitFresh (allineata a tailwind.config.js) =====
+       sage-500 #688361 primary, sage-600 #516a4c hover/dark
+       terracotta-500 #a8654a accent
+       cream-100 #faf8f2 bg, cream-50 #fdfcf9 surface */
+
+    /* ===== Layout container ===== */
+    .container {
+      width: 100%;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ===== Typography ===== */
+    .display {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.08;
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #516a4c;
+      background: #e9efe7;
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+
+    /* ===== Buttons ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 16px 28px;
+      border-radius: 14px;
+      border: 0;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #688361, #516a4c);
+      color: #fdfcf9;
+      box-shadow: 0 8px 24px rgba(104, 131, 97, 0.28);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(104, 131, 97, 0.35); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-ghost {
+      background: transparent;
+      color: #41553e;
+      padding: 14px 20px;
+    }
+    .btn-ghost:hover { color: #2c372c; }
+
+    /* ===== Header ===== */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(250, 248, 242, 0.85);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid rgba(82, 106, 76, 0.08);
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+    }
+    /* Logo dell'app: stesso PNG (icona sigaretta+foglie + wordmark "QuitFresh").
+       Visto che il PNG contiene già la wordmark, non c'è testo accanto. */
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+    }
+    .logo img {
+      height: 36px;
+      width: auto;
+      display: block;
+    }
+    .logo-footer img { height: 32px; }
+    .header-cta { font-size: 14px; padding: 10px 18px; }
+
+    /* ===== Hero ===== */
+    .hero {
+      position: relative;
+      padding: 64px 0 80px;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -20%;
+      right: -10%;
+      width: 60%;
+      height: 80%;
+      background: radial-gradient(circle, rgba(174, 193, 170, 0.35), transparent 65%);
+      filter: blur(60px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -15%;
+      width: 55%;
+      height: 70%;
+      background: radial-gradient(circle, rgba(192, 129, 96, 0.18), transparent 65%);
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(38px, 7vw, 64px);
+      margin: 20px 0 18px;
+      color: #2c372c;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(135deg, #688361 0%, #516a4c 60%, #a8654a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+    .hero p.lead {
+      font-size: clamp(17px, 2.2vw, 20px);
+      color: #4b5563;
+      max-width: 560px;
+      margin: 0 auto 32px;
+    }
+    .hero-cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+    .hero-meta {
+      margin-top: 20px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+    .hero-meta strong { color: #41553e; font-weight: 600; }
+
+    /* ===== Sezioni ===== */
+    section { padding: 72px 0; }
+    .section-head { text-align: center; max-width: 640px; margin: 0 auto 48px; }
+    .section-head h2 {
+      font-size: clamp(28px, 4.5vw, 40px);
+      margin: 14px 0 10px;
+      color: #2c372c;
+    }
+    .section-head p { color: #5a6b62; font-size: 16px; margin: 0; }
+
+    /* ===== Come funziona ===== */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+    }
+    .step {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.08);
+      border-radius: 20px;
+      padding: 28px 24px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .step:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.08); }
+    .step-num {
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #e9efe7, #d2dccf);
+      color: #41553e;
+      display: grid; place-items: center;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+    .step h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 20px;
+      margin: 0 0 8px;
+      color: #2c372c;
+      letter-spacing: -0.01em;
+    }
+    .step p { margin: 0; color: #5a6b62; font-size: 15px; }
+
+    /* ===== Funzionalità ===== */
+    .features-section { background: linear-gradient(180deg, transparent 0%, #f3eee2 50%, transparent 100%); }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .feature {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.08);
+      border-radius: 18px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #f6f8f5, #e9efe7);
+      display: grid; place-items: center;
+      color: #516a4c;
+    }
+    .feature-icon.terracotta {
+      background: linear-gradient(135deg, #fbf5f1, #f5e6dc);
+      color: #8a4f3a;
+    }
+    .feature h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 18px;
+      margin: 0;
+      color: #2c372c;
+    }
+    .feature p { margin: 0; color: #5a6b62; font-size: 14.5px; line-height: 1.55; }
+
+    /* ===== Citisina deep-dive ===== */
+    .citisina-section {
+      background: linear-gradient(180deg, transparent 0%, #f6f8f5 50%, transparent 100%);
+    }
+    .citisina-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+    .citisina-card {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.10);
+      border-radius: 20px;
+      padding: 28px 24px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .citisina-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 19px;
+      margin: 0;
+      color: #2c372c;
+      letter-spacing: -0.01em;
+    }
+    .citisina-card p { margin: 0; color: #5a6b62; font-size: 15px; line-height: 1.6; }
+    .citisina-note {
+      max-width: 720px;
+      margin: 36px auto 0;
+      padding: 18px 22px;
+      background: rgba(245, 230, 220, 0.5);
+      border: 1px solid rgba(192, 129, 96, 0.20);
+      border-radius: 14px;
+      color: #6e3f30;
+      font-size: 13.5px;
+      line-height: 1.6;
+      text-align: center;
+    }
+    .citisina-note strong { color: #4a2a1f; font-weight: 600; }
+
+    /* ===== Prezzo ===== */
+    .price-card {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.12);
+      border-radius: 28px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .price-card::before {
+      content: '';
+      position: absolute;
+      top: -50%; right: -30%;
+      width: 80%; height: 80%;
+      background: radial-gradient(circle, rgba(174, 193, 170, 0.25), transparent 70%);
+      filter: blur(40px);
+      pointer-events: none;
+    }
+    .price-badge {
+      display: inline-block;
+      background: #f5e6dc;
+      color: #6e3f30;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .price-amount {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 64px;
+      line-height: 1;
+      color: #2c372c;
+      letter-spacing: -0.02em;
+      margin: 0;
+      position: relative;
+    }
+    .price-amount .currency { font-size: 32px; vertical-align: top; margin-right: 4px; }
+    .price-sub { font-size: 15px; color: #5a6b62; margin: 8px 0 24px; position: relative; }
+    .price-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 28px;
+      text-align: left;
+      position: relative;
+    }
+    .price-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      font-size: 15px;
+      color: #41553e;
+      border-bottom: 1px solid rgba(82, 106, 76, 0.06);
+    }
+    .price-list li:last-child { border-bottom: 0; }
+    .price-list svg { flex-shrink: 0; color: #688361; margin-top: 2px; }
+    .stripe-line {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12.5px;
+      color: #6b7280;
+      margin-top: 16px;
+      position: relative;
+    }
+
+    /* ===== CTA finale ===== */
+    .cta-final {
+      background: linear-gradient(135deg, #41553e 0%, #2c372c 100%);
+      color: #fdfcf9;
+      border-radius: 28px;
+      padding: 64px 32px;
+      text-align: center;
+      margin: 24px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-final::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -10%;
+      width: 60%; height: 100%;
+      background: radial-gradient(circle, rgba(174, 193, 170, 0.20), transparent 65%);
+      filter: blur(60px);
+      pointer-events: none;
+    }
+    .cta-final::after {
+      content: '';
+      position: absolute;
+      bottom: -40%; right: -10%;
+      width: 50%; height: 80%;
+      background: radial-gradient(circle, rgba(192, 129, 96, 0.18), transparent 65%);
+      filter: blur(60px);
+      pointer-events: none;
+    }
+    .cta-final h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: clamp(28px, 4.5vw, 40px);
+      margin: 0 0 14px;
+      letter-spacing: -0.02em;
+      position: relative;
+    }
+    .cta-final p {
+      color: rgba(253, 252, 249, 0.78);
+      font-size: 17px;
+      max-width: 460px;
+      margin: 0 auto 32px;
+      position: relative;
+    }
+    .cta-final .btn-primary {
+      background: linear-gradient(135deg, #aec1aa, #85a081);
+      color: #2c372c;
+      box-shadow: 0 8px 24px rgba(174, 193, 170, 0.35);
+      position: relative;
+    }
+    .cta-final .btn-primary:hover { box-shadow: 0 12px 32px rgba(174, 193, 170, 0.5); }
+
+    /* ===== Footer ===== */
+    footer {
+      padding: 40px 0 32px;
+      border-top: 1px solid rgba(82, 106, 76, 0.10);
+      font-size: 14px;
+      color: #5a6b62;
+    }
+    .footer-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px 24px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+    }
+    .footer-links a {
+      color: #41553e;
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .footer-links a:hover { color: #2c372c; text-decoration: underline; }
+    .footer-bottom {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(82, 106, 76, 0.06);
+      font-size: 12.5px;
+      color: #8a9690;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 640px) {
+      .hero { padding: 40px 0 56px; }
+      section { padding: 56px 0; }
+      .cta-final { padding: 48px 24px; border-radius: 22px; }
+      .price-card { padding: 32px 24px; border-radius: 22px; }
+      .header-cta { padding: 9px 14px; font-size: 13px; }
+      .btn { font-size: 15px; padding: 14px 22px; }
+    }
+
+    /* ===== Reveal animation ===== */
+    .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+    .reveal.in { opacity: 1; transform: translateY(0); }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Header ===== -->
+  <header>
+    <div class="container header-row">
+      <a href="/" class="logo" aria-label="QuitFresh — torna alla home">
+        <img src="./logo.png" alt="QuitFresh" width="160" height="36" />
+      </a>
+      <a href="https://quitfresh.it" class="btn btn-primary header-cta">Apri l'app</a>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-inner reveal">
+        <span class="eyebrow">App citisina · Smetti di fumare</span>
+        <h1 class="display">
+          L'app pensata per chi usa<br />
+          <span class="accent">la citisina.</span>
+        </h1>
+        <p class="lead">
+          QuitFresh ti accompagna nel percorso da 25 giorni: promemoria dosi precisi, chat AI nei momenti di crisi, tracker giorni puliti e diario quotidiano. Tutto in un'unica app.
+        </p>
+        <div class="hero-cta-row">
+          <a href="https://quitfresh.it" class="btn btn-primary">
+            Inizia ora
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
+            </svg>
+          </a>
+          <a href="#prezzo" class="btn btn-ghost">Vedi i prezzi</a>
+        </div>
+        <div class="hero-meta">
+          <strong>€4.99 una tantum</strong> · nessun abbonamento · pagamento sicuro Stripe
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Come funziona ===== -->
+  <section id="come-funziona">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Come funziona</span>
+        <h2 class="display">Tre passi, e sei in cammino.</h2>
+        <p>Niente percorsi complicati: registrazione veloce, configurazione personale, e iniziamo subito a contare i giorni.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="step-num">1</div>
+          <h3>Registrati</h3>
+          <p>Crea il tuo account in meno di un minuto. Email e password, niente social tracking.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">2</div>
+          <h3>Imposta il piano citisina</h3>
+          <p>Indica giorno di inizio terapia e numero di sigarette al giorno. QuitFresh schedula automaticamente le dosi del piano standard da 25 giorni e ti manda i promemoria al momento giusto.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">3</div>
+          <h3>Smetti di fumare</h3>
+          <p>Ogni mattina i tuoi giorni puliti, i risparmi e il coach AI quando serve. Un passo alla volta.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Funzionalità ===== -->
+  <section class="features-section" id="funzionalita">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Cosa trovi dentro</span>
+        <h2 class="display">Strumenti pensati per durare.</h2>
+        <p>Non un'app che ti urla addosso. Un compagno discreto che c'è quando ti serve.</p>
+      </div>
+      <div class="features">
+        <div class="feature reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="3"/>
+              <path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+          </div>
+          <h3>Tracker giorni</h3>
+          <p>Conta in tempo reale i giorni senza fumo, le sigarette evitate e i soldi risparmiati. Visibile dalla home.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+            </svg>
+          </div>
+          <h3>Promemoria citisina</h3>
+          <p>Schedulazione automatica del piano da 25 giorni con notifiche affidabili. Non ti dimenticherai un dosaggio.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="feature-icon terracotta" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>
+            </svg>
+          </div>
+          <h3>Diario quotidiano</h3>
+          <p>Annota umore, energia e voglie. Riguarda i progressi e capisci i tuoi pattern nel tempo.</p>
+        </div>
+        <div class="feature reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              <path d="M8 10h.01M12 10h.01M16 10h.01"/>
+            </svg>
+          </div>
+          <h3>Coach AI</h3>
+          <p>Chat con un coach basato su intelligenza artificiale: arriva la voglia, premi un tasto, ne parli. Empatico, mai giudicante.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Perché funziona con la citisina ===== -->
+  <section id="citisina" class="citisina-section">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Citisina + supporto</span>
+        <h2 class="display">Perché funziona con la citisina.</h2>
+        <p>La citisina riduce il desiderio di fumare a livello chimico. Ma i momenti critici — la pausa caffè, lo stress, l'abitudine — esistono ancora. Lì serve uno strumento, non solo una pillola.</p>
+      </div>
+      <div class="citisina-grid">
+        <div class="citisina-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h3>Promemoria precisi al minuto</h3>
+          <p>Il piano standard prevede dosi a intervalli rigorosi che cambiano ogni 3 giorni. QuitFresh calcola tutto e ti notifica al momento esatto, anche se chiudi l'app.</p>
+        </div>
+        <div class="citisina-card reveal">
+          <div class="feature-icon terracotta" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+          </div>
+          <h3>Chat nei momenti di crisi</h3>
+          <p>Quando arriva la voglia improvvisa e la prossima dose è lontana, apri la chat. Un coach AI ti aiuta a superare i 3-5 minuti critici, senza giudicare.</p>
+        </div>
+        <div class="citisina-card reveal">
+          <div class="feature-icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <h3>Tracker motivazionale</h3>
+          <p>Vedere ogni mattina giorni puliti, sigarette evitate ed euro risparmiati ti tiene agganciato al percorso. La citisina dà il via, i numeri ti tengono in pista.</p>
+        </div>
+      </div>
+      <p class="citisina-note">
+        <strong>Nota:</strong> QuitFresh è uno strumento di supporto. La citisina è un farmaco; segui sempre le indicazioni del foglietto illustrativo e consulta il medico o il farmacista prima di iniziare la terapia.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== Prezzo ===== -->
+  <section id="prezzo">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Prezzo</span>
+        <h2 class="display">Una volta sola. Per sempre.</h2>
+        <p>Niente trial trappola, niente rinnovi automatici. Paghi una volta, accedi a tutto.</p>
+      </div>
+      <div class="price-card reveal">
+        <span class="price-badge">Una tantum</span>
+        <p class="price-amount"><span class="currency">€</span>4.99</p>
+        <p class="price-sub">Accesso completo · nessun abbonamento</p>
+        <ul class="price-list">
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Tutte le funzionalità, sbloccate subito
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Coach AI con conversazioni illimitate
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Aggiornamenti gratuiti inclusi
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Dati tuoi, mai venduti a terzi
+          </li>
+        </ul>
+        <a href="https://quitfresh.it" class="btn btn-primary" style="width: 100%;">
+          Inizia ora
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
+          </svg>
+        </a>
+        <div class="stripe-line">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Pagamento sicuro tramite Stripe
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA finale ===== -->
+  <section>
+    <div class="container">
+      <div class="cta-final reveal">
+        <h2>Il momento giusto è adesso.</h2>
+        <p>Migliaia di persone smettono ogni anno. Iniziare è la parte più difficile — il primo giorno conta più di tutti.</p>
+        <a href="https://quitfresh.it" class="btn btn-primary">
+          Inizia il tuo percorso
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer>
+    <div class="container">
+      <div class="footer-row">
+        <div class="logo logo-footer">
+          <img src="./logo.png" alt="QuitFresh" width="140" height="32" />
+        </div>
+        <nav class="footer-links" aria-label="Footer">
+          <a href="https://quitfresh.it/privacy">Privacy Policy</a>
+          <a href="https://quitfresh.it/termini">Termini di Servizio</a>
+          <a href="mailto:info@quitfresh.it">info@quitfresh.it</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        © <span id="year">2026</span> QuitFresh · Made with care in Italy
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Anno dinamico nel footer
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Reveal-on-scroll: aggiunge .in agli elementi .reveal quando entrano
+    // nel viewport. IntersectionObserver una sola volta (unobserve), così
+    // non riapparono se l'utente scrolla su e giù.
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            e.target.classList.add('in');
+            io.unobserve(e.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.05 });
+      document.querySelectorAll('.reveal').forEach(function (el) { io.observe(el); });
+    } else {
+      document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('in'); });
+    }
+  </script>
+</body>
+</html>
