@@ -86,7 +86,10 @@ export default function Stats() {
     setTodayCigs(todayEntry?.cigarettesToday ?? 0);
   }, [todayStr]);
 
-  useEffect(() => { load().catch(console.error); }, [load]);
+  // Refetch quando user.quitDate cambia (es. ricaduta o restart dalla Home).
+  // Senza questa dep, Stats restava con progress stale se l'utente cambiava
+  // stato in un altro tab/finestra o se React Router teneva l'istanza in cache.
+  useEffect(() => { load().catch(console.error); }, [load, user?.quitDate]);
 
   async function changeCigs(delta) {
     const next = Math.max(0, (todayCigs ?? 0) + delta);
@@ -104,16 +107,6 @@ export default function Stats() {
       setTodayCigs(prev => Math.max(0, (prev ?? 0) - delta));
     } finally { setSavingCigs(false); }
   }
-
-  // last 14 days chart data
-  const last14 = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (13 - i));
-    const ds = toDateStr(d);
-    const entry = diaryEntries.find(e => toDateStr(new Date(e.date)) === ds);
-    return { ds, cigs: entry?.cigarettesToday ?? null };
-  });
-  const maxCigs = Math.max(1, ...last14.map(d => d.cigs ?? 0));
 
   // Fonte unica per "ho smesso": progress.quitDate (gestito da Home + HealthSubPage).
   // smokeFreeSince è un campo legacy: lo accettiamo solo come fallback display.
@@ -282,48 +275,6 @@ export default function Stats() {
         </div>
       )}
 
-      {/* Chart 14g — istogramma sigarette per giorno */}
-      <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4 mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold">Ultimi 14 giorni</p>
-          <p className="text-[10px] text-sage-600/70">sigarette/giorno</p>
-        </div>
-        <div className="flex items-end gap-1 h-16 mb-1.5">
-          {last14.map(({ ds, cigs }, i) => {
-            const pct = cigs === null ? 0 : (cigs / maxCigs) * 100;
-            const isUnknown = cigs === null;
-            const isCurrentDay = ds === todayStr;
-            const level =
-              isUnknown ? 'unknown'
-              : cigs === 0 ? 'free'
-              : cigs <= 5 ? 'low'
-              : cigs <= 10 ? 'mid'
-              : 'high';
-            const fill =
-              level === 'unknown' ? 'bg-sage-100/60'
-              : level === 'free' ? 'bg-gradient-to-t from-sage-400 to-sage-300'
-              : level === 'low' ? 'bg-gradient-to-t from-sage-600 to-sage-500'
-              : level === 'mid' ? 'bg-gradient-to-t from-terracotta-300 to-terracotta-200'
-              : 'bg-gradient-to-t from-terracotta-500 to-terracotta-400';
-            return (
-              <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5">
-                <div
-                  className={`w-full rounded-t-md transition-all ${fill} ${isCurrentDay ? 'ring-2 ring-offset-1 ring-sage-400' : ''}`}
-                  style={{ height: isUnknown ? '4px' : `${Math.max(10, pct)}%`, minHeight: '4px' }}
-                />
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex justify-between text-[10px] text-sage-600/70 tabular-nums">
-          <span>{new Date(last14[0].ds).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' })}</span>
-          <span>oggi</span>
-        </div>
-        <p className="text-[10px] text-sage-600/60 mt-2 leading-snug">
-          Ogni barra è un giorno. Verde = 0 sigarette. Più alta la barra, più sigarette in quel giorno.
-        </p>
-      </div>
-
       {/* Row-cards navigabili */}
       <div className="space-y-2 flex-1">
         <NavRow
@@ -424,11 +375,23 @@ function CalendarSubPage({ diaryEntries, quitDate, onClose }) {
   const cigsByDate = Object.fromEntries(
     diaryEntries.map(e => [toDateStr(new Date(e.date)), e.cigarettesToday])
   );
+  const todayStr = toDateStr(new Date());
+
+  // Giorni "impliciti" 0-sig: dopo aver dichiarato quit (quitDate) e fino a
+  // oggi (escluso, oggi resta editabile via diario), se non c'è una diary
+  // entry esplicita, l'utente sta nel percorso → assumiamo 0 sigarette.
+  // Una entry esplicita > 0 vince comunque (= ricaduta registrata nel diario).
+  function effectiveCigs(ds) {
+    const explicit = cigsByDate[ds];
+    if (explicit !== undefined) return explicit;
+    if (quitDateStr && ds >= quitDateStr && ds <= todayStr) return 0;
+    return undefined;
+  }
 
   function dayColor(d) {
     if (!d) return '';
     const ds = `${calMonth.year}-${String(calMonth.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const cigs = cigsByDate[ds];
+    const cigs = effectiveCigs(ds);
     if (cigs === undefined) return 'text-sage-600/30';
     if (cigs === 0) return 'bg-sage-100 text-sage-800';
     if (cigs <= 5) return 'bg-sage-200/80 text-sage-900';
@@ -473,7 +436,7 @@ function CalendarSubPage({ diaryEntries, quitDate, onClose }) {
             const cls = dayColor(d);
             const tod = isToday(d);
             const ds = d ? `${calMonth.year}-${String(calMonth.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
-            const cigs = ds ? cigsByDate[ds] : undefined;
+            const cigs = ds ? cigsByDate[ds] : undefined; // solo esplicite per badge numerico
             const isQuitDay = ds && ds === quitDateStr;
             return (
               <div
