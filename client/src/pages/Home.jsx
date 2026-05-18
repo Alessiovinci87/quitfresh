@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { getActivePhase, getDoseTimes } from '../lib/cytisine';
+import { getActivePhase, getDoseTimes, totalDays } from '../lib/cytisine';
 
 const BADGE_EMOJI = {
   day1: '🌱', day3: '🌿', week1: '⭐', day14: '🌟', month1: '🏅', month3: '🏆',
@@ -177,13 +177,18 @@ export default function Home() {
 
   // ── Stato principale ──────────────────────────────────────
   const days = progress?.daysSinceQuit ?? 0;
-  const nextBadge = progress?.badges?.find((b) => !b.earned);
-  const ringTarget = nextBadge?.days ?? Math.max(days + 1, 30);
 
   // Phase corrente del protocollo citisina (se attivo). Serve per
   // mostrare il banner "Giorno 5" — punto chiave del foglietto.
   const phaseNow = user.cytisineStartDate
     ? getActivePhase(user.cytisineSchedule, user.cytisineStartDate)
+    : null;
+
+  // Countdown alla fine della terapia citisina. null se non c'è terapia
+  // attiva (cerchio destro nascosto, sinistro si centra).
+  const therapyTotal = totalDays(user.cytisineSchedule);
+  const therapyRemaining = phaseNow && phaseNow.day <= therapyTotal
+    ? therapyTotal - phaseNow.day
     : null;
 
   return (
@@ -219,27 +224,49 @@ export default function Home() {
           <div className="w-8 h-8 border-2 border-sage-400 border-t-transparent rounded-full animate-spin" />
         ) : (
           <>
-            <button
-              onClick={() => setShowStreakSheet(true)}
-              className="group focus:outline-none"
-              aria-label="Apri dettagli streak"
-            >
-              <ProgressRing value={days} max={ringTarget} size={240} stroke={14}>
-                <p className="font-display text-[80px] font-semibold text-sage-800 tabular-nums leading-none tracking-tight transition-transform group-active:scale-[0.97]">
-                  {days}
+            {/* Due cerchi affiancati: SX "Ho smesso" tappabile (apre lo
+                StreakSheet con il numero giorni + badges), DX countdown alla
+                fine della terapia citisina. Se non c'è terapia attiva, DX è
+                nascosto e SX si centra da solo (justify-center). */}
+            <div className="flex items-start justify-center gap-6 w-full">
+              {/* SINISTRA: sage filled, tappable.
+                  - days === 0 → invito "Ho smesso" (call to action, mai impostato)
+                  - days > 0   → mostra il numero (auto-incrementato dal backend ogni 24h) */}
+              <button
+                onClick={() => setShowStreakSheet(true)}
+                className="group focus:outline-none flex flex-col items-center"
+                aria-label={days > 0 ? `${days} giorni senza fumo, apri dettagli` : 'Imposta giorni senza fumo'}
+              >
+                <div className="w-36 h-36 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 shadow-sage flex items-center justify-center transition-transform group-active:scale-95">
+                  {days > 0 ? (
+                    <span className="font-display text-[64px] font-semibold text-white tabular-nums leading-none tracking-tight">
+                      {days}
+                    </span>
+                  ) : (
+                    <span className="font-display text-2xl font-semibold text-white tracking-tight">
+                      Ho smesso
+                    </span>
+                  )}
+                </div>
+                <p className="mt-3 text-[11px] font-semibold text-sage-700/80 tracking-wider uppercase text-center max-w-[10rem]">
+                  Giorni senza fumo
                 </p>
-                <p className="text-[11px] font-semibold text-sage-600/80 tracking-wider mt-1 uppercase">
-                  {days === 1 ? 'giorno' : 'giorni'}
-                </p>
-                {nextBadge ? (
-                  <p className="text-[10px] text-sage-600/60 mt-2">
-                    {ringTarget - days} al traguardo
+              </button>
+
+              {/* DESTRA: countdown terapia citisina — solo se attiva */}
+              {therapyRemaining != null && (
+                <div className="flex flex-col items-center">
+                  <div className="w-36 h-36 rounded-full bg-white border-2 border-sage-200 shadow-soft flex items-center justify-center">
+                    <span className="font-display text-[56px] font-semibold text-sage-800 tabular-nums leading-none">
+                      {therapyRemaining}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-[11px] font-semibold text-sage-700/80 tracking-wider uppercase text-center max-w-[10rem]">
+                    Alla fine terapia
                   </p>
-                ) : (
-                  <p className="text-[10px] text-sage-700 mt-2 font-medium">Tutti i traguardi ✓</p>
-                )}
-              </ProgressRing>
-            </button>
+                </div>
+              )}
+            </div>
 
             <p className="mt-3 text-xs text-sage-700/80">
               dal {progress?.quitDate
@@ -802,45 +829,3 @@ function RelapseModal({ progress, relapseLoading, onClose, onRelapse, onUseFreez
   );
 }
 
-// ── ProgressRing: SVG con gradient sage ────────────────────────
-function ProgressRing({ value, max, size = 220, stroke = 14, children }) {
-  const radius = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const ratio = max > 0 ? Math.min(value / max, 1) : 0;
-  const offset = circumference * (1 - ratio);
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90 absolute inset-0">
-        <defs>
-          <linearGradient id="homeRingGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#85a081" />
-            <stop offset="100%" stopColor="#41553e" />
-          </linearGradient>
-        </defs>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(104,131,97,0.12)"
-          strokeWidth={stroke}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="url(#homeRingGrad)"
-          strokeWidth={stroke}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          style={{ transition: 'stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1)' }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-        {children}
-      </div>
-    </div>
-  );
-}
