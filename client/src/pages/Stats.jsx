@@ -134,8 +134,15 @@ export default function Stats() {
   const periodCfg = PERIODS.find(p => p.id === period) ?? PERIODS[1];
   const baselineCigsPerDay = user?.cigarettesPerDay ?? 0;
   const daysSinceQuit = progress?.daysSinceQuit ?? 0;
-  const hasQuitData = !!quitRefDate;
-  const periodDays = hasQuitData ? Math.min(periodCfg.days, daysSinceQuit + 1) : 0;
+  // hasQuitDate = ha mai dichiarato (per hero "Giorni senza fumo"). L'onboarding
+  // setta quitDate=oggi quindi è sempre true post-onboarding: distingue solo
+  // l'utente in onboarding incompleto.
+  // hasAccumulatedDays = ha effettivamente accumulato giorni senza fumo > 0.
+  // Solo questa flag attiva le metriche periodo, altrimenti l'onboarding
+  // farebbe apparire valori spurii basati sul giorno 0 (parzialmente in corso).
+  const hasQuitDate = !!quitRefDate;
+  const hasAccumulatedDays = daysSinceQuit > 0;
+  const periodDays = hasAccumulatedDays ? Math.min(periodCfg.days, daysSinceQuit) : 0;
 
   const periodStart = new Date();
   periodStart.setHours(0, 0, 0, 0);
@@ -183,12 +190,12 @@ export default function Stats() {
         <div className="flex items-end justify-between">
           <div>
             <p className="font-display text-6xl font-semibold text-sage-900 tabular-nums leading-none">
-              {hasQuitData ? daysSinceQuit : '—'}
+              {hasQuitDate ? daysSinceQuit : '—'}
             </p>
             {quitDateLabel && (
               <p className="text-xs text-sage-600/70 mt-2">dal {quitDateLabel}</p>
             )}
-            {!hasQuitData && (
+            {!hasQuitDate && (
               <p className="text-xs text-sage-600/70 mt-2">imposta data di quit dalla Home</p>
             )}
           </div>
@@ -214,9 +221,9 @@ export default function Stats() {
             Sigarette non fumate
           </p>
           <p className="font-display text-3xl font-semibold text-sage-900 tabular-nums leading-tight">
-            {hasQuitData ? cigsAvoidedPeriod : 0}
+            {hasAccumulatedDays ? cigsAvoidedPeriod : 0}
           </p>
-          {hasQuitData && packsAvoidedPeriod > 0 && (
+          {hasAccumulatedDays && packsAvoidedPeriod > 0 && (
             <p className="text-[11px] text-sage-600/70 mt-1">
               ≈ {packsAvoidedPeriod} {packsAvoidedPeriod === 1 ? 'pacchetto' : 'pacchetti'}
             </p>
@@ -227,9 +234,9 @@ export default function Stats() {
             Soldi risparmiati
           </p>
           <p className="font-display text-3xl font-semibold text-sage-900 tabular-nums leading-tight">
-            {hasQuitData ? `${savedPeriod.toFixed(0)} €` : '0 €'}
+            {hasAccumulatedDays ? `${savedPeriod.toFixed(0)} €` : '0 €'}
           </p>
-          {hasQuitData && savedPeriod > 0 && (
+          {hasAccumulatedDays && savedPeriod > 0 && (
             <p className="text-[11px] text-sage-600/70 mt-1">{moneyEquivalent(savedPeriod)}</p>
           )}
         </div>
@@ -237,7 +244,7 @@ export default function Stats() {
 
       {/* Hero: tracker sigarette oggi — solo PRE-quit (dopo la dichiarazione
           il counter non ha più senso, l'utente non sta più fumando). */}
-      {!hasQuitData && (
+      {!hasQuitDate && (
         <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4 mb-3">
           <div className="flex items-center gap-2 mb-3">
             <span className="w-7 h-7 rounded-lg bg-sage-50 flex items-center justify-center">
