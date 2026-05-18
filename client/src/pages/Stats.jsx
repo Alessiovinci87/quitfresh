@@ -115,15 +115,21 @@ export default function Stats() {
   });
   const maxCigs = Math.max(1, ...last14.map(d => d.cigs ?? 0));
 
-  const smokeFreeSince = progress?.smokeFreeSince ? new Date(progress.smokeFreeSince) : null;
-  const hoursFree = smokeFreeSince ? (Date.now() - smokeFreeSince.getTime()) / (1000 * 60 * 60) : 0;
+  // Fonte unica per "ho smesso": progress.quitDate (gestito da Home + HealthSubPage).
+  // smokeFreeSince è un campo legacy: lo accettiamo solo come fallback display.
+  const quitRefDate = progress?.quitDate
+    ? new Date(progress.quitDate)
+    : (progress?.smokeFreeSince ? new Date(progress.smokeFreeSince) : null);
+  const hoursFree = quitRefDate ? (Date.now() - quitRefDate.getTime()) / (1000 * 60 * 60) : 0;
   const nextMilestone = HEALTH_MILESTONES.find(m => m.hours > hoursFree);
   const nextHoursLeft = nextMilestone ? nextMilestone.hours - hoursFree : 0;
   const lastReachedMilestone = [...HEALTH_MILESTONES].reverse().find(m => m.hours <= hoursFree);
   const packPrice = progress?.cigarettePackPrice ?? DEFAULT_PACK_PRICE;
 
-  const smokeFreeCount = diaryEntries.filter(e => e.cigarettesToday === 0).length;
-  const totalSaved = smokeFreeCount * packPrice;
+  // Risparmi: prendiamo i valori già calcolati dal backend (autorevole).
+  // daysSinceQuit = giorni dal quitDate, moneySaved = (daysSinceQuit×cigsPerDay/20)×packPrice.
+  const smokeFreeCount = progress?.daysSinceQuit ?? 0;
+  const totalSaved = progress?.moneySaved ?? 0;
 
   const monthName = new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
   const todayCalEntry = diaryEntries.find(e => toDateStr(new Date(e.date)) === todayStr);
@@ -134,9 +140,6 @@ export default function Stats() {
   // smokeFreeSince (che è un campo diverso: ultima sigaretta dopo ricaduta).
   const periodCfg = PERIODS.find(p => p.id === period) ?? PERIODS[1];
   const baselineCigsPerDay = user?.cigarettesPerDay ?? 0;
-  const quitRefDate = progress?.quitDate
-    ? new Date(progress.quitDate)
-    : smokeFreeSince;
   const daysSinceQuit = progress?.daysSinceQuit ?? 0;
   const hasQuitData = !!quitRefDate;
   const periodDays = hasQuitData ? Math.min(periodCfg.days, daysSinceQuit + 1) : 0;
@@ -239,42 +242,45 @@ export default function Stats() {
         </div>
       </div>
 
-      {/* Hero: tracker sigarette oggi */}
-      <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4 mb-3">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="w-7 h-7 rounded-lg bg-sage-50 flex items-center justify-center">
-            <svg className="w-4 h-4 text-sage-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M5 8v8m14-8v8" />
-            </svg>
-          </span>
-          <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold">Sigarette oggi</p>
-        </div>
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => changeCigs(-1)}
-            disabled={todayCigs === 0 || savingCigs}
-            className="w-10 h-10 rounded-full bg-white border border-sage-200 text-sage-700 text-xl font-bold disabled:opacity-30 hover:bg-sage-50 transition-all flex items-center justify-center shadow-soft active:scale-95"
-            aria-label="Diminuisci"
-          >−</button>
-          <div className="text-center">
-            <span className="font-display text-5xl font-semibold text-sage-900 tabular-nums leading-none">
-              {todayCigs ?? '—'}
+      {/* Hero: tracker sigarette oggi — solo PRE-quit (dopo la dichiarazione
+          il counter non ha più senso, l'utente non sta più fumando). */}
+      {!hasQuitData && (
+        <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4 mb-3">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-7 h-7 rounded-lg bg-sage-50 flex items-center justify-center">
+              <svg className="w-4 h-4 text-sage-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M5 8v8m14-8v8" />
+              </svg>
             </span>
-            {savingCigs && <p className="text-[10px] text-sage-500/70 mt-1">salvataggio…</p>}
+            <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold">Sigarette oggi</p>
           </div>
-          <button
-            onClick={() => changeCigs(1)}
-            disabled={savingCigs}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 text-white text-xl font-bold disabled:opacity-30 transition-all flex items-center justify-center shadow-sage active:scale-95"
-            aria-label="Aumenta"
-          >+</button>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => changeCigs(-1)}
+              disabled={todayCigs === 0 || savingCigs}
+              className="w-10 h-10 rounded-full bg-white border border-sage-200 text-sage-700 text-xl font-bold disabled:opacity-30 hover:bg-sage-50 transition-all flex items-center justify-center shadow-soft active:scale-95"
+              aria-label="Diminuisci"
+            >−</button>
+            <div className="text-center">
+              <span className="font-display text-5xl font-semibold text-sage-900 tabular-nums leading-none">
+                {todayCigs ?? '—'}
+              </span>
+              {savingCigs && <p className="text-[10px] text-sage-500/70 mt-1">salvataggio…</p>}
+            </div>
+            <button
+              onClick={() => changeCigs(1)}
+              disabled={savingCigs}
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 text-white text-xl font-bold disabled:opacity-30 transition-all flex items-center justify-center shadow-sage active:scale-95"
+              aria-label="Aumenta"
+            >+</button>
+          </div>
+          {todayCigs === 0 && (
+            <p className="text-center text-xs text-sage-700 font-medium mt-2 bg-sage-50 py-1.5 rounded-lg">
+              🌟 Giornata senza fumo
+            </p>
+          )}
         </div>
-        {todayCigs === 0 && (
-          <p className="text-center text-xs text-sage-700 font-medium mt-2 bg-sage-50 py-1.5 rounded-lg">
-            🌟 Giornata senza fumo
-          </p>
-        )}
-      </div>
+      )}
 
       {/* Chart 14g — istogramma sigarette per giorno */}
       <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-4 mb-3">
@@ -329,7 +335,7 @@ export default function Stats() {
         <NavRow
           icon="❤️"
           title="Salute nel tempo"
-          value={smokeFreeSince
+          value={quitRefDate
             ? (nextMilestone ? `Prossimo: ${nextMilestone.label}` : 'Tutti i traguardi ✓')
             : 'Imposta data'}
           onClick={() => setSubPage('health')}
@@ -347,12 +353,13 @@ export default function Stats() {
       {subPage === 'calendar' && (
         <CalendarSubPage
           diaryEntries={diaryEntries}
+          quitDate={quitRefDate}
           onClose={() => setSubPage(null)}
         />
       )}
       {subPage === 'health' && (
         <HealthSubPage
-          smokeFreeSince={smokeFreeSince}
+          smokeFreeSince={quitRefDate}
           hoursFree={hoursFree}
           nextMilestone={nextMilestone}
           nextHoursLeft={nextHoursLeft}
@@ -372,6 +379,7 @@ export default function Stats() {
           smokeFreeCount={smokeFreeCount}
           totalSaved={totalSaved}
           packPrice={packPrice}
+          baselineCigsPerDay={baselineCigsPerDay}
           goal={goal}
           setGoal={setGoal}
           onClose={() => setSubPage(null)}
@@ -405,7 +413,8 @@ function NavRow({ icon, title, value, highlight, onClick }) {
 }
 
 // ── CalendarSubPage ────────────────────────────────────────────
-function CalendarSubPage({ diaryEntries, onClose }) {
+function CalendarSubPage({ diaryEntries, quitDate, onClose }) {
+  const quitDateStr = quitDate ? toDateStr(quitDate) : null;
   const [calMonth, setCalMonth] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() };
@@ -465,13 +474,24 @@ function CalendarSubPage({ diaryEntries, onClose }) {
             const tod = isToday(d);
             const ds = d ? `${calMonth.year}-${String(calMonth.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null;
             const cigs = ds ? cigsByDate[ds] : undefined;
+            const isQuitDay = ds && ds === quitDateStr;
             return (
               <div
                 key={i}
-                className={`aspect-square flex flex-col items-center justify-center rounded-lg text-xs font-medium select-none transition-all ${cls} ${tod ? 'ring-2 ring-sage-500' : ''}`}
+                className={`relative aspect-square flex flex-col items-center justify-center rounded-lg text-xs font-medium select-none transition-all ${
+                  isQuitDay
+                    ? 'bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage'
+                    : cls
+                } ${tod ? 'ring-2 ring-sage-500' : ''}`}
+                title={isQuitDay ? 'Hai dichiarato di aver smesso questo giorno' : undefined}
               >
                 <span className="tabular-nums">{d ?? ''}</span>
-                {cigs !== undefined && cigs > 0 && (
+                {isQuitDay && (
+                  <span className="text-[8px] leading-none uppercase tracking-wider font-semibold mt-0.5">
+                    Quit
+                  </span>
+                )}
+                {!isQuitDay && cigs !== undefined && cigs > 0 && (
                   <span className="text-[9px] leading-none opacity-70 tabular-nums">{cigs}</span>
                 )}
               </div>
@@ -481,6 +501,7 @@ function CalendarSubPage({ diaryEntries, onClose }) {
 
         <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t border-sage-100/60">
           {[
+            ['bg-gradient-to-br from-sage-500 to-sage-700', 'Giorno quit'],
             ['bg-sage-100', '0 sig.'],
             ['bg-sage-200/80', '1–5'],
             ['bg-terracotta-100', '6–10'],
@@ -503,17 +524,20 @@ function HealthSubPage({
   showQuitForm, setShowQuitForm, quitInput, setQuitInput, settingQuit, setSettingQuit,
   load, onClose,
 }) {
+  const { updateUser } = useAuth();
   const nowLocalStr = (() => {
     const n = new Date();
     n.setSeconds(0, 0);
     return n.toISOString().slice(0, 16);
   })();
 
-  async function confirmQuit() {
-    if (!quitInput) return;
+  // Scrive sempre su user.quitDate (fonte unica). Il vecchio campo
+  // smokeFreeSince è legacy e non viene più toccato qui.
+  async function setQuit(isoDate) {
     setSettingQuit(true);
     try {
-      await api.quiz.setSmokeFreeeSince(new Date(quitInput).toISOString());
+      const { user: updated } = await api.quiz.setQuitDate(isoDate);
+      updateUser(updated);
       setShowQuitForm(false);
       setQuitInput('');
       await load();
@@ -521,24 +545,8 @@ function HealthSubPage({
     finally { setSettingQuit(false); }
   }
 
-  async function confirmQuitNow() {
-    setSettingQuit(true);
-    try {
-      await api.quiz.setSmokeFreeeSince(new Date().toISOString());
-      setShowQuitForm(false);
-      await load();
-    } catch (err) { console.error(err); }
-    finally { setSettingQuit(false); }
-  }
-
-  async function resetQuit() {
-    setSettingQuit(true);
-    try {
-      await api.quiz.setSmokeFreeeSince(null);
-      await load();
-    } catch (err) { console.error(err); }
-    finally { setSettingQuit(false); }
-  }
+  const confirmQuit = () => quitInput && setQuit(new Date(quitInput).toISOString());
+  const confirmQuitNow = () => setQuit(new Date().toISOString());
 
   return (
     <SubPage eyebrow="Andamento" title="Salute nel tempo" onClose={onClose}>
@@ -591,21 +599,17 @@ function HealthSubPage({
             )}
           </div>
         ) : (
-          <div className="bg-sage-50 border border-sage-100 rounded-xl-soft px-4 py-3 flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold">Non fumo da</p>
-              <p className="font-display text-base font-semibold text-sage-900 mt-0.5">
-                {smokeFreeSince.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
-                {' '}· {smokeFreeSince.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-            <button
-              onClick={resetQuit}
-              disabled={settingQuit}
-              className="text-[11px] text-sage-600/70 hover:text-sage-700 underline ml-2"
-            >
-              Reimposta
-            </button>
+          <div className="bg-sage-50 border border-sage-100 rounded-xl-soft px-4 py-3">
+            <p className="text-[10px] uppercase tracking-wider text-sage-600/70 font-semibold">Non fumo da</p>
+            <p className="font-display text-base font-semibold text-sage-900 mt-0.5">
+              {smokeFreeSince.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+              {smokeFreeSince.getHours() + smokeFreeSince.getMinutes() > 0 && (
+                <> · {smokeFreeSince.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</>
+              )}
+            </p>
+            <p className="text-[11px] text-sage-600/60 mt-1">
+              Per modificare la data o ricominciare il percorso, usa la Home.
+            </p>
           </div>
         )}
 
@@ -662,7 +666,7 @@ function HealthSubPage({
 }
 
 // ── SavingsSubPage ───────────────────────────────────────────────
-function SavingsSubPage({ smokeFreeCount, totalSaved, packPrice, goal, setGoal, onClose }) {
+function SavingsSubPage({ smokeFreeCount, totalSaved, packPrice, baselineCigsPerDay, goal, setGoal, onClose }) {
   const [goalInput, setGoalInput] = useState('');
   const [editingGoal, setEditingGoal] = useState(false);
 
@@ -695,7 +699,9 @@ function SavingsSubPage({ smokeFreeCount, totalSaved, packPrice, goal, setGoal, 
         </div>
 
         <p className="text-[11px] text-sage-600/70 leading-snug px-1">
-          {smokeFreeCount} {smokeFreeCount === 1 ? 'giornata' : 'giornate'} × €{packPrice.toFixed(2)}/pacchetto
+          {smokeFreeCount} {smokeFreeCount === 1 ? 'giorno' : 'giorni'}
+          {baselineCigsPerDay > 0 && ` × ${baselineCigsPerDay} sig/giorno`}
+          {' '}· €{packPrice.toFixed(2)}/pacchetto
         </p>
 
         {/* Obiettivo */}
