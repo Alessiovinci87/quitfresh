@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 export default function Register() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ email: '', password: '', confirm: '', accepted: false });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -23,6 +23,11 @@ export default function Register() {
 
     if (form.password !== form.confirm) {
       setError('Le password non coincidono');
+      return;
+    }
+
+    if (!form.accepted) {
+      setError('Devi accettare la Privacy Policy e i Termini di Servizio per procedere.');
       return;
     }
 
@@ -90,6 +95,28 @@ export default function Register() {
             />
           </div>
 
+          <label className="flex items-start gap-2.5 text-xs text-gray-600 leading-relaxed cursor-pointer select-none">
+            <input
+              type="checkbox"
+              required
+              checked={form.accepted}
+              onChange={(e) => setForm({ ...form, accepted: e.target.checked })}
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-sage-600 focus:ring-sage-400 cursor-pointer flex-shrink-0"
+            />
+            <span>
+              Ho letto e accetto la{' '}
+              <Link to="/privacy" target="_blank" rel="noopener" className="text-sage-600 underline">
+                Privacy Policy
+              </Link>{' '}
+              e i{' '}
+              <Link to="/terms" target="_blank" rel="noopener" className="text-sage-600 underline">
+                Termini di Servizio
+              </Link>
+              . Acconsento espressamente al trattamento dei dati sanitari (numero
+              di sigarette, protocollo citisina) ai sensi dell'art. 9.2.a GDPR.
+            </span>
+          </label>
+
           {error && (
             <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
@@ -107,16 +134,6 @@ export default function Register() {
           Hai già un account?{' '}
           <Link to="/login" className="text-sage-600 font-medium hover:underline">
             Accedi
-          </Link>
-        </p>
-
-        <p className="mt-8 text-center text-xs text-gray-400">
-          <Link to="/privacy" className="hover:text-gray-600 hover:underline">
-            Privacy Policy
-          </Link>
-          <span className="mx-2">·</span>
-          <Link to="/terms" className="hover:text-gray-600 hover:underline">
-            Termini di Servizio
           </Link>
         </p>
       </div>
