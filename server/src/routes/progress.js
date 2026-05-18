@@ -62,6 +62,7 @@ router.get('/', requireAuth, requireVerifiedEmail, async (req, res) => {
       resolvedCount,
       quitDate: user.quitDate,
       smokeFreeSince: user.smokeFreeSince,
+      cigarettesPerDay: user.cigarettesPerDay ?? 0,
       cigarettePackPrice: packPrice,
       pastAttempts: pastAttempts.map(a => ({
         startDate: a.startDate,

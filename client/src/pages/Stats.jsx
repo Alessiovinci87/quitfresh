@@ -132,7 +132,10 @@ export default function Stats() {
   // quindi prendiamo il valore già autorevole invece di ricalcolarlo da
   // smokeFreeSince (che è un campo diverso: ultima sigaretta dopo ricaduta).
   const periodCfg = PERIODS.find(p => p.id === period) ?? PERIODS[1];
-  const baselineCigsPerDay = user?.cigarettesPerDay ?? 0;
+  // Leggiamo da progress (fonte autorevole appena fetchata) con fallback su
+  // useAuth().user. Così se l'utente cambia cigarettesPerDay in Profile, il
+  // valore arriva qui sia via updateUser sia via refetch progress.
+  const baselineCigsPerDay = progress?.cigarettesPerDay ?? user?.cigarettesPerDay ?? 0;
   const daysSinceQuit = progress?.daysSinceQuit ?? 0;
   // hasQuitDate = ha mai dichiarato (per hero "Giorni senza fumo"). L'onboarding
   // setta quitDate=oggi quindi è sempre true post-onboarding: distingue solo
