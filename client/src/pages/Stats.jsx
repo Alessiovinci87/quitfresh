@@ -119,10 +119,11 @@ export default function Stats() {
   const lastReachedMilestone = [...HEALTH_MILESTONES].reverse().find(m => m.hours <= hoursFree);
   const packPrice = progress?.cigarettePackPrice ?? DEFAULT_PACK_PRICE;
 
-  // Risparmi: prendiamo i valori già calcolati dal backend (autorevole).
-  // daysSinceQuit = giorni dal quitDate, moneySaved = (daysSinceQuit×cigsPerDay/20)×packPrice.
+  // smokeFreeCount: giorni dal quitDate (backend, autorevole).
+  // totalSaved viene calcolato più giù dopo aver caricato baselineCigsPerDay
+  // e diaryEntries, perché ora deduciamo le sigarette del diario anche dal
+  // totale (coerenza con la card "Soldi risparmiati" del periodo).
   const smokeFreeCount = progress?.daysSinceQuit ?? 0;
-  const totalSaved = progress?.moneySaved ?? 0;
 
   const monthName = new Date().toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
   const todayCalEntry = diaryEntries.find(e => toDateStr(new Date(e.date)) === todayStr);
@@ -156,6 +157,19 @@ export default function Stats() {
   const cigsAvoidedPeriod = Math.max(0, baselineCigsPerDay * periodDays - cigsSmokedInPeriod);
   const packsAvoidedPeriod = Math.floor(cigsAvoidedPeriod / 20);
   const savedPeriod = (cigsAvoidedPeriod / 20) * packPrice;
+
+  // Risparmio totale: stessa formula del period card ma sull'intera finestra
+  // dal quitDate a oggi. Sottraiamo le sigarette registrate nel diary perché
+  // il valore moneySaved del backend le ignora e creava un mismatch visibile
+  // tra le due card ("Soldi risparmiati" 18€ vs "Risparmio" 21.75€).
+  const quitDateStr = quitRefDate ? toDateStr(quitRefDate) : null;
+  const cigsSmokedSinceQuit = quitDateStr
+    ? diaryEntries
+        .filter(e => toDateStr(new Date(e.date)) >= quitDateStr)
+        .reduce((sum, e) => sum + (e.cigarettesToday ?? 0), 0)
+    : 0;
+  const cigsAvoidedTotal = Math.max(0, baselineCigsPerDay * daysSinceQuit - cigsSmokedSinceQuit);
+  const totalSaved = (cigsAvoidedTotal / 20) * packPrice;
 
   const quitDateLabel = quitRefDate
     ? quitRefDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })
