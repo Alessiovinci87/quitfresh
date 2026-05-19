@@ -217,4 +217,43 @@ function sendBackupEmail(to, buffer, meta) {
   });
 }
 
-module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, isEnabled };
+// Notifica admin: codice sconto usato. Non-bloccante (errori loggati, non
+// propagati al flusso premium). Indirizzo letto da ADMIN_NOTIFY_EMAIL con
+// fallback su BACKUP_EMAIL_TO (gia' configurato su Railway per i backup DB).
+function sendPromoUsedAdminEmail({ userEmail, userId, code, discountPct, channel }) {
+  const to = (process.env.ADMIN_NOTIFY_EMAIL || process.env.BACKUP_EMAIL_TO || '').trim();
+  if (!to) {
+    console.log('[email] promo-used admin notify skipped: nessun ADMIN_NOTIFY_EMAIL/BACKUP_EMAIL_TO');
+    return Promise.resolve({ skipped: true });
+  }
+  const when = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'medium', timeStyle: 'short' });
+  const channelLabel = channel === 'free' ? 'Attivazione gratuita (codice 100%)' : 'Pagamento Stripe con sconto';
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:28px;">
+        <tr><td>
+          <p style="margin:0 0 8px;color:#84a98c;font-size:13px;font-weight:600;letter-spacing:0.5px;">QUITFRESH · ADMIN</p>
+          <h1 style="margin:0 0 16px;font-size:20px;color:#111827;">Codice sconto usato</h1>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;background:#f5f5f4;border-radius:12px;padding:14px 16px;font-size:13px;color:#374151;">
+            <tr><td style="padding:4px 0;">Codice</td><td style="text-align:right;font-weight:600;font-family:'SF Mono',Menlo,monospace;">${code}</td></tr>
+            <tr><td style="padding:4px 0;">Sconto</td><td style="text-align:right;font-weight:600;">${discountPct}%</td></tr>
+            <tr><td style="padding:4px 0;">Canale</td><td style="text-align:right;font-weight:600;">${channelLabel}</td></tr>
+            <tr><td style="padding:4px 0;">Utente</td><td style="text-align:right;font-weight:600;">${userEmail || '—'}</td></tr>
+            <tr><td style="padding:4px 0;">User ID</td><td style="text-align:right;font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#6b7280;">${userId || '—'}</td></tr>
+            <tr><td style="padding:4px 0;">Quando</td><td style="text-align:right;">${when}</td></tr>
+          </table>
+          <p style="margin:0;font-size:12px;color:#9ca3af;">Notifica automatica. Per disabilitarla rimuovi <code>ADMIN_NOTIFY_EMAIL</code> dalle env.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  return send({ to, subject: `Codice ${code} usato — ${userEmail || userId}`, html });
+}
+
+module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, sendPromoUsedAdminEmail, isEnabled };

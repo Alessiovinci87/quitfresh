@@ -2,6 +2,7 @@ const express = require('express');
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { stripe, priceId, webhookSecret, isConfigured } = require('../lib/stripe');
+const { sendPromoUsedAdminEmail } = require('../lib/email');
 
 const router = express.Router();
 
@@ -59,6 +60,14 @@ router.post('/checkout', requireAuth, requireVerifiedEmail, async (req, res) => 
             promoCodeUsed: promo.code,
           },
         });
+        // Notifica admin (fire-and-forget: errori loggati nel wrapper email).
+        sendPromoUsedAdminEmail({
+          userEmail: req.user.email,
+          userId: req.user.id,
+          code: promo.code,
+          discountPct: promo.discountPct,
+          channel: 'free',
+        }).catch(err => console.error('[payments] admin notify error:', err));
         return res.json({ url: null, freeActivated: true });
       } catch (err) {
         console.error('Free activation error:', err);
@@ -160,7 +169,7 @@ router.post('/webhook', async (req, res) => {
           return res.json({ received: true, alreadyProcessed: true });
         }
 
-        await prisma.user.update({
+        const updatedUser = await prisma.user.update({
           where: { id: userId },
           data: {
             isPremium: true,
@@ -168,6 +177,7 @@ router.post('/webhook', async (req, res) => {
             promoCodeUsed: promoCode || undefined,
             stripeCustomerId: typeof session.customer === 'string' ? session.customer : undefined,
           },
+          select: { email: true },
         });
 
         if (promoCode) {
@@ -179,6 +189,18 @@ router.post('/webhook', async (req, res) => {
             WHERE "code" = ${promoCode}
             AND ("maxUses" IS NULL OR "usageCount" < "maxUses")
           `.catch(() => {});
+
+          // Notifica admin (fire-and-forget). Recuperiamo discountPct dal db
+          // per arricchire la mail; se la lookup fallisce, mandiamo comunque.
+          prisma.promoCode.findUnique({ where: { code: promoCode }, select: { discountPct: true } })
+            .then(p => sendPromoUsedAdminEmail({
+              userEmail: updatedUser.email,
+              userId,
+              code: promoCode,
+              discountPct: p?.discountPct ?? null,
+              channel: 'stripe',
+            }))
+            .catch(err => console.error('[payments] admin notify error:', err));
         }
 
         console.log(`[payments] Premium attivato per user ${userId}${promoCode ? ` (codice ${promoCode})` : ''}`);
