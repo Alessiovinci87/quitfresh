@@ -159,15 +159,21 @@ export default function Stats() {
   const savedPeriod = (cigsAvoidedPeriod / 20) * packPrice;
 
   // Risparmio totale: stessa formula del period card ma sull'intera finestra
-  // dal quitDate a oggi. Sottraiamo le sigarette registrate nel diary perché
-  // il valore moneySaved del backend le ignora e creava un mismatch visibile
-  // tra le due card ("Soldi risparmiati" 18€ vs "Risparmio" 21.75€).
-  const quitDateStr = quitRefDate ? toDateStr(quitRefDate) : null;
-  const cigsSmokedSinceQuit = quitDateStr
-    ? diaryEntries
-        .filter(e => toDateStr(new Date(e.date)) >= quitDateStr)
-        .reduce((sum, e) => sum + (e.cigarettesToday ?? 0), 0)
-    : 0;
+  // dal quitDate a oggi. Usiamo la stessa logica di periodStart (gli ultimi
+  // daysSinceQuit giorni a partire da oggi all'indietro) anziché filtrare per
+  // quitDate, così la finestra è identica al period card quando coincide e
+  // *non* include eventuali sigarette registrate nel giorno del quit prima
+  // dell'orario di smesso (che invece il filtro >= quitDate includerebbe,
+  // gonfiando la detrazione e abbassando il totale rispetto al period card).
+  let cigsSmokedSinceQuit = 0;
+  if (daysSinceQuit > 0) {
+    const quitWindowStart = new Date();
+    quitWindowStart.setHours(0, 0, 0, 0);
+    quitWindowStart.setDate(quitWindowStart.getDate() - (daysSinceQuit - 1));
+    cigsSmokedSinceQuit = diaryEntries
+      .filter(e => new Date(e.date) >= quitWindowStart)
+      .reduce((sum, e) => sum + (e.cigarettesToday ?? 0), 0);
+  }
   const cigsAvoidedTotal = Math.max(0, baselineCigsPerDay * daysSinceQuit - cigsSmokedSinceQuit);
   const totalSaved = (cigsAvoidedTotal / 20) * packPrice;
 
