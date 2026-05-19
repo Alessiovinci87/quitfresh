@@ -221,11 +221,15 @@ function sendBackupEmail(to, buffer, meta) {
 // propagati al flusso premium). Indirizzo letto da ADMIN_NOTIFY_EMAIL con
 // fallback su BACKUP_EMAIL_TO (gia' configurato su Railway per i backup DB).
 function sendPromoUsedAdminEmail({ userEmail, userId, code, discountPct, channel }) {
-  const to = (process.env.ADMIN_NOTIFY_EMAIL || process.env.BACKUP_EMAIL_TO || '').trim();
-  if (!to) {
+  // Accetta uno o piu' destinatari separati da virgola, es:
+  // ADMIN_NOTIFY_EMAIL="info@quitfresh.it,alessio.vinci87@gmail.com"
+  const raw = (process.env.ADMIN_NOTIFY_EMAIL || process.env.BACKUP_EMAIL_TO || '').trim();
+  const recipients = raw.split(',').map(s => s.trim()).filter(Boolean);
+  if (recipients.length === 0) {
     console.log('[email] promo-used admin notify skipped: nessun ADMIN_NOTIFY_EMAIL/BACKUP_EMAIL_TO');
     return Promise.resolve({ skipped: true });
   }
+  const to = recipients.length === 1 ? recipients[0] : recipients;
   const when = new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'medium', timeStyle: 'short' });
   const channelLabel = channel === 'free' ? 'Attivazione gratuita (codice 100%)' : 'Pagamento Stripe con sconto';
   const html = `<!DOCTYPE html>
