@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import FeatureLimitPaywall from '../components/FeatureLimitPaywall';
 
 const SIDE_EFFECTS = ['Nausea', 'Secchezza bocca', 'Sogni vividi', 'Irritabilità', 'Insonnia', 'Mal di testa'];
 
@@ -27,6 +28,8 @@ export default function Diary() {
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [success, setSuccess] = useState('');
+  const [paywallReached, setPaywallReached] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const [form, setForm] = useState({
     date: todayISO(),
@@ -58,6 +61,7 @@ export default function Diary() {
 
   async function handleSave() {
     setSaving(true);
+    setSaveError('');
     try {
       const saved = await api.diary.save(form);
       setEntries(prev => {
@@ -69,7 +73,12 @@ export default function Diary() {
       setSuccess('Registrazione salvata');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error(err);
+      if (err.freemiumLimit?.feature === 'diary') {
+        setPaywallReached(true);
+        setShowForm(false);
+      } else {
+        setSaveError(err.message || 'Errore nel salvataggio');
+      }
     } finally {
       setSaving(false);
     }
@@ -119,6 +128,19 @@ export default function Diary() {
       <div className="flex-1 pb-2">
         {success && (
           <p className="text-sm text-sage-700 bg-sage-50 rounded-xl-soft px-3 py-2 mb-4 border border-sage-100">{success}</p>
+        )}
+        {saveError && (
+          <p className="text-sm text-terracotta-700 bg-terracotta-50 rounded-xl-soft px-3 py-2 mb-4 border border-terracotta-100">{saveError}</p>
+        )}
+        {paywallReached && (
+          <div className="mb-4">
+            <FeatureLimitPaywall feature="diary" compact />
+          </div>
+        )}
+        {!paywallReached && !user.isPremium && !user.freemiumGrandfathered && entries.length >= 5 && entries.length < 7 && (
+          <p className="text-[11px] text-sage-600/80 mb-3 text-center">
+            Hai usato {entries.length} di 7 giorni gratuiti del diario.
+          </p>
         )}
 
         {/* Entries list */}

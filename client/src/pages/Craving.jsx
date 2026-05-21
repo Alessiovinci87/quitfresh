@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import FeatureLimitPaywall from '../components/FeatureLimitPaywall';
 
 const HEADER_HEIGHT = 64;
 const INPUT_HEIGHT = 72;
@@ -8,11 +10,15 @@ const MAX_WIDTH = 430;
 
 export default function Craving() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [error, setError] = useState('');
+  // Freemium: settato quando il backend ritorna FREE_LIMIT_REACHED su chat.
+  const [paywallReached, setPaywallReached] = useState(false);
+  const [freemiumStatus, setFreemiumStatus] = useState(null); // { used, limit, remaining }
   // iOS PWA standalone: applichiamo lo stack visualViewport + body lock +
   // animating. Su Android Chrome (e desktop) il viewport rifluisce
   // nativamente con interactive-widget=resizes-content → layout flex
@@ -211,7 +217,7 @@ export default function Craving() {
 
   async function sendMessage() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || loading || paywallReached) return;
     const userMsg = { role: 'user', content: text };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
@@ -219,10 +225,21 @@ export default function Craving() {
     setLoading(true);
     setError('');
     try {
-      const { reply } = await api.chat.send(newMessages);
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      const res = await api.chat.send(newMessages);
+      setMessages(prev => [...prev, { role: 'assistant', content: res.reply }]);
+      if (res.freemium) setFreemiumStatus(res.freemium);
     } catch (err) {
-      setError(err.message || 'Errore nella risposta AI.');
+      if (err.freemiumLimit?.feature === 'chat') {
+        // Lascia il messaggio dell'utente visibile e mostra paywall sotto.
+        setPaywallReached(true);
+        setFreemiumStatus({
+          used: err.freemiumLimit.used,
+          limit: err.freemiumLimit.limit,
+          remaining: 0,
+        });
+      } else {
+        setError(err.message || 'Errore nella risposta AI.');
+      }
     } finally {
       setLoading(false);
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -430,6 +447,20 @@ export default function Craving() {
               </p>
             )}
 
+            {paywallReached && (
+              <div className="mt-2">
+                <FeatureLimitPaywall feature="chat" compact />
+              </div>
+            )}
+
+            {!paywallReached && freemiumStatus && freemiumStatus.remaining <= 1 && (
+              <p className="text-[11px] text-sage-600/80 text-center">
+                {freemiumStatus.remaining === 0
+                  ? 'Ultimo messaggio inviato del piano gratuito.'
+                  : `Ti resta ${freemiumStatus.remaining} messaggio gratuito.`}
+              </p>
+            )}
+
             <div ref={bottomRef} />
           </div>
         </div>
@@ -453,6 +484,7 @@ export default function Craving() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              disabled={paywallReached}
               onPointerDown={() => {
                 // SUBITO: manipola il DOM direttamente — senza aspettare
                 // React render, l'animazione parte nello stesso frame del
@@ -475,7 +507,7 @@ export default function Craving() {
             />
             <button
               onClick={sendMessage}
-              disabled={!input.trim() || loading}
+              disabled={!input.trim() || loading || paywallReached}
               className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-full shadow-sage disabled:opacity-40 active:scale-95 transition-all shrink-0"
               aria-label="Invia"
             >

@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const { getUserProgress } = require('./progress');
 
 // GDPR: assicurarsi di aver disabilitato "Improve model for everyone" su
 // platform.openai.com → Settings → Data Controls, altrimenti i messaggi
@@ -12,63 +13,116 @@ function getTimeOfDay(hour) {
   return 'notte';
 }
 
-function buildSystemPrompt({ user, timeOfDay, hour, daysSinceQuit }) {
+function formatProgress(p) {
+  const lines = [`- Giorno del percorso (dal quit date): ${p.daysSinceQuit}`];
+  if (p.cytisineDay !== null) {
+    lines.push(`- Giorno del protocollo citisina: ${p.cytisineDay}`);
+    if (p.cytisinePhase) {
+      lines.push(
+        `- Fase citisina attiva: ${p.cytisinePhase.pills} compresse/die, intervallo ${p.cytisinePhase.intervalMin}min`
+      );
+    }
+  }
+  lines.push(`- Sigarette/giorno pre-quit: ${p.cigarettesPerDay || 'non specificato'}`);
+  lines.push(`- Sigarette evitate finora: ${p.cigarettesAvoided}`);
+  lines.push(`- Risparmio stimato: €${p.moneySaved.toFixed(2)}`);
+  return lines.join('\n');
+}
+
+function formatPatterns(ctx) {
+  const lines = [];
+  lines.push(`- Craving registrati negli ultimi 14 giorni: ${ctx.cravingsLast14d}`);
+  lines.push(`- Sessioni SOS completate (totale): ${ctx.cravingsBattled}`);
+
+  if (ctx.topCravingTimes.length > 0) {
+    const t = ctx.topCravingTimes.map((x) => `${x.time} (×${x.count})`).join(', ');
+    lines.push(`- Orari più frequenti dei craving: ${t}`);
+  }
+  if (ctx.topCravingBuckets.length > 0) {
+    const b = ctx.topCravingBuckets.map((x) => `${x.bucket} (×${x.count})`).join(', ');
+    lines.push(`- Fasce della giornata più critiche: ${b}`);
+  }
+  if (ctx.topTriggers.length > 0) {
+    const tg = ctx.topTriggers.map((x) => `${x.trigger} (×${x.count})`).join(', ');
+    lines.push(`- Trigger ricorrenti citati nei log: ${tg}`);
+  }
+  if (ctx.diarySummary.length > 0) {
+    lines.push('- Diario recente:');
+    for (const d of ctx.diarySummary) {
+      const se = d.sideEffects.length ? ` effetti:${d.sideEffects.join('/')}` : '';
+      const note = d.notes ? ` note:"${d.notes}"` : '';
+      lines.push(`    · ${d.date} — capsule:${d.pills} sig:${d.cigs}${se}${note}`);
+    }
+  }
+  return lines.length ? lines.join('\n') : '- Nessun pattern significativo ancora registrato.';
+}
+
+function buildSystemPrompt({ user, timeOfDay, hour, context }) {
   const momenti = user.criticalMoments?.length
     ? user.criticalMoments.join(', ')
+    : 'non specificati';
+  const motivi = user.quitReasons?.length
+    ? user.quitReasons.join(', ')
     : 'non specificati';
 
   return `Sei un supporto personale per una persona che sta smettendo di fumare. Parli in italiano, in modo diretto e umano — non da app, non da coach, non da manuale. Come un amico che conosce bene la dipendenza da nicotina e i percorsi di cessazione.
 
-PROFILO UTENTE:
-- Sigarette al giorno (prima di smettere): ${user.cigarettesPerDay || 'non specificato'}
-- Livello dipendenza dichiarato: ${user.dependencyLevel || 'non specificato'}/5
-- Momenti critici: ${momenti}
-- Giorni di percorso: ${daysSinceQuit}
-- Ora attuale: ${timeOfDay} (${hour}:00)
+PROFILO DICHIARATO
+- Livello dipendenza: ${user.dependencyLevel || 'non specificato'}/5
+- Momenti critici dichiarati: ${momenti}
+- Motivi per smettere: ${motivi}
 
-CONOSCENZA SUL PERCORSO CON CITISINA (usa queste informazioni se l'utente le menziona):
-La citisina (Tabex, Desmoxan, Todacitan) è un alcaloide vegetale usato come farmaco per smettere di fumare.
-Protocollo standard:
-- Giorni 1-5: si CONTINUA a fumare, ma si inizia la citisina (1 compressa ogni 2 ore circa, max 6/die). Si cerca di ridurre le sigarette gradualmente.
-- Giorno 6: si smette COMPLETAMENTE di fumare. Da qui la citisina fa il suo lavoro principale.
-- Giorni 6-25: citisina a scalare (dose ridotta progressivamente), zero sigarette.
-Come funziona: è un agonista parziale dei recettori nicotinici α4β2. "Occupa" i recettori che userebbe la nicotina, riducendo sia il craving sia il piacere della sigaretta se si cede. Riduce anche i sintomi di astinenza dal giorno 6 in poi.
-Effetti collaterali comuni e normali: nausea (specie se presa a stomaco vuoto), secchezza della bocca, sogni vividi, irritabilità, disturbi del sonno. Passano con il tempo.
-Se l'utente è nei giorni 1-5: normale che stia ancora fumando — è parte del protocollo, non un fallimento.
-Se l'utente è al giorno 6 o oltre: ha smesso di fumare, il craving è gestito dalla citisina ma può ancora essere presente, specie nei momenti critici.
+STATO ATTUALE (dati live, calcolati ora)
+${formatProgress(context.progress)}
+- Ora locale: ${timeOfDay} (${hour}:00)
 
-ALTRI FARMACI E SUPPORTI COMUNI:
-- Vareniclina (Champix/Chantix): simile alla citisina, stesso meccanismo, protocollo simile
-- NRT (cerotti, gomme, spray): sostituzione nicotinica, si smette subito o gradualmente
-- Bupropione: antidepressivo usato per la cessazione
+PATTERN OSSERVATI
+${formatPatterns(context)}
 
-COME RISPONDERE:
-- Leggi con attenzione quello che scrive e rispondi a QUELLO, non a una versione generica
-- Se ha un craving acuto: gestiscilo con concretezza (distrazione fisica, respirazione, spostare l'attenzione — ma scegli quello pertinente al suo contesto)
-- Se ha domande sul farmaco: rispondi con le informazioni corrette che hai sopra
-- Se è emotivo o spaventato: sii presente prima di essere pratico
-- Se vuole solo parlare: parla
-- Tono: diretto, caldo, reale. No frasi fatte, no elenchi puntati infiniti, no "ottimo!" o "bravo!"
-- Lunghezza: proporzionata. Breve se basta, più lunga se serve.
-- Non inventare informazioni mediche che non conosci — in quel caso di' che non sai e suggerisci di chiedere al medico.`;
+CONOSCENZA PROTOCOLLO CITISINA (usa solo se pertinente)
+Citisina (Tabex/Desmoxan/Todacitan): alcaloide vegetale, agonista parziale dei recettori nicotinici α4β2.
+- Giorni 1-5: si continua a fumare riducendo gradualmente, si inizia la citisina.
+- Giorno 6: si smette completamente di fumare.
+- Giorni 6-25: dose a scalare, zero sigarette.
+Effetti collaterali comuni: nausea, secchezza, sogni vividi, irritabilità, sonno disturbato.
+Altri supporti: vareniclina (Champix), NRT (cerotti/gomme), bupropione.
+
+REGOLE DI RISPOSTA (rispettarle sempre)
+1. Usa SEMPRE almeno un dato concreto dello "STATO ATTUALE" o dei "PATTERN OSSERVATI". Se citi un numero, deve venire da lì — mai inventato.
+2. Se l'utente segnala un craving e l'orario/contesto matcha un pattern, riconoscilo esplicitamente (es: "è il momento dopo pranzo, ti succede spesso").
+3. VIETATO: frasi motivazionali generiche ("Sei forte", "Ce la farai", "Bravo", "Sei sulla strada giusta"), inviti generici a "respirare profondamente" senza contesto, elenchi puntati lunghi, emoji.
+4. VIETATO: ripetere frasi o aperture già usate nella tua risposta precedente di questa conversazione. Varia.
+5. Lunghezza: massimo 3 frasi, a meno che l'utente chieda esplicitamente una spiegazione tecnica.
+6. Se non hai abbastanza dati per essere specifico, fai UNA domanda concreta (orario, situazione fisica, ultimo pasto, dove ti trovi) invece di rispondere generico.
+7. Non inventare informazioni mediche. Se non sai, dillo e suggerisci il medico.
+8. Tono: diretto, caldo, reale. Mai paternalismo.`;
 }
 
-async function getChatResponse({ user, messages }) {
+async function getChatResponse({ user, messages, context }) {
   const now = new Date();
   const hour = now.getHours();
   const timeOfDay = getTimeOfDay(hour);
-  const daysSinceQuit = user.quitDate
-    ? Math.floor((now - new Date(user.quitDate)) / (1000 * 60 * 60 * 24))
-    : 0;
 
-  const systemPrompt = buildSystemPrompt({ user, timeOfDay, hour, daysSinceQuit });
+  // Fallback: se chi chiama non ha passato context (es. test), lo costruiamo
+  // qui in modo minimale dal solo user (no query DB aggiuntive).
+  const ctx = context || {
+    progress: getUserProgress(user, now),
+    cravingsBattled: 0,
+    cravingsLast14d: 0,
+    topCravingTimes: [],
+    topCravingBuckets: [],
+    topTriggers: [],
+    diarySummary: [],
+  };
+
+  const systemPrompt = buildSystemPrompt({ user, timeOfDay, hour, context: ctx });
 
   const openaiMessages = [{ role: 'system', content: systemPrompt }];
 
   if (messages.length === 0) {
     openaiMessages.push({
       role: 'user',
-      content: `[L'utente ha aperto la chat. È ${timeOfDay}. Sono ${daysSinceQuit} giorni dall'inizio del percorso. Salutalo brevemente e chiedi come sta andando o cosa lo ha portato qui. Non essere ridondante con i dati che già conosci.]`,
+      content: `[L'utente ha aperto la chat. È ${timeOfDay}, giorno ${ctx.progress.daysSinceQuit} del percorso. Salutalo brevemente (1 frase) e fai una domanda concreta — non riassumere i suoi dati, lui li conosce già.]`,
     });
   } else {
     openaiMessages.push(...messages);
@@ -77,8 +131,10 @@ async function getChatResponse({ user, messages }) {
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: openaiMessages,
-    max_tokens: 700,
-    temperature: 0.8,
+    max_tokens: 500,
+    temperature: 0.85,
+    presence_penalty: 0.6,
+    frequency_penalty: 0.4,
   });
 
   return response.choices[0].message.content;
@@ -89,9 +145,7 @@ async function getCravingResponse({ user, context }) {
   const now = new Date();
   const hour = now.getHours();
   const timeOfDay = getTimeOfDay(hour);
-  const daysSinceQuit = user.quitDate
-    ? Math.floor((now - new Date(user.quitDate)) / (1000 * 60 * 60 * 24))
-    : 0;
+  const progress = getUserProgress(user, now);
   const momenti = user.criticalMoments?.length ? user.criticalMoments.join(', ') : 'non specificati';
 
   const response = await openai.chat.completions.create({
@@ -104,7 +158,7 @@ async function getCravingResponse({ user, context }) {
       },
       {
         role: 'user',
-        content: `Ora: ${timeOfDay}. Giorni: ${daysSinceQuit}. Momenti critici: ${momenti}. Contesto: ${context || 'craving generico'}.`,
+        content: `Ora: ${timeOfDay}. Giorni: ${progress.daysSinceQuit}. Momenti critici: ${momenti}. Contesto: ${context || 'craving generico'}.`,
       },
     ],
     max_tokens: 300,
@@ -114,4 +168,4 @@ async function getCravingResponse({ user, context }) {
   return JSON.parse(response.choices[0].message.content);
 }
 
-module.exports = { getChatResponse, getCravingResponse };
+module.exports = { getChatResponse, getCravingResponse, buildSystemPrompt };

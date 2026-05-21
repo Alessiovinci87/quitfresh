@@ -22,6 +22,11 @@ async function request(path, options = {}) {
     const err = new Error(data.error || 'Errore sconosciuto');
     err.status = res.status;
     err.code = data.code; // es. 'EMAIL_NOT_VERIFIED' per gating UI
+    // 402 freemium gating: il backend manda { error:'FREE_LIMIT_REACHED',
+    // feature, limit, used } — il client lo usa per mostrare paywall inline.
+    if (data.error === 'FREE_LIMIT_REACHED') {
+      err.freemiumLimit = { feature: data.feature, limit: data.limit, used: data.used };
+    }
     throw err;
   }
   return data;

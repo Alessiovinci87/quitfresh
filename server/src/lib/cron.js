@@ -94,6 +94,16 @@ function startCron() {
         include: { pushSubscriptions: true },
       });
 
+      // Freemium gate: utenti free (non premium, non grandfathered) ricevono
+      // promemoria citisina solo nei primi 3 giorni del protocollo. Premium
+      // e grandfathered (registrati pre-rollout freemium) restano illimitati.
+      const FREE_CYTISINE_DAYS = 3;
+      const isCytisineAllowed = (user, phase) => {
+        if (!phase) return false;
+        if (user.isPremium || user.freemiumGrandfathered) return true;
+        return phase.day <= FREE_CYTISINE_DAYS;
+      };
+
       // Pre-calcolo bounds di oggi in Europe/Rome per query pillsTaken.
       const todayStart = new Date(romeNow);
       todayStart.setHours(0, 0, 0, 0);
@@ -106,7 +116,7 @@ function startCron() {
       for (const user of cytisineUsers) {
         const start = new Date(new Date(user.cytisineStartDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
         const phase = getActivePhase(user.cytisineSchedule, start, romeNow);
-        if (!phase) continue;
+        if (!isCytisineAllowed(user, phase)) continue;
 
         const doseTimes = getDoseTimes(user.firstDoseTime, phase);
         if (doseTimes.length === 0) continue;

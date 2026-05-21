@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
+const { checkFreeLimit, isFreeGated, FREE_LIMITS } = require('../middleware/premium');
 
 // L'endpoint resta aperto (anche utenti free): la Home usa /api/diary per
 // segnare le capsule citisina di oggi, feature inclusa nel free. La pagina
@@ -52,6 +53,27 @@ router.post('/', async (req, res) => {
 
   try {
     const entryDate = dayStart(date || new Date());
+
+    // Freemium gate: max 7 entry distinct date per utenti free non-grandfathered.
+    // Update di una data gia' esistente passa sempre — il limite scatta solo
+    // alla creazione dell'ottava data nuova.
+    if (isFreeGated(req.user)) {
+      const existing = await prisma.diaryEntry.findUnique({
+        where: { userId_date: { userId: req.user.id, date: entryDate } },
+      });
+      if (!existing) {
+        const count = await prisma.diaryEntry.count({ where: { userId: req.user.id } });
+        const limitCheck = checkFreeLimit({ user: req.user, feature: 'diary', usedCount: count });
+        if (!limitCheck.allowed) {
+          return res.status(402).json({
+            error: 'FREE_LIMIT_REACHED',
+            feature: 'diary',
+            limit: limitCheck.limit,
+            used: count,
+          });
+        }
+      }
+    }
 
     const entry = await prisma.diaryEntry.upsert({
       where: { userId_date: { userId: req.user.id, date: entryDate } },

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 import SubPage from '../components/SubPage';
 import { useAuth } from '../context/AuthContext';
+import FeatureLimitPaywall from '../components/FeatureLimitPaywall';
 
 const DEFAULT_PACK_PRICE = 5.80;
 
@@ -74,6 +75,9 @@ export default function Stats() {
   const [settingQuit, setSettingQuit] = useState(false);
 
   const todayStr = toDateStr(new Date());
+  // Freemium: tab periodo (trend) e analisi avanzate sono premium.
+  // Free vede solo totale dal quit + base navrow.
+  const isFreeGated = !user?.isPremium && !user?.freemiumGrandfathered;
 
   const load = useCallback(async () => {
     const [prog, entries] = await Promise.all([
@@ -188,7 +192,8 @@ export default function Stats() {
         <h1 className="font-display text-3xl font-semibold text-sage-900 leading-tight mt-0.5">Statistiche</h1>
       </header>
 
-      {/* Tab pill periodo */}
+      {/* Tab pill periodo — premium only (trend = feature avanzata) */}
+      {!isFreeGated && (
       <div className="inline-flex p-1 bg-sage-50/80 rounded-full mb-4 self-start">
         {PERIODS.map(p => (
           <button
@@ -204,6 +209,7 @@ export default function Stats() {
           </button>
         ))}
       </div>
+      )}
 
       {/* Hero: giorni senza fumo */}
       <div className="bg-white rounded-2xl-soft shadow-soft border border-sage-100/60 p-5 mb-3 relative overflow-hidden">
@@ -329,6 +335,12 @@ export default function Stats() {
           onClick={() => setSubPage('savings')}
         />
       </div>
+
+      {isFreeGated && (
+        <div className="mt-5">
+          <FeatureLimitPaywall feature="stats" compact />
+        </div>
+      )}
 
       {/* Sub-pages */}
       {subPage === 'calendar' && (

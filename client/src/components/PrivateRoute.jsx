@@ -5,6 +5,10 @@ import { useAuth } from '../context/AuthContext';
 // Strategia "freemium": l'utente atterra in /home con il proprio contatore,
 // badge e risparmio. Il paywall scatta solo quando tocca una funzione
 // premium (chat AI = /craving, diario, tools, stats avanzate).
+// Modello freemium: tutte le pagine principali sono navigabili anche dai
+// non-premium. Le restrizioni scattano contestualmente DENTRO le pagine
+// (3 messaggi chat, 7 entry diario, stats avanzate gated, ecc.) via
+// FeatureLimitPaywall inline. /paywall resta come destinazione esplicita.
 const PAYWALL_EXEMPT = new Set([
   '/paywall',
   '/premium-success',
@@ -15,6 +19,11 @@ const PAYWALL_EXEMPT = new Set([
   '/privacy',
   '/terms',
   '/admin/promo-codes',
+  '/craving',
+  '/diary',
+  '/stats',
+  '/tools',
+  '/sos',
 ]);
 
 // Route accessibili anche se l'utente NON ha ancora completato l'onboarding

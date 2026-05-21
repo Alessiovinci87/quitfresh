@@ -39,6 +39,13 @@ model User {
   tokenVersion       Int                @default(0)
   quitReasons       String[]
   cravingsBattled   Int                @default(0)
+  // Freemium gating: contatore messaggi chat AI usati dal piano free
+  // (incrementato solo quando isPremium=false e !freemiumGrandfathered).
+  chatMessagesUsed       Int     @default(0)
+  // Grandfathering: utenti registrati prima del rollout freemium
+  // mantengono accesso illimitato a chat/diario/citisina push.
+  // Settato via migration data per tutti gli User esistenti.
+  freemiumGrandfathered  Boolean @default(false)
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]
   diaryEntries      DiaryEntry[]
