@@ -65,11 +65,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'js.stripe.com', 'https://www.googletagmanager.com'],
+      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'js.stripe.com', 'https://www.googletagmanager.com', 'https://www.clarity.ms', 'https://*.clarity.ms'],
       'style-src': ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
       'font-src': ["'self'", 'fonts.gstatic.com', 'data:'],
       'img-src': ["'self'", 'data:', 'blob:', 'https:'],
-      'connect-src': ["'self'", 'https://*.sentry.io', 'https://*.ingest.sentry.io', 'https://api.stripe.com', 'https://m.stripe.com', 'https://www.google-analytics.com', 'https://*.analytics.google.com', 'https://*.google-analytics.com', 'https://www.googletagmanager.com'],
+      'connect-src': ["'self'", 'https://*.sentry.io', 'https://*.ingest.sentry.io', 'https://api.stripe.com', 'https://m.stripe.com', 'https://www.google-analytics.com', 'https://*.analytics.google.com', 'https://*.google-analytics.com', 'https://www.googletagmanager.com', 'https://www.clarity.ms', 'https://*.clarity.ms'],
       'frame-src': ['js.stripe.com', 'hooks.stripe.com'],
       'worker-src': ["'self'", 'blob:'],
       'object-src': ["'none'"],
