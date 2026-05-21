@@ -547,15 +547,6 @@
       background: linear-gradient(150deg, #2c372c, #1c241d);
       box-shadow: 0 30px 60px -20px rgba(31,45,34,0.35), 0 0 0 2px rgba(255,255,255,0.04) inset;
     }
-    .showcase-phone-notch {
-      position: absolute;
-      top: 18px; left: 50%;
-      transform: translateX(-50%);
-      width: 108px; height: 28px;
-      background: #0d130e;
-      border-radius: 18px;
-      z-index: 2;
-    }
     .showcase-phone-screen {
       position: relative;
       width: 100%;
@@ -618,7 +609,6 @@
       .showcase { grid-template-columns: 1fr; gap: 32px; }
       .showcase-phone { width: 260px; height: 533px; border-radius: 36px; padding: 10px; }
       .showcase-phone-screen { border-radius: 26px; }
-      .showcase-phone-notch { width: 90px; height: 24px; top: 16px; }
       .showcase-list { display: none; }
       .showcase-dots { display: flex; }
     }
@@ -711,7 +701,6 @@
 
       <div class="showcase">
         <div class="showcase-phone reveal" aria-hidden="true">
-          <div class="showcase-phone-notch"></div>
           <div class="showcase-phone-screen">
             <img class="showcase-shot is-active" data-idx="0" src="./screens/1-home.jpg" alt="" loading="lazy" />
             <img class="showcase-shot" data-idx="1" src="./screens/2-sos.jpg" alt="" loading="lazy" />
