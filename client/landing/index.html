@@ -63,12 +63,21 @@
     /* Palette sage-500 #688361, sage-600 #516a4c, sage-700 #41553e,
        terracotta-500 #a8654a, cream-100 #faf8f2 (bg), cream-50 #fdfcf9 (surface) */
 
-    .container {
+    /* Tre livelli di container.
+       - .container (reading): testo lungo, FAQ, copy denso. Max 640.
+       - .container-wide (showcase): grid di card, preview phone, audience,
+         plans. Max 1080 → permette layout a 2-3-4 colonne su desktop.
+       - .container-full: niente max, padding orizzontale conservato.
+       Tutti partono mobile-first (100% width con 20px padding). */
+    .container,
+    .container-wide,
+    .container-full {
       width: 100%;
-      max-width: 720px;        /* mobile-first: cap stretto anche su desktop */
       margin: 0 auto;
       padding: 0 20px;
     }
+    .container { max-width: 640px; }
+    .container-wide { max-width: 1080px; }
 
     .display {
       font-family: 'Fraunces', Georgia, serif;
@@ -155,36 +164,125 @@
       padding: 9px 16px;
     }
 
+    /* ===== Hamburger mobile ===== */
+    .menu-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px; height: 40px;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      color: #41553e;
+      border-radius: 10px;
+    }
+    .menu-btn:hover { background: rgba(82, 106, 76, 0.08); }
+    .menu-btn svg { width: 22px; height: 22px; }
+
+    /* Drawer mobile */
+    .mobile-menu {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      background: #faf8f2;
+      padding: 14px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column;
+      transform: translateY(-100%);
+      transition: transform 0.28s ease;
+      visibility: hidden;
+    }
+    .mobile-menu.open {
+      transform: translateY(0);
+      visibility: visible;
+    }
+    .mobile-menu-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(82, 106, 76, 0.1);
+    }
+    .mobile-menu nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 18px 0 12px;
+      flex: 1;
+    }
+    .mobile-menu nav a {
+      display: block;
+      padding: 14px 4px;
+      font-size: 18px;
+      color: #2c372c;
+      text-decoration: none;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      border-bottom: 1px solid rgba(82, 106, 76, 0.08);
+    }
+    .mobile-menu nav a:last-child { border-bottom: 0; }
+    .mobile-menu .menu-cta {
+      width: 100%;
+      padding: 16px 24px;
+      font-size: 16px;
+    }
+    body.menu-open { overflow: hidden; }
+
     /* ===== Sezioni ===== */
-    section { padding: 56px 0; }
-    .section-head { max-width: 540px; margin: 0 auto 32px; }
-    .section-head .eyebrow { margin-bottom: 10px; }
+    /* Padding verticale che cresce con la viewport: la pagina respira
+       su desktop largo senza sembrare densa su mobile. */
+    section { padding: clamp(56px, 9vw, 120px) 0; }
+    .section-head {
+      max-width: 620px;
+      margin: 0 auto clamp(28px, 4vw, 56px);
+    }
+    .section-head .eyebrow { margin-bottom: 12px; }
     .section-head h2 {
       font-family: 'Fraunces', Georgia, serif;
       font-weight: 600;
       letter-spacing: -0.02em;
-      line-height: 1.12;
-      font-size: clamp(26px, 5.5vw, 36px);
-      margin: 0 0 12px;
+      line-height: 1.1;
+      font-size: clamp(28px, 5vw, 44px);
+      margin: 0 0 14px;
       color: #2c372c;
     }
     .section-head p {
       color: #5a6b62;
-      font-size: 16px;
+      font-size: clamp(15.5px, 1.5vw, 17.5px);
       margin: 0;
+      line-height: 1.55;
     }
+    /* Sezioni con sfondo pieno (bande): titolo invertito gestito a mano */
+    .band-cream { background: #fdfcf9; }
+    .band-sage { background: #e9efe7; }
+    .band-dark { background: #2c372c; color: #f6f8f5; }
+    .band-dark .section-head h2 { color: #fdfcf9; }
+    .band-dark .section-head p { color: #c2cdbf; }
 
     /* ===== Hero ===== */
-    .hero { padding: 40px 0 36px; }
+    .hero {
+      padding: clamp(36px, 6vw, 88px) 0 clamp(40px, 6vw, 80px);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 36px;
+      align-items: center;
+    }
+    .hero-text { max-width: 560px; }
     .hero h1 {
-      font-size: clamp(32px, 8vw, 44px);
-      margin: 0 0 14px;
+      font-size: clamp(34px, 6.5vw, 60px);
+      margin: 0 0 16px;
+      line-height: 1.05;
     }
     .hero p.lead {
-      font-size: 17px;
+      font-size: clamp(16.5px, 1.6vw, 19px);
       color: #4b5563;
-      margin: 0 0 22px;
+      margin: 0 0 24px;
       max-width: 520px;
+      line-height: 1.5;
     }
     .hero-cta {
       display: flex;
@@ -192,11 +290,16 @@
       gap: 10px;
       align-items: flex-start;
     }
-    .hero-cta .btn-primary { width: 100%; max-width: 360px; padding: 17px 28px; font-size: 17px; }
-    .hero-cta .meta {
-      font-size: 13px;
-      color: #6b7280;
+    .hero-cta .btn-primary {
+      width: 100%;
+      max-width: 360px;
+      padding: 17px 28px;
+      font-size: 17px;
     }
+    .hero-cta .meta { font-size: 13px; color: #6b7280; }
+    /* Phone hero a destra solo su desktop (≥960). Su mobile e tablet
+       resta nascosto — l'utente vede subito copy + CTA. */
+    .hero-phone { display: none; }
 
     /* ===== Sticky CTA mobile (solo mobile) ===== */
     .sticky-cta {
@@ -230,8 +333,15 @@
       margin: 24px 0;
     }
 
-    /* ===== Steps "Come funziona" ===== */
-    .steps { display: grid; gap: 16px; }
+    /* ===== Steps "Come funziona" =====
+       Mobile: stack. Desktop (≥720): 3 colonne affiancate. */
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
     .step {
       background: #fdfcf9;
       border: 1px solid rgba(82, 106, 76, 0.1);
@@ -265,10 +375,14 @@
     /* ===== Trigger / pattern (lista osservazioni) ===== */
     .pattern-list {
       display: grid;
+      grid-template-columns: 1fr;
       gap: 14px;
       margin: 0;
       padding: 0;
       list-style: none;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .pattern-item {
       background: #fdfcf9;
@@ -296,11 +410,19 @@
       margin: 0;
     }
 
-    /* ===== Citisina box ===== */
+    /* ===== Citisina box =====
+       Su mobile: card sage dentro al container. Da tablet+ diventa
+       contenuto interno di una band sage full-width (vedi .section.band-sage). */
     .citisine {
       background: #e9efe7;
       border-radius: 18px;
       padding: 28px 22px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .band-sage .citisine {
+      background: transparent;
+      padding: 0;
     }
     .citisine h3 {
       font-family: 'Fraunces', Georgia, serif;
@@ -340,6 +462,8 @@
       gap: 0;
       padding-left: 8px;
       border-left: 2px solid rgba(82, 106, 76, 0.18);
+      max-width: 640px;
+      margin: 0 auto;
     }
     .timeline-item {
       padding: 0 0 26px 22px;
@@ -369,10 +493,14 @@
       font-size: 15px;
     }
 
-    /* ===== Tabella Free vs Premium ===== */
+    /* ===== Tabella Free vs Premium =====
+       Mobile: stack. Tablet+ (≥720): side-by-side per confronto immediato. */
     .plans {
       display: grid;
+      grid-template-columns: 1fr;
       gap: 16px;
+      max-width: 880px;
+      margin: 0 auto;
     }
     .plan {
       background: #fdfcf9;
@@ -445,7 +573,10 @@
     /* ===== "Per chi è" ===== */
     .audience {
       display: grid;
+      grid-template-columns: 1fr;
       gap: 12px;
+      max-width: 640px;
+      margin: 0 auto;
     }
     .audience-item {
       background: #fdfcf9;
@@ -486,6 +617,8 @@
       border-radius: 18px;
       padding: 26px 22px;
       text-align: left;
+      max-width: 640px;
+      margin: 0 auto;
     }
     .community h3 {
       font-family: 'Fraunces', Georgia, serif;
@@ -516,11 +649,16 @@
     .ig-btn:hover { background: #d2dccf; }
     .ig-btn svg { width: 18px; height: 18px; }
 
-    /* ===== Preview / mockup phone ===== */
+    /* ===== Preview / mockup phone =====
+       Mobile small (<420): 1 per riga, mockup grande e leggibile.
+       Mobile/tablet (≥420): 2 per riga.
+       Desktop (≥960): 4 per riga, layout showcase. */
     .preview-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 18px;
+      grid-template-columns: 1fr;
+      gap: 22px;
+      max-width: 360px;
+      margin: 0 auto;
     }
     .phone {
       background: #2c372c;
@@ -558,7 +696,12 @@
     }
 
     /* ===== FAQ ===== */
-    .faq { display: grid; gap: 12px; }
+    .faq {
+      display: grid;
+      gap: 12px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
     .faq details {
       background: #fdfcf9;
       border: 1px solid rgba(82, 106, 76, 0.1);
@@ -598,26 +741,28 @@
       line-height: 1.6;
     }
 
-    /* ===== CTA finale ===== */
+    /* ===== CTA finale =====
+       Diventa band scura full-width (vedi section.band-dark che la avvolge).
+       La card interna ora e' solo il contenuto centrato, niente fondo. */
     .cta-final {
-      background: #2c372c;
-      color: #f6f8f5;
-      border-radius: 22px;
-      padding: 36px 24px;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0;
       text-align: center;
     }
     .cta-final h2 {
       font-family: 'Fraunces', Georgia, serif;
       font-weight: 600;
-      font-size: clamp(24px, 5vw, 32px);
-      letter-spacing: -0.01em;
-      margin: 0 0 10px;
+      font-size: clamp(28px, 4.5vw, 44px);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin: 0 0 14px;
       color: #fdfcf9;
     }
     .cta-final p {
       color: #c2cdbf;
-      margin: 0 0 22px;
-      font-size: 15px;
+      margin: 0 0 26px;
+      font-size: clamp(15px, 1.4vw, 17px);
     }
     .cta-final .btn-primary {
       background: #aec1aa;
@@ -662,13 +807,46 @@
 
     /* ===== Desktop bump (mobile-first, ma su schermi grandi
             allarghiamo solo nav e qualche spaziatura) ===== */
+    /* ===== Breakpoint scale ===== */
+
+    /* Da 420px in su: 2 colonne preview phone */
+    @media (min-width: 420px) {
+      .preview-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: none;
+      }
+    }
+
+    /* Da 720px (tablet/desktop small): nav, layout multi-colonna */
     @media (min-width: 720px) {
-      .container { max-width: 760px; padding: 0 24px; }
+      .container, .container-wide, .container-full { padding: 0 28px; }
       .header-nav { display: flex; }
-      .hero { padding: 56px 0 64px; }
-      .hero-cta { flex-direction: row; align-items: center; }
+      .menu-btn { display: none; }
+      .hero-cta { flex-direction: row; align-items: center; gap: 16px; }
       .hero-cta .btn-primary { width: auto; max-width: none; }
-      section { padding: 72px 0; }
+      .audience { grid-template-columns: repeat(2, 1fr); max-width: 880px; }
+      .plans { grid-template-columns: repeat(2, 1fr); align-items: start; }
+      .steps { grid-template-columns: repeat(3, 1fr); }
+      .pattern-list { grid-template-columns: repeat(2, 1fr); max-width: 880px; }
+    }
+
+    /* Da 960px (desktop): preview 4×1, hero con phone a destra */
+    @media (min-width: 960px) {
+      .preview-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+      .hero-grid {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        gap: 48px;
+      }
+      .hero-phone {
+        display: block;
+        max-width: 320px;
+        margin-left: auto;
+      }
+    }
+
+    /* Da 1200px: ulteriore respiro orizzontale */
+    @media (min-width: 1200px) {
+      .container, .container-wide, .container-full { padding: 0 40px; }
     }
   </style>
 </head>
@@ -688,28 +866,66 @@
         <a href="https://www.instagram.com/quitfresh/" target="_blank" rel="noopener" aria-label="Instagram">Instagram</a>
         <a href="https://quitfresh.it/login">Accedi</a>
       </nav>
-      <a href="https://quitfresh.it/register" class="btn btn-primary header-cta">Inizia gratis</a>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <a href="https://quitfresh.it/register" class="btn btn-primary header-cta">Inizia gratis</a>
+        <button class="menu-btn" id="menuOpen" aria-label="Apri menu" aria-expanded="false" aria-controls="mobileMenu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="4" y1="7" x2="20" y2="7"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="17" x2="20" y2="17"/>
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </header>
+
+<!-- Mobile drawer (solo <720px, hamburger nascosto su desktop) -->
+<div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+  <div class="mobile-menu-head">
+    <a href="/" class="logo" aria-label="QuitFresh"><img src="./logo.png" alt="QuitFresh" /></a>
+    <button class="menu-btn" id="menuClose" aria-label="Chiudi menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <nav aria-label="Menu principale">
+    <a href="#come-funziona" data-close>Come funziona</a>
+    <a href="#trigger" data-close>I tuoi trigger</a>
+    <a href="#percorso" data-close>Il percorso</a>
+    <a href="#faq" data-close>FAQ</a>
+    <a href="https://www.instagram.com/quitfresh/" target="_blank" rel="noopener" data-close>Instagram</a>
+    <a href="https://quitfresh.it/login" data-close>Accedi</a>
+  </nav>
+  <a href="https://quitfresh.it/register" class="btn btn-primary menu-cta" data-close>Inizia gratis</a>
+</div>
 
 <main>
 
   <!-- ===== HERO ===== -->
   <section class="hero">
-    <div class="container">
-      <h1 class="display">Smetti davvero. Iniziando a vedere quando fumi, e perché.</h1>
-      <p class="lead">QuitFresh ti aiuta a riconoscere i tuoi automatismi e ti accompagna nel percorso con la citisina.</p>
-      <div class="hero-cta">
-        <a href="https://quitfresh.it/register" class="btn btn-primary">Inizia gratis</a>
-        <span class="meta">Senza carta · Funziona dal browser, anche offline</span>
+    <div class="container-wide">
+      <div class="hero-grid">
+        <div class="hero-text">
+          <h1 class="display">Smetti davvero. Iniziando a vedere quando fumi, e perché.</h1>
+          <p class="lead">QuitFresh ti aiuta a riconoscere i tuoi automatismi e ti accompagna nel percorso con la citisina.</p>
+          <div class="hero-cta">
+            <a href="https://quitfresh.it/register" class="btn btn-primary">Inizia gratis</a>
+            <span class="meta">Senza carta · Funziona dal browser, anche offline</span>
+          </div>
+        </div>
+        <div class="hero-phone" aria-hidden="true">
+          <div class="phone"><div class="phone-screen"><img src="./screens/1-home.jpg" alt="" /></div></div>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- ===== PER CHI E' ===== -->
   <section id="per-chi" style="padding-top: 24px;">
-    <div class="container">
+    <div class="container-wide">
       <div class="section-head" style="margin-bottom: 24px;">
         <span class="eyebrow">Per chi è</span>
         <h2>QuitFresh è pensata per te se…</h2>
@@ -748,8 +964,8 @@
   </section>
 
   <!-- ===== 1. COME FUNZIONA ===== -->
-  <section id="come-funziona">
-    <div class="container">
+  <section id="come-funziona" class="band-cream">
+    <div class="container-wide">
       <div class="section-head">
         <span class="eyebrow">Come funziona</span>
         <h2>Tre passi, niente di più.</h2>
@@ -782,7 +998,7 @@
 
   <!-- ===== Anteprima app ===== -->
   <section>
-    <div class="container">
+    <div class="container-wide">
       <div class="section-head">
         <span class="eyebrow">Anteprima</span>
         <h2>Come si presenta.</h2>
@@ -810,7 +1026,7 @@
 
   <!-- ===== 2. I TUOI TRIGGER ===== -->
   <section id="trigger">
-    <div class="container">
+    <div class="container-wide">
       <div class="section-head">
         <span class="eyebrow">I tuoi pattern</span>
         <h2>La sigaretta non arriva mai a caso.</h2>
@@ -847,7 +1063,7 @@
   </section>
 
   <!-- ===== 3. CITISINA ===== -->
-  <section>
+  <section class="band-sage">
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Citisina</span>
@@ -903,8 +1119,8 @@
   </section>
 
   <!-- ===== 5. PIANI ===== -->
-  <section>
-    <div class="container">
+  <section class="band-cream">
+    <div class="container-wide">
       <div class="section-head">
         <span class="eyebrow">Quanto costa</span>
         <h2>Puoi usare QuitFresh gratis.</h2>
@@ -1000,7 +1216,7 @@
   </section>
 
   <!-- ===== 7. CTA FINALE ===== -->
-  <section>
+  <section class="band-dark">
     <div class="container">
       <div class="cta-final">
         <h2 class="display">Inizia a guardare come fumi davvero.</h2>
@@ -1041,6 +1257,32 @@
 </div>
 
 <script>
+  // ── Mobile menu drawer ──────────────────────────────────────
+  (function() {
+    var menu = document.getElementById('mobileMenu');
+    var openBtn = document.getElementById('menuOpen');
+    var closeBtn = document.getElementById('menuClose');
+    if (!menu || !openBtn) return;
+
+    function setOpen(open) {
+      menu.classList.toggle('open', open);
+      menu.setAttribute('aria-hidden', open ? 'false' : 'true');
+      openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('menu-open', open);
+    }
+    openBtn.addEventListener('click', function() { setOpen(true); });
+    closeBtn && closeBtn.addEventListener('click', function() { setOpen(false); });
+    // Chiudi quando si clicca un link interno
+    menu.querySelectorAll('[data-close]').forEach(function(a) {
+      a.addEventListener('click', function() { setOpen(false); });
+    });
+    // ESC chiude
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+
+  // ── Sticky CTA mobile ───────────────────────────────────────
   (function() {
     var sticky = document.getElementById('stickyCta');
     if (!sticky) return;
