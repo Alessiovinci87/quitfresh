@@ -36,14 +36,14 @@ const CRAVING_MESSAGES = [
 ];
 
 function buildEncouragementMessage(days) {
+  const dayLabel = days === 1 ? 'un giorno intero' : `${days} giorni`;
+  const dayShort = days === 1 ? '1 giorno' : `${days} giorni`;
   const pool = [
-    days === 0
-      ? 'Oggi inizia il viaggio. Sei più forte di quanto credi.'
-      : `Sono ${days} giorni senza fumo. Stai andando alla grande.`,
-    `Hai resistito ${days === 1 ? 'un giorno intero' : `${days} giorni`}. Ogni giornata vinta è tua.`,
-    `${days === 0 ? 'Giorno 1' : `${days} giorni`} di nuovo respiro. Vai così.`,
-    `Sei a quota ${days === 1 ? '1 giorno' : `${days} giorni`}. Una scelta forte, oggi e ogni giorno.`,
-    `${days === 0 ? 'Oggi' : `${days} giorni`}: il tuo corpo ti ringrazia ogni minuto.`,
+    `Sono ${dayShort} senza fumo. Stai andando alla grande.`,
+    `Hai resistito ${dayLabel}. Ogni giornata vinta è tua.`,
+    `${dayShort} di nuovo respiro. Vai così.`,
+    `Sei a quota ${dayShort}. Una scelta forte, oggi e ogni giorno.`,
+    `${dayShort}: il tuo corpo ti ringrazia ogni minuto.`,
   ];
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -187,7 +187,7 @@ function startCron() {
       for (const user of encouragementUsers) {
         const quitDate = new Date(new Date(user.quitDate).toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
         const days = Math.floor((romeNow - quitDate) / 86400000);
-        if (days < 0) continue;
+        if (days < 1) continue;
 
         await dispatchToUser(user, {
           title: 'QuitFresh',
