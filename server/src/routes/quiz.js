@@ -8,6 +8,7 @@ router.post('/', requireAuth, requireVerifiedEmail, async (req, res) => {
   const {
     cigarettesPerDay, criticalMoments, dependencyLevel, quitDate,
     cytisineStartDate, firstDoseTime, cytisineSchedule, cigarettePackPrice,
+    quitReasons,
   } = req.body;
 
   if (dependencyLevel != null && (dependencyLevel < 1 || dependencyLevel > 5)) {
@@ -36,6 +37,13 @@ router.post('/', requireAuth, requireVerifiedEmail, async (req, res) => {
   if (cytisineSchedule !== undefined) {
     // null/array invalido → null (cron usa il protocollo standard di default)
     data.cytisineSchedule = cytisineSchedule === null ? null : normalizeSchedule(cytisineSchedule);
+  }
+  if (Array.isArray(quitReasons)) {
+    // Max 5 motivi, max 80 char ciascuno. Trim e filtro vuoti.
+    data.quitReasons = quitReasons
+      .map(r => typeof r === 'string' ? r.trim().slice(0, 80) : '')
+      .filter(Boolean)
+      .slice(0, 5);
   }
   if (cigarettePackPrice !== undefined) {
     const price = parseFloat(cigarettePackPrice);

@@ -172,7 +172,7 @@ router.post('/logout-all', requireAuth, async (req, res) => {
 router.get('/export', requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
-    const [user, diaryEntries, cravingLogs, quitAttempts, pushSubscriptions] = await Promise.all([
+    const [user, diaryEntries, cravingLogs, quitAttempts, pushSubscriptions, cravingSessions] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -184,6 +184,7 @@ router.get('/export', requireAuth, async (req, res) => {
           notificationTimes: true, encouragementTime: true,
           isPremium: true, premiumSince: true, promoCodeUsed: true,
           emailVerified: true, streakFreezesUsed: true,
+          quitReasons: true, cravingsBattled: true,
         },
       }),
       prisma.diaryEntry.findMany({ where: { userId }, orderBy: { date: 'asc' } }),
@@ -193,6 +194,7 @@ router.get('/export', requireAuth, async (req, res) => {
         where: { userId },
         select: { endpoint: true, createdAt: true },
       }),
+      prisma.cravingSession.findMany({ where: { userId }, orderBy: { completedAt: 'asc' } }),
     ]);
     res.setHeader('Content-Disposition', `attachment; filename=quitfresh-export-${userId}.json`);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -204,6 +206,7 @@ router.get('/export', requireAuth, async (req, res) => {
       cravingLogs,
       quitAttempts,
       pushSubscriptions,
+      cravingSessions,
     });
   } catch (err) {
     console.error('GDPR export error:', err);

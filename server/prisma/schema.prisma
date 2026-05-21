@@ -37,10 +37,28 @@ model User {
   // invalidare TUTTI i JWT esistenti dell'utente. Middleware requireAuth
   // compara payload.tv === user.tokenVersion.
   tokenVersion       Int                @default(0)
+  quitReasons       String[]
+  cravingsBattled   Int                @default(0)
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]
   diaryEntries      DiaryEntry[]
   pushSubscriptions PushSubscription[]
+  cravingSessions   CravingSession[]
+}
+
+// SOS Craving: sessione anti-craving guidata (B+C+E)
+// Registra intensita' prima/dopo + tipo azione scelta per misurare il delta
+// e popolare il counter "craving battuti".
+model CravingSession {
+  id               String   @id @default(cuid())
+  userId           String
+  intensityBefore  Int
+  intensityAfter   Int?
+  type             String   // 'water' | 'teeth' | 'squats' | 'walk' | 'gum'
+  completedAt      DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
 }
 
 model PromoCode {
