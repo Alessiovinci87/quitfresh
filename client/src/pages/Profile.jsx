@@ -121,7 +121,10 @@ export default function Profile() {
         </p>
       </div>
 
-      {!user.isPremium ? (
+      {/* CTA upgrade per non-premium non-grandfathered.
+          Le NavRow sotto restano sempre accessibili: calendario citisina,
+          notifiche, abitudini sono settings di base del free tier. */}
+      {!user.isPremium && !user.freemiumGrandfathered && (
         <button
           onClick={() => navigate('/paywall')}
           className="w-full mb-4 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-2xl-soft px-4 py-3.5 flex items-center justify-between shadow-sage active:scale-[0.98] transition-all"
@@ -134,54 +137,52 @@ export default function Profile() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
-      ) : (
-        <>
-          {/* Lista nav settings */}
-          <div className="space-y-2 mb-4">
-            <NavRow
-              icon="👤"
-              title="Profilo"
-              value={user.email}
-              onClick={() => setSubPage('profile')}
-            />
-            <NavRow
-              icon="🌱"
-              title="Gestione abitudini"
-              value={
-                currentPhase
-                  ? `${user.cigarettesPerDay || '—'} sig/die · citisina G${currentPhase.day}·F${currentPhase.index + 1}`
-                  : `${user.cigarettesPerDay || '—'} sig/die · €${(user.cigarettePackPrice ?? 5.80).toFixed(2)}/pacc`
-              }
-              onClick={() => setSubPage('habits')}
-            />
-            <NavRow
-              icon="🔔"
-              title="Notifiche"
-              value={
-                (user.notificationTimes?.length || user.encouragementTime)
-                  ? [
-                      user.notificationTimes?.length && `${user.notificationTimes.length} anti-craving`,
-                      user.encouragementTime && `incoraggiamento ${user.encouragementTime}`,
-                    ].filter(Boolean).join(' · ')
-                  : 'Nessuna attiva'
-              }
-              onClick={() => setSubPage('notifications')}
-            />
-            <NavRow
-              icon="📜"
-              title="Cronologia tentativi"
-              value="Azzera Record e tentativi"
-              onClick={() => setShowResetHistoryModal(true)}
-            />
-            <NavRow
-              icon="📱"
-              title="Installa sul telefono"
-              value="iOS · Android · PWA"
-              onClick={() => setSubPage('install')}
-            />
-          </div>
-        </>
       )}
+
+      {/* Lista nav settings — sempre visibile a tutti gli utenti loggati */}
+      <div className="space-y-2 mb-4">
+        <NavRow
+          icon="👤"
+          title="Profilo"
+          value={user.email}
+          onClick={() => setSubPage('profile')}
+        />
+        <NavRow
+          icon="🌱"
+          title="Gestione abitudini"
+          value={
+            currentPhase
+              ? `${user.cigarettesPerDay || '—'} sig/die · citisina G${currentPhase.day}·F${currentPhase.index + 1}`
+              : `${user.cigarettesPerDay || '—'} sig/die · €${(user.cigarettePackPrice ?? 5.80).toFixed(2)}/pacc`
+          }
+          onClick={() => setSubPage('habits')}
+        />
+        <NavRow
+          icon="🔔"
+          title="Notifiche"
+          value={
+            (user.notificationTimes?.length || user.encouragementTime)
+              ? [
+                  user.notificationTimes?.length && `${user.notificationTimes.length} anti-craving`,
+                  user.encouragementTime && `incoraggiamento ${user.encouragementTime}`,
+                ].filter(Boolean).join(' · ')
+              : 'Nessuna attiva'
+          }
+          onClick={() => setSubPage('notifications')}
+        />
+        <NavRow
+          icon="📜"
+          title="Cronologia tentativi"
+          value="Azzera Record e tentativi"
+          onClick={() => setShowResetHistoryModal(true)}
+        />
+        <NavRow
+          icon="📱"
+          title="Installa sul telefono"
+          value="iOS · Android · PWA"
+          onClick={() => setSubPage('install')}
+        />
+      </div>
 
       {resetHistoryResult && (
         <p className={`text-xs mb-3 px-3 py-2 rounded-lg ${resetHistoryResult.startsWith('Errore') ? 'text-terracotta-700 bg-terracotta-50' : 'text-sage-700 bg-sage-50'}`}>
