@@ -453,11 +453,11 @@ export default function Craving() {
               </div>
             )}
 
-            {!paywallReached && freemiumStatus && freemiumStatus.remaining <= 1 && (
+            {!paywallReached && freemiumStatus && (
               <p className="text-[11px] text-sage-600/80 text-center">
                 {freemiumStatus.remaining === 0
-                  ? 'Ultimo messaggio inviato del piano gratuito.'
-                  : `Ti resta ${freemiumStatus.remaining} messaggio gratuito.`}
+                  ? 'Ultimo messaggio della settimana — il contatore si riapre tra 7 giorni.'
+                  : `${freemiumStatus.used} di ${freemiumStatus.limit} messaggi usati questa settimana (${freemiumStatus.remaining} ${freemiumStatus.remaining === 1 ? 'rimasto' : 'rimasti'}).`}
               </p>
             )}
 

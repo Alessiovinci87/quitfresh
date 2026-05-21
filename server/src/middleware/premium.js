@@ -1,10 +1,12 @@
 const { isConfigured } = require('../lib/stripe');
 
 const FREE_LIMITS = {
-  chat: 3,    // messaggi
-  diary: 7,   // entry
+  chat: 10,   // messaggi per settimana ricorrente
+  diary: 7,   // entry totali
   cytisinePushDays: 3,
 };
+
+const CHAT_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Utente "free attivo": va gated sulle feature freemium.
 // Sono ESCLUSI: premium veri, grandfathered (utenti pre-rollout),
@@ -40,4 +42,17 @@ function requirePremium(req, res, next) {
   return res.status(402).json({ error: 'PREMIUM_REQUIRED' });
 }
 
-module.exports = { requirePremium, checkFreeLimit, isFreeGated, FREE_LIMITS };
+// Calcola lo stato della finestra settimanale chat per un utente.
+// Ritorna { used, weekStart, expired } dove expired=true se la finestra
+// e' passata e va resettata prima del prossimo incremento.
+function getChatWindow(user, now = new Date()) {
+  const weekStart = user.chatWeekStart ? new Date(user.chatWeekStart) : null;
+  const expired = !weekStart || (now - weekStart) >= CHAT_WEEK_MS;
+  return {
+    used: expired ? 0 : (user.chatMessagesUsed || 0),
+    weekStart,
+    expired,
+  };
+}
+
+module.exports = { requirePremium, checkFreeLimit, isFreeGated, FREE_LIMITS, getChatWindow, CHAT_WEEK_MS };

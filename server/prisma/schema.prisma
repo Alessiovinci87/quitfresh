@@ -39,9 +39,12 @@ model User {
   tokenVersion       Int                @default(0)
   quitReasons       String[]
   cravingsBattled   Int                @default(0)
-  // Freemium gating: contatore messaggi chat AI usati dal piano free
-  // (incrementato solo quando isPremium=false e !freemiumGrandfathered).
-  chatMessagesUsed       Int     @default(0)
+  // Freemium gating: contatore messaggi chat AI usati nella settimana
+  // corrente del piano free. Si azzera quando chatWeekStart > 7gg fa
+  // (logica in routes/chat.js). Incrementato solo per non-premium e
+  // non-grandfathered.
+  chatMessagesUsed       Int       @default(0)
+  chatWeekStart          DateTime?
   // Grandfathering: utenti registrati prima del rollout freemium
   // mantengono accesso illimitato a chat/diario/citisina push.
   // Settato via migration data per tutti gli User esistenti.

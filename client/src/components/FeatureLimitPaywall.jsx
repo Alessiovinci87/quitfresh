@@ -10,11 +10,11 @@ const BASE_PRICE = 4.99;
 const FEATURE_COPY = {
   chat: {
     icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-    title: 'Hai usato i tuoi 3 messaggi gratuiti',
-    body: 'Continuare la chat ti permette di tornare nei momenti difficili senza limiti, con un coach che conosce i tuoi dati e i tuoi pattern.',
+    title: 'Hai usato i 10 messaggi di questa settimana',
+    body: 'Tra qualche giorno la chat si riapre, ma se hai bisogno adesso puoi sbloccarla in modo definitivo — senza più limiti, mai.',
     unlocks: [
       'Chat AI illimitata, sempre',
-      'I 3 messaggi già scambiati restano salvati',
+      'La conversazione di questa settimana resta salva',
       'Promemoria citisina completi (tutti i 25 giorni)',
       'Diario senza limite + statistiche avanzate',
     ],
