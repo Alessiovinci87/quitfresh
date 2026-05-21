@@ -21,6 +21,11 @@ const CRITICAL_MOMENTS_OPTIONS = [
   'Alcol', 'Noia', 'Telefonate', 'Mattino al risveglio', 'Socialità',
 ];
 
+const QUIT_REASONS_OPTIONS = [
+  'Salute', 'Famiglia', 'Soldi', 'Libertà', 'Fiato',
+  'Odore', 'Esempio per i figli', 'Mi sento meglio', 'Bellezza pelle/denti',
+];
+
 const DEPENDENCY_LABELS = {
   1: 'Leggera', 2: 'Moderata', 3: 'Media', 4: 'Alta', 5: 'Molto alta',
 };
@@ -384,6 +389,8 @@ function HabitsSubPage({ user, updateUser, onClose }) {
   const [packPrice, setPackPrice] = useState(user.cigarettePackPrice != null ? String(user.cigarettePackPrice) : '5.80');
   const [selectedMoments, setSelectedMoments] = useState(user.criticalMoments || []);
   const [customMoment, setCustomMoment] = useState('');
+  const [quitReasons, setQuitReasons] = useState(user.quitReasons || []);
+  const [customReason, setCustomReason] = useState('');
   const [dependencyLevel, setDependencyLevel] = useState(user.dependencyLevel || null);
   const [cytisineStartDate, setCytisineStartDate] = useState(
     user.cytisineStartDate ? new Date(user.cytisineStartDate).toISOString().split('T')[0] : ''
@@ -418,6 +425,20 @@ function HabitsSubPage({ user, updateUser, onClose }) {
     if (val && !selectedMoments.includes(val)) setSelectedMoments(prev => [...prev, val]);
     setCustomMoment('');
   }
+  function toggleReason(r) {
+    setQuitReasons(prev =>
+      prev.includes(r)
+        ? prev.filter(x => x !== r)
+        : (prev.length >= 5 ? prev : [...prev, r])
+    );
+  }
+  function addCustomReason() {
+    const val = customReason.trim().slice(0, 80);
+    if (val && !quitReasons.includes(val) && quitReasons.length < 5) {
+      setQuitReasons(prev => [...prev, val]);
+    }
+    setCustomReason('');
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -437,6 +458,7 @@ function HabitsSubPage({ user, updateUser, onClose }) {
         cytisineStartDate: cytisineStartDate || null,
         firstDoseTime: firstDoseTime || null,
         cytisineSchedule: isCustomSchedule ? schedule : null,
+        quitReasons,
         ...(validPrice && { cigarettePackPrice: priceValue }),
         ...(quitDate !== undefined && { quitDate }),
       });
@@ -521,6 +543,53 @@ function HabitsSubPage({ user, updateUser, onClose }) {
               Aggiungi
             </button>
           </div>
+        </Field>
+
+        <Field label="Motivi per smettere" hint="Fino a 5. Li vedrai nello SOS Craving per ricordarti perché.">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {QUIT_REASONS_OPTIONS.map(r => (
+              <button
+                key={r}
+                onClick={() => toggleReason(r)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95 ${
+                  quitReasons.includes(r)
+                    ? 'bg-gradient-to-br from-sage-500 to-sage-700 border-transparent text-white shadow-sage'
+                    : 'border-sage-200 text-sage-700 bg-white hover:bg-sage-50'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+            {quitReasons.filter(r => !QUIT_REASONS_OPTIONS.includes(r)).map(r => (
+              <button
+                key={r}
+                onClick={() => toggleReason(r)}
+                className="px-3 py-1.5 rounded-full text-sm font-medium border border-transparent bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage"
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 mb-1">
+            <input
+              type="text"
+              value={customReason}
+              onChange={e => setCustomReason(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustomReason())}
+              maxLength={80}
+              disabled={quitReasons.length >= 5}
+              placeholder="Un motivo tuo…"
+              className="flex-1 min-w-0 px-3 py-2 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white disabled:opacity-50"
+            />
+            <button
+              onClick={addCustomReason}
+              disabled={quitReasons.length >= 5}
+              className="px-4 py-2 bg-white border border-sage-200 text-sage-700 rounded-xl-soft text-sm font-medium hover:bg-sage-50 transition-colors disabled:opacity-50"
+            >
+              Aggiungi
+            </button>
+          </div>
+          <p className="text-[11px] text-sage-600/60">{quitReasons.length}/5</p>
         </Field>
 
         <Field label="Livello di dipendenza">
