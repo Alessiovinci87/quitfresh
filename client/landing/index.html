@@ -527,6 +527,102 @@
       .btn { font-size: 15px; padding: 14px 22px; }
     }
 
+    /* ===== Showcase carousel (phone mockup + dissolvenza) ===== */
+    .showcase-section { padding: 80px 0 100px; background: #fdfcf9; }
+    .showcase {
+      display: grid;
+      grid-template-columns: minmax(0, 320px) 1fr;
+      gap: 56px;
+      align-items: center;
+      max-width: 960px;
+      margin: 48px auto 0;
+    }
+    .showcase-phone {
+      position: relative;
+      width: 320px;
+      height: 656px;
+      margin: 0 auto;
+      border-radius: 44px;
+      padding: 12px;
+      background: linear-gradient(150deg, #2c372c, #1c241d);
+      box-shadow: 0 30px 60px -20px rgba(31,45,34,0.35), 0 0 0 2px rgba(255,255,255,0.04) inset;
+    }
+    .showcase-phone-notch {
+      position: absolute;
+      top: 18px; left: 50%;
+      transform: translateX(-50%);
+      width: 108px; height: 28px;
+      background: #0d130e;
+      border-radius: 18px;
+      z-index: 2;
+    }
+    .showcase-phone-screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 32px;
+      overflow: hidden;
+      background: #fdfcf9;
+    }
+    .showcase-shot {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      opacity: 0;
+      transform: scale(1.02);
+      transition: opacity 700ms ease, transform 700ms ease;
+    }
+    .showcase-shot.is-active { opacity: 1; transform: scale(1); }
+    .showcase-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+    .showcase-item {
+      width: 100%;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      text-align: left;
+      padding: 14px 16px;
+      border: 1px solid transparent;
+      border-radius: 16px;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      transition: background 200ms ease, border-color 200ms ease;
+      font: inherit;
+    }
+    .showcase-item:hover { background: rgba(104,131,97,0.06); }
+    .showcase-item.is-active { background: #fff; border-color: rgba(104,131,97,0.18); box-shadow: 0 6px 20px -10px rgba(31,45,34,0.18); }
+    .showcase-num {
+      width: 28px; height: 28px; flex: 0 0 28px;
+      border-radius: 50%;
+      background: linear-gradient(150deg, #84a98c, #6b8f71);
+      color: #fff; font-weight: 700; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 10px -4px rgba(107,143,113,0.5);
+    }
+    .showcase-item.is-active .showcase-num { box-shadow: 0 6px 14px -4px rgba(107,143,113,0.7); }
+    .showcase-item > span:last-child { display: block; font-size: 14px; line-height: 1.5; color: #4a5b50; }
+    .showcase-item > span:last-child strong { display: block; color: #1f2d22; font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+    .showcase-dots { display: none; gap: 8px; justify-content: center; margin-top: 28px; }
+    .showcase-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      border: 0; padding: 0; cursor: pointer;
+      background: rgba(104,131,97,0.25);
+      transition: background 200ms ease, width 200ms ease;
+    }
+    .showcase-dot.is-active { background: #688361; width: 22px; border-radius: 4px; }
+    @media (max-width: 768px) {
+      .showcase-section { padding: 56px 0 72px; }
+      .showcase { grid-template-columns: 1fr; gap: 32px; }
+      .showcase-phone { width: 260px; height: 533px; border-radius: 36px; padding: 10px; }
+      .showcase-phone-screen { border-radius: 26px; }
+      .showcase-phone-notch { width: 90px; height: 24px; top: 16px; }
+      .showcase-list { display: none; }
+      .showcase-dots { display: flex; }
+    }
+
     /* ===== Reveal animation ===== */
     .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
     .reveal.in { opacity: 1; transform: translateY(0); }
@@ -600,6 +696,61 @@
           <h3>Smetti di fumare</h3>
           <p>Ogni mattina i tuoi giorni puliti, i risparmi e il coach AI quando serve. Un passo alla volta.</p>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Screenshots carousel (phone mockup + dissolvenza) ===== -->
+  <section class="showcase-section" id="screenshot">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Dentro QuitFresh</span>
+        <h2 class="display">L'app, da vicino.</h2>
+        <p>Tocca una voce per esplorare. Le schermate scorrono da sole ogni 4 secondi.</p>
+      </div>
+
+      <div class="showcase">
+        <div class="showcase-phone reveal" aria-hidden="true">
+          <div class="showcase-phone-notch"></div>
+          <div class="showcase-phone-screen">
+            <img class="showcase-shot is-active" data-idx="0" src="./screens/1-home.png" alt="" loading="lazy" />
+            <img class="showcase-shot" data-idx="1" src="./screens/2-sos.png" alt="" loading="lazy" />
+            <img class="showcase-shot" data-idx="2" src="./screens/3-chat.png" alt="" loading="lazy" />
+            <img class="showcase-shot" data-idx="3" src="./screens/4-citisina.png" alt="" loading="lazy" />
+            <img class="showcase-shot" data-idx="4" src="./screens/5-stats.png" alt="" loading="lazy" />
+          </div>
+        </div>
+
+        <ul class="showcase-list reveal" role="tablist">
+          <li><button type="button" class="showcase-item is-active" data-idx="0" role="tab" aria-selected="true">
+            <span class="showcase-num">1</span>
+            <span><strong>Il tuo contatore</strong>Giorni puliti, soldi risparmiati, badge — in tempo reale nella home.</span>
+          </button></li>
+          <li><button type="button" class="showcase-item" data-idx="1" role="tab" aria-selected="false">
+            <span class="showcase-num">2</span>
+            <span><strong>SOS Craving</strong>Un'azione guidata di pochi minuti per superare ogni voglia, senza scrivere.</span>
+          </button></li>
+          <li><button type="button" class="showcase-item" data-idx="2" role="tab" aria-selected="false">
+            <span class="showcase-num">3</span>
+            <span><strong>Coach AI</strong>Una conversazione vera nei momenti difficili. Risponde subito.</span>
+          </button></li>
+          <li><button type="button" class="showcase-item" data-idx="3" role="tab" aria-selected="false">
+            <span class="showcase-num">4</span>
+            <span><strong>Promemoria citisina</strong>Protocollo Sopharma da 25 giorni. Mai più capsule dimenticate.</span>
+          </button></li>
+          <li><button type="button" class="showcase-item" data-idx="4" role="tab" aria-selected="false">
+            <span class="showcase-num">5</span>
+            <span><strong>I tuoi progressi</strong>Vedi i benefici, le sessioni, le voglie battute — giorno per giorno.</span>
+          </button></li>
+        </ul>
+      </div>
+
+      <div class="showcase-dots reveal" role="tablist" aria-label="Schermate">
+        <button type="button" class="showcase-dot is-active" data-idx="0" aria-label="Schermata 1"></button>
+        <button type="button" class="showcase-dot" data-idx="1" aria-label="Schermata 2"></button>
+        <button type="button" class="showcase-dot" data-idx="2" aria-label="Schermata 3"></button>
+        <button type="button" class="showcase-dot" data-idx="3" aria-label="Schermata 4"></button>
+        <button type="button" class="showcase-dot" data-idx="4" aria-label="Schermata 5"></button>
       </div>
     </div>
   </section>
@@ -786,6 +937,48 @@
   <script>
     // Anno dinamico nel footer
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Showcase carousel: auto-rotate ogni 4s, click su voce/dot per saltare.
+    (function () {
+      var shots = document.querySelectorAll('.showcase-shot');
+      var items = document.querySelectorAll('.showcase-item');
+      var dots = document.querySelectorAll('.showcase-dot');
+      if (!shots.length) return;
+      var idx = 0;
+      var timer = null;
+
+      function go(next) {
+        idx = (next + shots.length) % shots.length;
+        shots.forEach(function (el, i) { el.classList.toggle('is-active', i === idx); });
+        items.forEach(function (el, i) {
+          el.classList.toggle('is-active', i === idx);
+          el.setAttribute('aria-selected', i === idx ? 'true' : 'false');
+        });
+        dots.forEach(function (el, i) { el.classList.toggle('is-active', i === idx); });
+      }
+      function start() {
+        stop();
+        timer = setInterval(function () { go(idx + 1); }, 4000);
+      }
+      function stop() { if (timer) { clearInterval(timer); timer = null; } }
+
+      items.forEach(function (el) {
+        el.addEventListener('click', function () { go(parseInt(el.dataset.idx, 10)); start(); });
+      });
+      dots.forEach(function (el) {
+        el.addEventListener('click', function () { go(parseInt(el.dataset.idx, 10)); start(); });
+      });
+
+      // Pausa auto-rotate quando la sezione esce dal viewport (risparmia layout work).
+      var section = document.getElementById('screenshot');
+      if (section && 'IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { e.isIntersecting ? start() : stop(); });
+        }, { threshold: 0.2 }).observe(section);
+      } else {
+        start();
+      }
+    })();
 
     // Reveal-on-scroll: aggiunge .in agli elementi .reveal quando entrano
     // nel viewport. IntersectionObserver una sola volta (unobserve), così
