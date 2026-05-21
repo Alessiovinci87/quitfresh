@@ -53,24 +53,28 @@ export default function PremiumGate({ onCancel }) {
       </p>
 
       <div className="w-full bg-sage-50 border border-sage-200 rounded-2xl px-5 py-4 mb-5">
+        <p className="text-[11px] uppercase tracking-wider text-sage-600/70 font-semibold mb-2">Cosa sblocchi</p>
         <ul className="space-y-2 text-sm text-sage-800">
           <li className="flex items-start gap-2">
             <span className="text-sage-500 mt-0.5">✓</span>
-            <span>Tracker giorni senza fumo e risparmio</span>
+            <span>Chat AI <strong>illimitata</strong> (gratis sono 10 messaggi a settimana)</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-sage-500 mt-0.5">✓</span>
-            <span>Promemoria personalizzati nei momenti critici</span>
+            <span>Promemoria citisina <strong>per tutti i 25 giorni</strong> (gratis solo i primi 3)</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-sage-500 mt-0.5">✓</span>
-            <span>Diario, statistiche e protocollo citisina</span>
+            <span>Diario <strong>senza limiti</strong> (gratis 7 giorni)</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-sage-500 mt-0.5">✓</span>
-            <span>Coach AI disponibile nei momenti di crisi</span>
+            <span>Statistiche avanzate: trend, analisi trigger, breakdown orario</span>
           </li>
         </ul>
+        <p className="text-[11px] text-sage-700/70 mt-3 leading-snug">
+          Tracker giorni, sigarette evitate, risparmio e SOS Craving restano sempre gratuiti.
+        </p>
       </div>
 
       <div className="w-full mb-3">
