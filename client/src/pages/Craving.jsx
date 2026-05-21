@@ -377,6 +377,22 @@ export default function Craving() {
           }}
         >
           <div className="space-y-3">
+            {/* SOS Craving entry — azione guidata senza AI, alternativa
+                immediata alla chat per chi vuole "fare" piuttosto che "parlare". */}
+            <button
+              onClick={() => navigate('/sos')}
+              className="w-full bg-gradient-to-br from-terracotta-50 to-terracotta-100/70 border border-terracotta-200/80 rounded-2xl px-4 py-3 flex items-center gap-3 hover:from-terracotta-100 active:scale-[0.98] transition-all shadow-soft"
+            >
+              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shrink-0 shadow-soft">
+                🆘
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-semibold text-terracotta-900 leading-tight">SOS Craving</p>
+                <p className="text-[11px] text-terracotta-700/80 leading-snug">Un'azione guidata di 2-3 minuti, senza dover scrivere.</p>
+              </div>
+              <span className="text-terracotta-700/70 text-lg">→</span>
+            </button>
+
             {messages.length === 0 && loading && (
               <div className="flex items-center gap-2 text-sage-500/70">
                 <TypingDots />

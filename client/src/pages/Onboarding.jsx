@@ -3,11 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 const CRITICAL_MOMENTS_OPTIONS = [
   'Caffè', 'Stress', 'Pausa lavoro', 'Dopo i pasti', 'Guida',
   'Alcol', 'Noia', 'Telefonate', 'Mattino al risveglio', 'Socialità',
+];
+
+const QUIT_REASONS_OPTIONS = [
+  'Salute', 'Famiglia', 'Soldi', 'Libertà', 'Fiato',
+  'Odore', 'Esempio per i figli', 'Mi sento meglio', 'Bellezza pelle/denti',
 ];
 
 function todayISO() {
@@ -33,6 +38,24 @@ export default function Onboarding() {
   const [usesCytisine, setUsesCytisine] = useState(null);
   const [cytisineStartDate, setCytisineStartDate] = useState(todayISO());
   const [firstDoseTime, setFirstDoseTime] = useState('08:00');
+  const [quitReasons, setQuitReasons] = useState([]);
+  const [customReason, setCustomReason] = useState('');
+
+  function toggleReason(r) {
+    setQuitReasons((prev) =>
+      prev.includes(r)
+        ? prev.filter((x) => x !== r)
+        : (prev.length >= 5 ? prev : [...prev, r])
+    );
+  }
+
+  function addCustomReason() {
+    const val = customReason.trim().slice(0, 80);
+    if (val && !quitReasons.includes(val) && quitReasons.length < 5) {
+      setQuitReasons((prev) => [...prev, val]);
+    }
+    setCustomReason('');
+  }
 
   function toggleMoment(m) {
     setSelectedMoments((prev) =>
@@ -70,11 +93,14 @@ export default function Onboarding() {
         if (!firstDoseTime) return 'Imposta l\'orario della prima dose';
       }
     }
+    if (s === 6) {
+      if (quitReasons.length === 0) return 'Aggiungi almeno un motivo';
+    }
     return '';
   }
 
   async function handleFinish() {
-    const err = validateStep(4) || validateStep(5);
+    const err = validateStep(4) || validateStep(5) || validateStep(6);
     if (err) {
       setError(err);
       return;
@@ -90,6 +116,7 @@ export default function Onboarding() {
         quitDate: new Date().toISOString(),
         cytisineStartDate: usesCytisine ? cytisineStartDate : null,
         firstDoseTime: usesCytisine ? firstDoseTime : null,
+        quitReasons,
       });
       updateUser(user);
       navigate('/home', { replace: true });
@@ -160,7 +187,16 @@ export default function Onboarding() {
             />
           )}
           {step === 6 && (
-            <Step6 usesCytisine={!!usesCytisine} />
+            <Step6Reasons
+              reasons={quitReasons}
+              onToggle={toggleReason}
+              customReason={customReason}
+              onCustomChange={setCustomReason}
+              onAddCustom={addCustomReason}
+            />
+          )}
+          {step === 7 && (
+            <Step7 usesCytisine={!!usesCytisine} />
           )}
         </div>
 
@@ -454,10 +490,64 @@ function Step5({ uses, onUsesChange, startDate, onStartDateChange, firstDoseTime
   );
 }
 
-function Step6({ usesCytisine }) {
+function Step6Reasons({ reasons, onToggle, customReason, onCustomChange, onAddCustom }) {
   return (
     <div>
-      <StepHeader step={6} title="Tutto pronto." sub="Ecco cosa troverai dentro l'app dal primo giorno." />
+      <StepHeader step={6} title="Perché vuoi smettere?" sub="Scegli o scrivi fino a 5 motivi. Te li ricorderemo nei momenti difficili." />
+      <div className="flex flex-wrap gap-2 mb-4">
+        {QUIT_REASONS_OPTIONS.map((r) => (
+          <button
+            key={r}
+            onClick={() => onToggle(r)}
+            className={`px-3.5 py-2 rounded-full text-sm font-medium border transition-all active:scale-95 ${
+              reasons.includes(r)
+                ? 'bg-gradient-to-br from-sage-500 to-sage-700 border-transparent text-white shadow-sage'
+                : 'border-sage-200 text-sage-700 bg-white hover:bg-sage-50'
+            }`}
+          >
+            {r}
+          </button>
+        ))}
+        {reasons
+          .filter((r) => !QUIT_REASONS_OPTIONS.includes(r))
+          .map((r) => (
+            <button
+              key={r}
+              onClick={() => onToggle(r)}
+              className="px-3.5 py-2 rounded-full text-sm font-medium border border-transparent bg-gradient-to-br from-sage-500 to-sage-700 text-white shadow-sage"
+            >
+              {r}
+            </button>
+          ))}
+      </div>
+      <div className="flex gap-2 mb-2">
+        <input
+          type="text"
+          value={customReason}
+          onChange={(e) => onCustomChange(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), onAddCustom())}
+          maxLength={80}
+          className="flex-1 min-w-0 px-3 py-2 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+          placeholder="Un motivo tuo…"
+          disabled={reasons.length >= 5}
+        />
+        <button
+          onClick={onAddCustom}
+          disabled={reasons.length >= 5}
+          className="px-4 py-2 bg-white border border-sage-200 text-sage-700 rounded-xl-soft text-sm font-medium hover:bg-sage-50 transition-colors disabled:opacity-50"
+        >
+          Aggiungi
+        </button>
+      </div>
+      <p className="text-[11px] text-sage-600/60">{reasons.length}/5 motivi</p>
+    </div>
+  );
+}
+
+function Step7({ usesCytisine }) {
+  return (
+    <div>
+      <StepHeader step={7} title="Tutto pronto." sub="Ecco cosa troverai dentro l'app dal primo giorno." />
       <div className="space-y-3">
         <TourCard
           icon="🌱"

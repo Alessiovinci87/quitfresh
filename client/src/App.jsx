@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Craving from './pages/Craving';
+import Sos from './pages/Sos';
 import Profile from './pages/Profile';
 import Tools from './pages/Tools';
 import Diary from './pages/Diary';
@@ -201,6 +202,7 @@ function AppShell() {
           <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
           <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
           <Route path="/craving" element={<PrivateRoute><Craving /></PrivateRoute>} />
+          <Route path="/sos" element={<PrivateRoute><Sos /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Layout><Profile /></Layout></PrivateRoute>} />
           <Route path="/tools" element={<PrivateRoute><Layout><Tools /></Layout></PrivateRoute>} />
           <Route path="/diary" element={<PrivateRoute><Layout><Diary /></Layout></PrivateRoute>} />

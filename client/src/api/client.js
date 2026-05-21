@@ -101,6 +101,10 @@ export const api = {
       body: JSON.stringify({ promoCode: promoCode || '' }),
     }),
   },
+  sos: {
+    createSession: (body) => request('/api/sos/sessions', { method: 'POST', body: JSON.stringify(body) }),
+    stats: () => request('/api/sos/stats'),
+  },
   admin: {
     listPromoCodes: () => request('/api/admin/promo-codes'),
     createPromoCode: (body) => request('/api/admin/promo-codes', {
