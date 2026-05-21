@@ -3,6 +3,9 @@
 // 5 screen iPhone 15 Pro (393x852 @ 3x) salvati in client/landing/screens/.
 //
 // Pre-requisito: account demo seedato (server: npm run seed:demo).
+// Puppeteer NON e' in package.json (Chromium pesa ~300MB, non serve in
+// produzione Railway). Installalo on-demand una volta sola in locale:
+//   npm install --no-save puppeteer@^23
 //
 // Uso:
 //   DEMO_EMAIL=demo@quitfresh.it DEMO_PASSWORD=... npm run screenshots
