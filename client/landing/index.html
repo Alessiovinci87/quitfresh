@@ -175,29 +175,48 @@
     }
 
     /* ===== Hero ===== */
-    .hero { padding: 36px 0 48px; }
-    .hero .eyebrow { margin-bottom: 16px; }
+    .hero { padding: 40px 0 36px; }
     .hero h1 {
-      font-size: clamp(30px, 7.5vw, 44px);
-      margin: 0 0 18px;
+      font-size: clamp(32px, 8vw, 44px);
+      margin: 0 0 14px;
     }
     .hero p.lead {
       font-size: 17px;
       color: #4b5563;
-      margin: 0 0 26px;
-      max-width: 540px;
+      margin: 0 0 22px;
+      max-width: 520px;
     }
     .hero-cta {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       align-items: flex-start;
     }
-    .hero-cta .btn-primary { width: 100%; max-width: 320px; }
+    .hero-cta .btn-primary { width: 100%; max-width: 360px; padding: 17px 28px; font-size: 17px; }
     .hero-cta .meta {
       font-size: 13px;
       color: #6b7280;
     }
+
+    /* ===== Sticky CTA mobile (solo mobile) ===== */
+    .sticky-cta {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 60;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+      background: rgba(250, 248, 242, 0.96);
+      backdrop-filter: saturate(180%) blur(10px);
+      -webkit-backdrop-filter: saturate(180%) blur(10px);
+      border-top: 1px solid rgba(82, 106, 76, 0.12);
+      transform: translateY(110%);
+      transition: transform 0.25s ease;
+    }
+    .sticky-cta.show { transform: translateY(0); }
+    .sticky-cta .btn { width: 100%; padding: 15px 24px; }
+    /* Padding aggiunto al body quando sticky e' visibile per non coprire footer */
+    body.has-sticky-cta { padding-bottom: 86px; }
 
     /* ===== Card grigio-verde (per quote/osservazioni) ===== */
     .quote {
@@ -423,6 +442,80 @@
       color: #6b7280;
     }
 
+    /* ===== "Per chi è" ===== */
+    .audience {
+      display: grid;
+      gap: 12px;
+    }
+    .audience-item {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.1);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .audience-item .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #688361;
+      margin-top: 9px;
+      margin-left: 10px;
+    }
+    .audience-item h4 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 0 0 4px;
+      color: #2c372c;
+      letter-spacing: -0.01em;
+    }
+    .audience-item p {
+      margin: 0;
+      color: #5a6b62;
+      font-size: 14.5px;
+      line-height: 1.5;
+    }
+
+    /* ===== Community / Instagram ===== */
+    .community {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.12);
+      border-radius: 18px;
+      padding: 26px 22px;
+      text-align: left;
+    }
+    .community h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 20px;
+      margin: 0 0 8px;
+      color: #2c372c;
+      letter-spacing: -0.01em;
+    }
+    .community p {
+      margin: 0 0 18px;
+      color: #5a6b62;
+      font-size: 15px;
+    }
+    .ig-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      color: #41553e;
+      background: #e9efe7;
+      padding: 12px 18px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: background 0.18s ease;
+    }
+    .ig-btn:hover { background: #d2dccf; }
+    .ig-btn svg { width: 18px; height: 18px; }
+
     /* ===== Preview / mockup phone ===== */
     .preview-grid {
       display: grid;
@@ -592,6 +685,7 @@
         <a href="#trigger">I tuoi trigger</a>
         <a href="#percorso">Il percorso</a>
         <a href="#faq">FAQ</a>
+        <a href="https://www.instagram.com/quitfresh/" target="_blank" rel="noopener" aria-label="Instagram">Instagram</a>
         <a href="https://quitfresh.it/login">Accedi</a>
       </nav>
       <a href="https://quitfresh.it/register" class="btn btn-primary header-cta">Inizia gratis</a>
@@ -604,12 +698,51 @@
   <!-- ===== HERO ===== -->
   <section class="hero">
     <div class="container">
-      <span class="eyebrow">Smettere di fumare</span>
-      <h1 class="display">Non è voglia di fumare. È un automatismo che si ripete sempre negli stessi momenti.</h1>
-      <p class="lead">QuitFresh ti aiuta a vedere quali sono quei momenti — orari, situazioni, emozioni — e ti accompagna nel percorso con la citisina, giorno per giorno.</p>
+      <h1 class="display">Smetti davvero. Iniziando a vedere quando fumi, e perché.</h1>
+      <p class="lead">QuitFresh ti aiuta a riconoscere i tuoi automatismi e ti accompagna nel percorso con la citisina.</p>
       <div class="hero-cta">
         <a href="https://quitfresh.it/register" class="btn btn-primary">Inizia gratis</a>
-        <span class="meta">Gratis per sempre · €4,99 una tantum per sbloccare tutto</span>
+        <span class="meta">Senza carta · Funziona dal browser, anche offline</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PER CHI E' ===== -->
+  <section id="per-chi" style="padding-top: 24px;">
+    <div class="container">
+      <div class="section-head" style="margin-bottom: 24px;">
+        <span class="eyebrow">Per chi è</span>
+        <h2>QuitFresh è pensata per te se…</h2>
+      </div>
+      <div class="audience">
+        <div class="audience-item">
+          <span class="dot"></span>
+          <div>
+            <h4>Hai deciso di smettere</h4>
+            <p>E vuoi farlo davvero, non per la sesta volta. Cerchi uno strumento che ti aiuti a capire come ci sei finito qui.</p>
+          </div>
+        </div>
+        <div class="audience-item">
+          <span class="dot"></span>
+          <div>
+            <h4>Stai usando la citisina</h4>
+            <p>Tabex, Desmoxan, Todacitan. L'app gestisce dosi e orari sui 25 giorni del protocollo, così non devi ricordarteli tu.</p>
+          </div>
+        </div>
+        <div class="audience-item">
+          <span class="dot"></span>
+          <div>
+            <h4>Vuoi ridurre prima di smettere</h4>
+            <p>Vai per gradi. Tracker, diario e SOS Craving sono lì da subito, anche senza terapia farmacologica.</p>
+          </div>
+        </div>
+        <div class="audience-item">
+          <span class="dot"></span>
+          <div>
+            <h4>Ricadi sempre negli stessi momenti</h4>
+            <p>Dopo pranzo. In macchina. La domenica sera. Se ti riconosci, QuitFresh è fatta per vedere quei momenti prima di te.</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -686,19 +819,24 @@
 
       <ul class="pattern-list">
         <li class="pattern-item">
-          <div class="when">Lun–Ven, 13:30–14:00</div>
-          <p class="what">Sigaretta dopo pranzo, sempre fuori dall'ufficio.</p>
-          <p class="why">Non è il bisogno di nicotina: è la pausa, il caffè, l'idea di "staccare". Una volta che lo vedi, puoi sostituire il rituale.</p>
+          <div class="when">Mattina</div>
+          <p class="what">La sigaretta dopo il caffè.</p>
+          <p class="why">Quella che "non si tocca". Inizia automaticamente — ancora prima di accorgertene.</p>
         </li>
         <li class="pattern-item">
-          <div class="when">Sera, dopo cena</div>
-          <p class="what">Una sola, sul balcone. È quella più difficile.</p>
-          <p class="why">Associata al rilassamento e al silenzio. Spesso è l'ultima a cui rinunci — l'app ti aiuta a riconoscerla per quello che è.</p>
+          <div class="when">Spostamenti</div>
+          <p class="what">La pausa automatica appena sali in macchina.</p>
+          <p class="why">Mano destra alla chiave, sinistra al pacchetto. Stesso ordine ogni volta.</p>
         </li>
         <li class="pattern-item">
-          <div class="when">Situazione</div>
-          <p class="what">Sotto stress al lavoro, dopo una telefonata difficile.</p>
-          <p class="why">Quando l'app vede che registri sempre craving in questi momenti, te lo fa notare. Vedere il pattern è metà del lavoro.</p>
+          <div class="when">Lavoro</div>
+          <p class="what">Il gesto che arriva quando sei stressato.</p>
+          <p class="why">Email difficile, riunione tirata, scadenza. La sigaretta come "valvola" — ma è il momento, non la nicotina.</p>
+        </li>
+        <li class="pattern-item">
+          <div class="when">Sera</div>
+          <p class="what">Una sola sul balcone, dopo cena.</p>
+          <p class="why">Quella più difficile da togliere. Silenzio, calma, fine giornata. L'app ti aiuta a riconoscere il rituale.</p>
         </li>
       </ul>
 
@@ -769,8 +907,8 @@
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Quanto costa</span>
-        <h2>Gratis per sempre. Con limiti onesti.</h2>
-        <p>QuitFresh non ha abbonamenti, non rinnova nulla in automatico. Provi tutto, e se decidi che ti serve la versione completa paghi €4,99 una volta sola.</p>
+        <h2>Puoi usare QuitFresh gratis.</h2>
+        <p>Se vuoi approfondire il percorso, puoi sbloccare le funzioni avanzate con un pagamento unico. Nessun abbonamento, nessun rinnovo, nessuna carta richiesta per iniziare.</p>
       </div>
 
       <div class="plans">
@@ -843,6 +981,24 @@
     </div>
   </section>
 
+  <!-- ===== Community Instagram ===== -->
+  <section style="padding: 36px 0;">
+    <div class="container">
+      <div class="community">
+        <h3>Segui il percorso su Instagram</h3>
+        <p>Storie reali di chi sta smettendo, osservazioni sui pattern più comuni, microcontenuti che fanno parte del percorso. Niente motivational, solo cose concrete.</p>
+        <a href="https://www.instagram.com/quitfresh/" target="_blank" rel="noopener" class="ig-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+          @quitfresh
+        </a>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== 7. CTA FINALE ===== -->
   <section>
     <div class="container">
@@ -866,6 +1022,7 @@
         QuitFresh è uno strumento di supporto, non un servizio medico. La terapia con citisina va sempre discussa con il proprio medico curante. Se hai pensieri di autolesionismo o sei in crisi, contatta il <strong>Telefono Amico 02 2327 2327</strong> o il <strong>112</strong>.
       </p>
       <div class="footer-links">
+        <a href="https://www.instagram.com/quitfresh/" target="_blank" rel="noopener">Instagram</a>
         <a href="https://quitfresh.it/privacy">Privacy</a>
         <a href="https://quitfresh.it/terms">Termini</a>
         <a href="mailto:info@quitfresh.it">info@quitfresh.it</a>
@@ -874,6 +1031,49 @@
     </div>
   </div>
 </footer>
+
+
+<!-- Sticky CTA solo su mobile (<720px gestito via JS).
+     Compare dopo aver scrollato oltre l'hero, si nasconde quando il
+     bottone "Inizia gratis" finale e' visibile per non duplicare. -->
+<div class="sticky-cta" id="stickyCta" aria-hidden="true">
+  <a href="https://quitfresh.it/register" class="btn btn-primary">Inizia gratis</a>
+</div>
+
+<script>
+  (function() {
+    var sticky = document.getElementById('stickyCta');
+    if (!sticky) return;
+
+    function isMobile() { return window.matchMedia('(max-width: 719px)').matches; }
+
+    var hero = document.querySelector('.hero');
+    var ctaFinal = document.querySelector('.cta-final');
+
+    function update() {
+      if (!isMobile()) {
+        sticky.classList.remove('show');
+        document.body.classList.remove('has-sticky-cta');
+        return;
+      }
+      // Mostra dopo aver superato l'hero, nascondi quando CTA finale e' a schermo.
+      var heroBottom = hero ? hero.getBoundingClientRect().bottom : 0;
+      var passedHero = heroBottom < 0;
+      var ctaVisible = false;
+      if (ctaFinal) {
+        var r = ctaFinal.getBoundingClientRect();
+        ctaVisible = r.top < window.innerHeight - 60;
+      }
+      var show = passedHero && !ctaVisible;
+      sticky.classList.toggle('show', show);
+      document.body.classList.toggle('has-sticky-cta', show);
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+</script>
 
 </body>
 </html>
