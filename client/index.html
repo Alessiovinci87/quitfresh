@@ -17,6 +17,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
+
+    <!-- Google Analytics 4 — cross-domain (quitfresh.com landing + quitfresh.it app).
+         send_page_view e' DISABILITATO: l'SPA invia page_view manualmente
+         dal hook useLocation in App.jsx (vedi src/lib/analytics.js).
+         linker.domains: il tag GA aggiunge automaticamente il parametro _gl
+         ai link cross-domain per non spezzare la sessione utente. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-6RE0R8S47N"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', 'G-6RE0R8S47N', {
+        send_page_view: false,
+        linker: { domains: ['quitfresh.com', 'quitfresh.it'] },
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

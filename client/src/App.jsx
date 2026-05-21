@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
@@ -174,6 +174,23 @@ function CookieBanner() {
   );
 }
 
+// GA4 SPA tracker: invia un evento page_view ad ogni cambio di route React.
+// Il tag GA in index.html ha send_page_view:false per evitare doppi hit
+// (uno automatico al boot + uno qui sotto): l'inizializzazione e' unica
+// (gtag('config', ...) in index.html), questo componente emette solo events.
+function AnalyticsTracker() {
+  const location = useLocation();
+  useEffect(() => {
+    if (typeof window.gtag !== 'function') return;
+    window.gtag('event', 'page_view', {
+      page_path: location.pathname + location.search,
+      page_location: window.location.href,
+      page_title: document.title,
+    });
+  }, [location.pathname, location.search]);
+  return null;
+}
+
 function AppShell() {
   const [splashVisible, setSplashVisible] = useState(true);
 
@@ -184,6 +201,7 @@ function AppShell() {
 
   return (
     <>
+      <AnalyticsTracker />
       {splashVisible && <SplashScreen />}
       <UpdateBanner />
       <CookieBanner />

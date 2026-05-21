@@ -65,11 +65,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'js.stripe.com'],
+      'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'js.stripe.com', 'https://www.googletagmanager.com'],
       'style-src': ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
       'font-src': ["'self'", 'fonts.gstatic.com', 'data:'],
       'img-src': ["'self'", 'data:', 'blob:', 'https:'],
-      'connect-src': ["'self'", 'https://*.sentry.io', 'https://*.ingest.sentry.io', 'https://api.stripe.com', 'https://m.stripe.com'],
+      'connect-src': ["'self'", 'https://*.sentry.io', 'https://*.ingest.sentry.io', 'https://api.stripe.com', 'https://m.stripe.com', 'https://www.google-analytics.com', 'https://*.analytics.google.com', 'https://*.google-analytics.com', 'https://www.googletagmanager.com'],
       'frame-src': ['js.stripe.com', 'hooks.stripe.com'],
       'worker-src': ["'self'", 'blob:'],
       'object-src': ["'none'"],
