@@ -2,7 +2,11 @@ const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 
-const ACTION_TYPES = new Set(['water', 'teeth', 'squats', 'walk', 'gum']);
+const ACTION_TYPES = new Set([
+  'water', 'teeth', 'squats', 'walk', 'gum',
+  'cold', 'breath', 'call', 'snack',
+  'custom',
+]);
 
 // SOS Craving e' una feature di retention FREE (no AI = no costi marginali).
 // Niente requirePremium qui.

@@ -67,7 +67,92 @@ const ACTIONS = [
       'La bocca è occupata. Il craving ha meno spazio.',
     ],
   },
+  {
+    type: 'cold',
+    icon: '🧊',
+    title: 'Acqua fredda sul viso',
+    duration: 60,
+    coach: [
+      'Vai al lavandino, apri l\'acqua fredda.',
+      'Bagna le mani e portale al viso.',
+      'Senti il freddo svegliare la pelle.',
+      'Il craving è solo una sensazione: questa è più forte.',
+    ],
+  },
+  {
+    type: 'breath',
+    icon: '🌬️',
+    title: 'Respiro profondo (4-7-8)',
+    duration: 120,
+    coach: [
+      'Inspira dal naso per 4 secondi.',
+      'Trattieni il respiro per 7 secondi.',
+      'Espira dalla bocca per 8 secondi.',
+      'Ripeti. Ogni ciclo è un mattone tra te e la sigaretta.',
+    ],
+  },
+  {
+    type: 'call',
+    icon: '📞',
+    title: 'Chiama o scrivi a qualcuno',
+    duration: 180,
+    coach: [
+      'Apri i contatti. Scegli una persona che ti vuole bene.',
+      'Mandagli un messaggio anche solo per salutare.',
+      'Distrai la mente con una conversazione vera.',
+      'Non sei solo in questo. Mai.',
+    ],
+  },
+  {
+    type: 'snack',
+    icon: '🍎',
+    title: 'Mangia qualcosa di sano',
+    duration: 180,
+    coach: [
+      'Mela, carota, mandorle, frutta secca: scegli tu.',
+      'Mastica lentamente. Senti il sapore vero.',
+      'Stai dando al corpo qualcosa di buono, non di tossico.',
+      'Ogni morso è una piccola scelta giusta.',
+    ],
+  },
 ];
+
+const CUSTOM_COACH = [
+  'Stai facendo qualcosa di buono. Continua.',
+  'Il craving è solo un\'onda. Sta scendendo.',
+  'Tu sei più forte di questa voglia.',
+  'Manca poco. Non mollare adesso.',
+];
+
+const CUSTOM_KEY = 'qf_sos_custom_action';
+
+function loadCustomAction() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.title || !parsed?.duration) return null;
+    return {
+      type: 'custom',
+      icon: '⭐',
+      title: String(parsed.title).slice(0, 60),
+      duration: Math.max(30, Math.min(600, parseInt(parsed.duration, 10) || 120)),
+      coach: CUSTOM_COACH,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveCustomAction({ title, duration }) {
+  try {
+    localStorage.setItem(CUSTOM_KEY, JSON.stringify({ title, duration }));
+  } catch {}
+}
+
+function clearCustomAction() {
+  try { localStorage.removeItem(CUSTOM_KEY); } catch {}
+}
 
 function fmt(secs) {
   const m = Math.floor(secs / 60);
@@ -127,6 +212,22 @@ export default function Sos() {
           {step === 3 && (
             <StepChoose
               onPick={(a) => { setAction(a); setStep(4); }}
+              onEditCustom={() => setStep(3.5)}
+            />
+          )}
+
+          {step === 3.5 && (
+            <StepEditCustom
+              initial={loadCustomAction()}
+              onCancel={() => setStep(3)}
+              onSave={(payload) => {
+                if (payload === null) {
+                  clearCustomAction();
+                } else {
+                  saveCustomAction(payload);
+                }
+                setStep(3);
+              }}
             />
           )}
 
@@ -250,7 +351,10 @@ function StepReasons({ reasons, onNext }) {
   );
 }
 
-function StepChoose({ onPick }) {
+function StepChoose({ onPick, onEditCustom }) {
+  const custom = loadCustomAction();
+  const list = custom ? [custom, ...ACTIONS] : ACTIONS;
+
   return (
     <div>
       <p className="text-[10px] font-semibold text-sage-600/70 uppercase tracking-[0.2em] mb-2">Scegli un'azione</p>
@@ -258,22 +362,126 @@ function StepChoose({ onPick }) {
       <p className="text-sage-700/80 text-sm mb-6 leading-relaxed">Una piccola azione concreta che spezza il craving. Scegli quella che senti più giusta adesso.</p>
 
       <div className="space-y-2.5">
-        {ACTIONS.map((a) => (
+        {list.map((a) => (
           <button
             key={a.type}
             onClick={() => onPick(a)}
-            className="w-full bg-white rounded-2xl-soft border border-sage-100/60 shadow-soft px-4 py-4 flex items-center gap-4 hover:bg-sage-50/40 active:scale-[0.98] transition-all"
+            className={`w-full rounded-2xl-soft border shadow-soft px-4 py-4 flex items-center gap-4 active:scale-[0.98] transition-all ${
+              a.type === 'custom'
+                ? 'bg-gradient-to-br from-sage-50 to-sage-100/60 border-sage-200/70 hover:from-sage-100'
+                : 'bg-white border-sage-100/60 hover:bg-sage-50/40'
+            }`}
           >
-            <div className="w-12 h-12 rounded-full bg-sage-50 flex items-center justify-center text-2xl shrink-0">
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0 ${
+              a.type === 'custom' ? 'bg-white shadow-soft' : 'bg-sage-50'
+            }`}>
               {a.icon}
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-sm font-semibold text-sage-900">{a.title}</p>
-              <p className="text-[12px] text-sage-700/70">{Math.round(a.duration / 60) || 1} min</p>
+              <p className="text-sm font-semibold text-sage-900 truncate">{a.title}</p>
+              <p className="text-[12px] text-sage-700/70">
+                {Math.round(a.duration / 60) || 1} min
+                {a.type === 'custom' ? ' · la tua azione' : ''}
+              </p>
             </div>
             <span className="text-sage-400 text-lg">→</span>
           </button>
         ))}
+
+        <button
+          onClick={onEditCustom}
+          className="w-full rounded-2xl-soft border border-dashed border-sage-300 px-4 py-3 flex items-center gap-3 text-sage-700 hover:bg-sage-50/60 active:scale-[0.98] transition-all"
+        >
+          <div className="w-9 h-9 rounded-full bg-sage-50 flex items-center justify-center text-lg shrink-0">
+            {custom ? '✏️' : '+'}
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <p className="text-sm font-medium">{custom ? 'Modifica la tua azione personale' : 'Aggiungi un\'azione personale'}</p>
+            <p className="text-[11px] text-sage-600/70">{custom ? 'Cambia titolo o durata' : 'Sai già cosa ti aiuta? Inseriscilo.'}</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function StepEditCustom({ initial, onCancel, onSave }) {
+  const [title, setTitle] = useState(initial?.title || '');
+  const [minutes, setMinutes] = useState(initial ? Math.round(initial.duration / 60) : 2);
+
+  const canSave = title.trim().length >= 2 && minutes >= 1 && minutes <= 10;
+
+  return (
+    <div className="flex flex-col h-full">
+      <p className="text-[10px] font-semibold text-sage-600/70 uppercase tracking-[0.2em] mb-2">La tua azione</p>
+      <h2 className="font-display text-3xl font-semibold text-sage-900 leading-tight mb-2">Cosa ti aiuta?</h2>
+      <p className="text-sage-700/80 text-sm mb-6 leading-relaxed">Scrivi un'azione che sai già funzionare per te. La ritroverai in cima alla lista la prossima volta.</p>
+
+      <div className="bg-white rounded-2xl-soft border border-sage-100/60 shadow-soft p-5 space-y-4 mb-6">
+        <div>
+          <label className="block text-xs font-semibold text-sage-700/80 uppercase tracking-wider mb-2">
+            Cosa fai
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={60}
+            placeholder="Es. Suono la chitarra, doccia fredda…"
+            className="w-full px-4 py-3 border border-sage-200 rounded-xl-soft text-sm focus:outline-none focus:ring-2 focus:ring-sage-400 bg-white"
+          />
+          <p className="text-[11px] text-sage-600/60 mt-1">{title.length}/60</p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-sage-700/80 uppercase tracking-wider mb-2">
+            Quanti minuti
+          </label>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMinutes(m => Math.max(1, m - 1))}
+              className="w-10 h-10 rounded-full border border-sage-200 text-lg text-sage-700 flex items-center justify-center hover:bg-sage-50 active:scale-95 transition-all"
+              aria-label="Diminuisci"
+            >
+              −
+            </button>
+            <div className="flex-1 text-center font-display text-3xl font-semibold text-sage-900 tabular-nums">
+              {minutes}
+            </div>
+            <button
+              onClick={() => setMinutes(m => Math.min(10, m + 1))}
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-sage-500 to-sage-700 text-lg text-white flex items-center justify-center shadow-sage active:scale-95 transition-all"
+              aria-label="Aumenta"
+            >
+              +
+            </button>
+          </div>
+          <p className="text-[11px] text-sage-600/60 text-center mt-1">tra 1 e 10 min</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <button
+          onClick={() => onSave({ title: title.trim(), duration: minutes * 60 })}
+          disabled={!canSave}
+          className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage disabled:opacity-50 active:scale-[0.98] transition-all"
+        >
+          Salva
+        </button>
+        <button
+          onClick={onCancel}
+          className="w-full py-2.5 text-sm text-sage-700 hover:text-sage-900"
+        >
+          Annulla
+        </button>
+        {initial && (
+          <button
+            onClick={() => onSave(null)}
+            className="w-full py-2 text-xs text-terracotta-600 hover:text-terracotta-700"
+          >
+            Rimuovi azione personale
+          </button>
+        )}
       </div>
     </div>
   );
