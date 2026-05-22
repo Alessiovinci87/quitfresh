@@ -133,7 +133,19 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/sos', sosRoutes);
 app.use('/api/events', eventsRoutes);
 
-app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+// Health check usato da UptimeRobot. Testa anche il DB: se Postgres e' down
+// torna 503 cosi' UptimeRobot ti notifica anche quando il container Node
+// e' vivo ma il DB e' irraggiungibile.
+const prismaForHealth = require('./lib/prisma');
+app.get('/api/health', async (_req, res) => {
+  try {
+    await prismaForHealth.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', db: 'ok', uptime: process.uptime() });
+  } catch (err) {
+    console.error('[health] DB check failed:', err.message);
+    res.status(503).json({ status: 'degraded', db: 'down', error: err.message });
+  }
+});
 
 // 404 JSON SOLO per route API mancanti (es. typo, endpoint rimosso).
 // NON usare catch-all globale, altrimenti lo SPA fallback sotto non scatta.
