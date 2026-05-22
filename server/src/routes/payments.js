@@ -2,7 +2,7 @@ const express = require('express');
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { stripe, priceId, webhookSecret, isConfigured } = require('../lib/stripe');
-const { sendPromoUsedAdminEmail } = require('../lib/email');
+const { sendPromoUsedAdminEmail, sendNewPaymentAdminEmail } = require('../lib/email');
 
 const router = express.Router();
 
@@ -179,6 +179,17 @@ router.post('/webhook', async (req, res) => {
           },
           select: { email: true },
         });
+
+        // Notifica admin pagamento (fire-and-forget). Inviata sempre, anche
+        // senza codice promo. Errori loggati, non bloccano il webhook.
+        sendNewPaymentAdminEmail({
+          userEmail: updatedUser.email,
+          userId,
+          amount: session.amount_total,
+          currency: session.currency,
+          promoCode,
+          sessionId: session.id,
+        }).catch(err => console.error('[payments] payment notify error:', err));
 
         if (promoCode) {
           // RACE CONDITION FIX: increment ATOMIC con WHERE che blocca

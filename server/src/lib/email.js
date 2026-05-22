@@ -302,4 +302,48 @@ function sendNewUserAdminEmail({ userEmail, createdAt, ip, userAgent, referer })
   });
 }
 
-module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, sendPromoUsedAdminEmail, sendNewUserAdminEmail, isEnabled };
+// Notifica admin: nuovo pagamento Stripe. Non-bloccante.
+function sendNewPaymentAdminEmail({ userEmail, userId, amount, currency, promoCode, sessionId }) {
+  const to = 'alessio.vinci87@gmail.com';
+  const when = new Date().toLocaleString('it-IT', {
+    timeZone: 'Europe/Rome',
+    dateStyle: 'full',
+    timeStyle: 'medium',
+  });
+  const amountFmt = (typeof amount === 'number')
+    ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: (currency || 'EUR').toUpperCase() }).format(amount / 100)
+    : '—';
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:28px;">
+        <tr><td>
+          <p style="margin:0 0 8px;color:#84a98c;font-size:13px;font-weight:600;letter-spacing:0.5px;">QUITFRESH · ADMIN</p>
+          <h1 style="margin:0 0 16px;font-size:20px;color:#111827;">💸 Nuovo pagamento Premium</h1>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;background:#f5f5f4;border-radius:12px;padding:14px 16px;font-size:13px;color:#374151;">
+            <tr><td style="padding:4px 0;">Importo</td><td style="text-align:right;font-weight:700;font-size:15px;color:#16a34a;">${amountFmt}</td></tr>
+            <tr><td style="padding:4px 0;">Email</td><td style="text-align:right;font-weight:600;">${userEmail || '—'}</td></tr>
+            <tr><td style="padding:4px 0;">User ID</td><td style="text-align:right;font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#6b7280;">${userId || '—'}</td></tr>
+            <tr><td style="padding:4px 0;">Codice promo</td><td style="text-align:right;font-weight:600;">${promoCode || '—'}</td></tr>
+            <tr><td style="padding:4px 0;">Session ID</td><td style="text-align:right;font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#6b7280;word-break:break-all;">${sessionId || '—'}</td></tr>
+            <tr><td style="padding:4px 0;">Quando</td><td style="text-align:right;">${when}</td></tr>
+          </table>
+          <p style="margin:0;font-size:12px;color:#9ca3af;">Notifica automatica pagamento Stripe.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  return send({
+    to,
+    from: 'QuitFresh <noreply@quitfresh.it>',
+    subject: `💸 Pagamento ${amountFmt} — ${userEmail || userId}`,
+    html,
+  });
+}
+
+module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, sendPromoUsedAdminEmail, sendNewUserAdminEmail, sendNewPaymentAdminEmail, isEnabled };
