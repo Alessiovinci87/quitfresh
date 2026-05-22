@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { track } from '../lib/tracker';
 
 export default function Login() {
   const { login, user } = useAuth();
@@ -23,6 +24,7 @@ export default function Login() {
     setLoading(true);
     try {
       const { token, user: userData } = await api.auth.login(form);
+      track('login_success');
       login(token, userData);
       if (!userData.emailVerified) navigate('/check-email', { replace: true });
       else if (!userData.quitDate) navigate('/onboarding', { replace: true });

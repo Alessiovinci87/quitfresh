@@ -3,6 +3,8 @@ const prisma = require('./prisma');
 const { sendPush, isEnabled } = require('./push');
 const { getActivePhase, getDoseTimes } = require('./cytisine');
 const { runScheduledBackup } = require('./backup');
+const { buildDailyReportData } = require('./analytics');
+const { sendDailyReportEmail } = require('./email');
 
 // Dedup cache primaria citisina (chiave: userId_YYYYMMDD_doseIndex).
 // Vive in memoria: al restart del container si svuota — accettabile perché
@@ -61,6 +63,29 @@ async function dispatchToUser(user, msg) {
 }
 
 function startCron() {
+  // Daily analytics report 08:30 Europe/Rome — admin email con metriche di ieri.
+  cron.schedule('30 8 * * *', async () => {
+    try {
+      const data = await buildDailyReportData({ days: 7 });
+      await sendDailyReportEmail(data);
+      console.log('[analytics-cron] daily report inviato');
+    } catch (err) {
+      console.error('[analytics-cron] errore:', err.message);
+    }
+  }, { timezone: 'Europe/Rome' });
+
+  // Retention UsageEvent: cancella eventi più vecchi di 90 giorni.
+  // Settimanale, domenica 03:30.
+  cron.schedule('30 3 * * 0', async () => {
+    try {
+      const cutoff = new Date(Date.now() - 90 * 86400000);
+      const result = await prisma.usageEvent.deleteMany({ where: { createdAt: { lt: cutoff } } });
+      console.log(`[analytics-retention] cancellati ${result.count} eventi >90gg`);
+    } catch (err) {
+      console.error('[analytics-retention] errore:', err.message);
+    }
+  }, { timezone: 'Europe/Rome' });
+
   // Backup DB giornaliero 08:00 Europe/Rome — INDIPENDENTE da push.
   // Lo schedulo PRIMA della guard isEnabled() così funziona anche se
   // VAPID/web-push non è configurato.

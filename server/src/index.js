@@ -42,6 +42,7 @@ const notificationsRoutes = require('./routes/notifications');
 const paymentsRoutes = require('./routes/payments');
 const adminRoutes = require('./routes/admin');
 const sosRoutes = require('./routes/sos');
+const eventsRoutes = require('./routes/events');
 
 const { init: initPush } = require('./lib/push');
 const { startCron } = require('./lib/cron');
@@ -130,6 +131,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/sos', sosRoutes);
+app.use('/api/events', eventsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

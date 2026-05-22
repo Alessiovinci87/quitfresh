@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import FeatureLimitPaywall from '../components/FeatureLimitPaywall';
+import { track } from '../lib/tracker';
 
 const HEADER_HEIGHT = 64;
 const INPUT_HEIGHT = 72;
@@ -225,11 +226,13 @@ export default function Craving() {
     setLoading(true);
     setError('');
     try {
+      track('chat_message_sent', { length: text.length, msgCount: newMessages.length });
       const res = await api.chat.send(newMessages);
       setMessages(prev => [...prev, { role: 'assistant', content: res.reply }]);
       if (res.freemium) setFreemiumStatus(res.freemium);
     } catch (err) {
       if (err.freemiumLimit?.feature === 'chat') {
+        track('chat_limit_hit', { used: err.freemiumLimit.used, limit: err.freemiumLimit.limit });
         // Lascia il messaggio dell'utente visibile e mostra paywall sotto.
         setPaywallReached(true);
         setFreemiumStatus({

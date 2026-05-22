@@ -7,6 +7,9 @@ const { runScheduledBackup } = require('../lib/backup');
 
 router.use(requireAuth, requireVerifiedEmail, requireAdmin);
 
+// Sub-router analytics — montato qui per ereditare middleware admin.
+router.use('/analytics', require('./adminAnalytics'));
+
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // niente I/O/0/1 per leggibilità
 
 function generateCode(length = 8) {

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { track } from '../lib/tracker';
 
 const BASE_PRICE = 4.99;
 
@@ -12,11 +13,16 @@ export default function PremiumGate({ onCancel }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => { track('paywall_seen'); }, []);
+
   async function handleCheckout() {
+    track('paywall_cta_clicked', { hasPromo: Boolean(promoCode) });
+    if (promoCode) track('promo_code_entered');
     setLoading(true);
     setError('');
     try {
       const result = await api.payments.checkout(promoCode || null);
+      track('checkout_started', { freeActivated: Boolean(result.freeActivated) });
       if (result.freeActivated) {
         // Codice 100% riscattato lato server: refresh utente e vai al success.
         const { user } = await api.auth.me();

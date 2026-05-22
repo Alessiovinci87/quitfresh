@@ -18,6 +18,7 @@ import Stats from './pages/Stats';
 import PremiumSuccess from './pages/PremiumSuccess';
 import Paywall from './pages/Paywall';
 import Admin from './pages/Admin';
+import AdminAnalytics, { AdminUserDetail } from './pages/AdminAnalytics';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import ForgotPassword from './pages/ForgotPassword';
@@ -25,6 +26,7 @@ import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import CheckEmail from './pages/CheckEmail';
 import InstallBanner from './components/InstallBanner';
+import { startTracker, track } from './lib/tracker';
 
 export default function App() {
   return (
@@ -181,12 +183,16 @@ function CookieBanner() {
 function AnalyticsTracker() {
   const location = useLocation();
   useEffect(() => {
-    if (typeof window.gtag !== 'function') return;
-    window.gtag('event', 'page_view', {
-      page_path: location.pathname + location.search,
-      page_location: window.location.href,
-      page_title: document.title,
-    });
+    // Telemetria interna
+    track('page_view', { path: location.pathname + location.search });
+    // GA legacy (se configurato)
+    if (typeof window.gtag === 'function') {
+      window.gtag('event', 'page_view', {
+        page_path: location.pathname + location.search,
+        page_location: window.location.href,
+        page_title: document.title,
+      });
+    }
   }, [location.pathname, location.search]);
   return null;
 }
@@ -196,6 +202,7 @@ function AppShell() {
 
   useEffect(() => {
     const t = setTimeout(() => setSplashVisible(false), 1800);
+    startTracker();
     return () => clearTimeout(t);
   }, []);
 
@@ -217,6 +224,8 @@ function AppShell() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/admin/promo-codes" element={<PrivateRoute><Admin /></PrivateRoute>} />
+          <Route path="/admin/analytics" element={<PrivateRoute><AdminAnalytics /></PrivateRoute>} />
+          <Route path="/admin/analytics/users/:id" element={<PrivateRoute><AdminUserDetail /></PrivateRoute>} />
           <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
           <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
           <Route path="/craving" element={<PrivateRoute><Craving /></PrivateRoute>} />

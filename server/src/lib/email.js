@@ -346,4 +346,97 @@ function sendNewPaymentAdminEmail({ userEmail, userId, amount, currency, promoCo
   });
 }
 
-module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, sendPromoUsedAdminEmail, sendNewUserAdminEmail, sendNewPaymentAdminEmail, isEnabled };
+// Daily analytics report inviato dal cron alle 08:30 Europe/Rome.
+function sendDailyReportEmail(reportData) {
+  const to = 'alessio.vinci87@gmail.com';
+  const d = reportData;
+  const yDate = new Date(d.period.yesterdayStart).toLocaleDateString('it-IT', { dateStyle: 'full' });
+
+  function pct(n) { return n == null ? '—' : `${Math.round(n * 100)}%`; }
+  function row(label, value) {
+    return `<tr><td style="padding:4px 0;color:#4b5563;">${label}</td><td style="text-align:right;font-weight:600;color:#111827;">${value}</td></tr>`;
+  }
+
+  const byTypeRows = Object.entries(d.yesterday.byType || {})
+    .sort((a, b) => b[1] - a[1])
+    .map(([t, n]) => `<tr><td style="padding:2px 0;font-family:monospace;color:#374151;">${t}</td><td style="text-align:right;color:#6b7280;">${n}</td></tr>`)
+    .join('') || '<tr><td colspan="2" style="color:#9ca3af;">Nessun evento</td></tr>';
+
+  const topActiveRows = d.topActive.length
+    ? d.topActive.map(t => `<tr><td style="padding:2px 0;color:#374151;">${t.email}</td><td style="text-align:right;color:#6b7280;">${t.actions} azioni</td></tr>`).join('')
+    : '<tr><td colspan="2" style="color:#9ca3af;">Nessun utente attivo ieri</td></tr>';
+
+  const newUsersRows = d.newUsersList.length
+    ? d.newUsersList.map(u => `<tr><td style="padding:2px 0;color:#374151;">${u.email}</td><td style="text-align:right;color:#6b7280;">${u.emailVerified ? '✓ verif' : 'non verif'}</td></tr>`).join('')
+    : '<tr><td colspan="2" style="color:#9ca3af;">Nessuna nuova registrazione</td></tr>';
+
+  const dormantRows = d.dormantUsers.length
+    ? d.dormantUsers.slice(0, 10).map(u => {
+        const days = u.lastActiveAt ? Math.floor((Date.now() - new Date(u.lastActiveAt).getTime()) / 86400000) : null;
+        return `<tr><td style="padding:2px 0;color:#374151;">${u.email}</td><td style="text-align:right;color:#6b7280;">${days != null ? `${days}gg fa` : 'mai loggato'}</td></tr>`;
+      }).join('')
+    : '<tr><td colspan="2" style="color:#9ca3af;">Nessun dormiente</td></tr>';
+
+  const html = `<!DOCTYPE html>
+<html lang="it"><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;padding:28px;">
+        <tr><td>
+          <p style="margin:0 0 8px;color:#84a98c;font-size:13px;font-weight:600;letter-spacing:0.5px;">QUITFRESH · DAILY REPORT</p>
+          <h1 style="margin:0 0 4px;font-size:22px;color:#111827;">📊 ${yDate}</h1>
+          <p style="margin:0 0 20px;font-size:12px;color:#9ca3af;">Generato ${new Date(d.generatedAt).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'short', timeStyle: 'short' })} Europe/Rome</p>
+
+          <h2 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">📈 Overall</h2>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;background:#f5f5f4;border-radius:12px;padding:14px 16px;font-size:13px;">
+            ${row('Utenti totali', d.overall.totalUsers)}
+            ${row('DAU / WAU / MAU', `${d.overall.DAU} / ${d.overall.WAU} / ${d.overall.MAU}`)}
+            ${row('DAU su totale', pct(d.overall.dauOverTotal))}
+          </table>
+
+          <h2 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">📅 Ieri</h2>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;background:#f5f5f4;border-radius:12px;padding:14px 16px;font-size:13px;">
+            ${row('Nuove registrazioni', d.yesterday.newUsers)}
+            ${row('Nuovi premium', `${d.yesterday.newPremium}${d.yesterday.newPremiumViaPromo ? ` (di cui ${d.yesterday.newPremiumViaPromo} con codice)` : ''}`)}
+            ${row('Utenti attivi (eventi)', d.yesterday.activeUniqueByEvents)}
+            ${row('SOS', `${d.yesterday.sos.started} avviati → ${d.yesterday.sos.completed} completati ${d.yesterday.sos.completionRate != null ? `(${pct(d.yesterday.sos.completionRate)})` : ''}`)}
+            ${row('Funnel paywall', `${d.yesterday.paywall.seen} visti → ${d.yesterday.paywall.cta} CTA → ${d.yesterday.paywall.checkout} checkout`)}
+            ${row('Chat limit hit', d.yesterday.chatLimitHits)}
+          </table>
+
+          <h2 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">🧑‍🤝‍🧑 Top attivi ieri</h2>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:13px;">
+            ${topActiveRows}
+          </table>
+
+          <h2 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">🌱 Nuovi utenti ieri</h2>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:13px;">
+            ${newUsersRows}
+          </table>
+
+          <h2 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">😴 Dormienti (>14gg)</h2>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;font-size:13px;">
+            ${dormantRows}
+          </table>
+
+          <h2 style="margin:0 0 8px;font-size:14px;color:#111827;text-transform:uppercase;letter-spacing:0.5px;">🔍 Eventi di ieri per tipo</h2>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;background:#f5f5f4;border-radius:12px;padding:14px 16px;font-size:12px;">
+            ${byTypeRows}
+          </table>
+
+          <p style="margin:16px 0 0;font-size:11px;color:#9ca3af;text-align:center;">Dashboard live: <a href="https://quitfresh.it/admin/analytics" style="color:#84a98c;">quitfresh.it/admin/analytics</a></p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+  return send({
+    to,
+    from: 'QuitFresh <noreply@quitfresh.it>',
+    subject: `📊 QuitFresh Daily — ${yDate}`,
+    html,
+  });
+}
+
+module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, sendPromoUsedAdminEmail, sendNewUserAdminEmail, sendNewPaymentAdminEmail, sendDailyReportEmail, isEnabled };

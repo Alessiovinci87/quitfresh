@@ -53,11 +53,33 @@ model User {
   // mantengono accesso illimitato a chat/diario/citisina push.
   // Settato via migration data per tutti gli User esistenti.
   freemiumGrandfathered  Boolean @default(false)
+  // Telemetria di prodotto: se true, il middleware salta gli insert in
+  // UsageEvent per questo utente. Default false (raccolta attiva).
+  analyticsOptOut   Boolean            @default(false)
   cravingLogs       CravingLog[]
   quitAttempts      QuitAttempt[]
   diaryEntries      DiaryEntry[]
   pushSubscriptions PushSubscription[]
   cravingSessions   CravingSession[]
+  usageEvents       UsageEvent[]
+}
+
+// Telemetria di prodotto: evento di utilizzo (page_view, sos_started,
+// chat_message_sent, paywall_seen, ...). Inserito in batch dal client
+// via POST /api/events. Niente PII nei `meta` — solo metadati.
+// Retention: 90gg via cron settimanale (vedi lib/cron.js).
+model UsageEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  type      String
+  path      String?
+  meta      Json?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([createdAt])
 }
 
 // SOS Craving: sessione anti-craving guidata (B+C+E)

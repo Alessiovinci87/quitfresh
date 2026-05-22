@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { track } from '../lib/tracker';
 
 export default function Register() {
   const { login, user } = useAuth();
@@ -37,6 +38,7 @@ export default function Register() {
         email: form.email,
         password: form.password,
       });
+      track('register_success');
       login(token, userData);
       navigate('/check-email', { replace: true });
     } catch (err) {

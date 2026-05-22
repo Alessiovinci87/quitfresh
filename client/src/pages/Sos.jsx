@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { track } from '../lib/tracker';
 
 // SOS Craving — flow B+C+E (mini-task fisico + motivi personali + benefici live).
 // Free-tier: nessuna chiamata AI, costa zero. Pensata come retention hook.
@@ -170,6 +171,8 @@ export default function Sos() {
   const [saving, setSaving] = useState(false);
   const [savedCounter, setSavedCounter] = useState(null);
 
+  useEffect(() => { track('sos_started'); }, []);
+
   const cigsPerDay = user?.cigarettesPerDay || 0;
   const packPrice = user?.cigarettePackPrice || 5.80;
   const eurPerCig = packPrice / 20;
@@ -254,6 +257,12 @@ export default function Sos() {
                     intensityBefore,
                     intensityAfter,
                     type: action.type,
+                  });
+                  track('sos_completed', {
+                    type: action.type,
+                    intensityBefore,
+                    intensityAfter,
+                    delta: intensityBefore - intensityAfter,
                   });
                   setSavedCounter(cravingsBattled);
                   updateUser({ cravingsBattled });

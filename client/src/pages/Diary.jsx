@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import FeatureLimitPaywall from '../components/FeatureLimitPaywall';
+import { track } from '../lib/tracker';
 
 const SIDE_EFFECTS = ['Nausea', 'Secchezza bocca', 'Sogni vividi', 'Irritabilità', 'Insonnia', 'Mal di testa'];
 
@@ -64,6 +65,7 @@ export default function Diary() {
     setSaveError('');
     try {
       const saved = await api.diary.save(form);
+      track('diary_entry_saved', { pillsTaken: form.pillsTaken, cigarettesToday: form.cigarettesToday });
       setEntries(prev => {
         const idx = prev.findIndex(e => e.date?.startsWith(form.date));
         if (idx >= 0) { const n = [...prev]; n[idx] = saved; return n; }

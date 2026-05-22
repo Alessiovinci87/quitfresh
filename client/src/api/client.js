@@ -123,5 +123,9 @@ export const api = {
     deletePromoCode: (id) => request(`/api/admin/promo-codes/${id}`, {
       method: 'DELETE',
     }),
+    analyticsSummary: (days = 30) => request(`/api/admin/analytics/summary?days=${days}`),
+    analyticsLive: (limit = 50) => request(`/api/admin/analytics/live?limit=${limit}`),
+    analyticsUsers: () => request('/api/admin/analytics/users'),
+    analyticsUser: (id) => request(`/api/admin/analytics/user/${id}`),
   },
 };
