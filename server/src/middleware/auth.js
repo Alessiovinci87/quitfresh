@@ -1,6 +1,11 @@
 const jwt = require('jsonwebtoken');
 const prisma = require('../lib/prisma');
 
+// Cache in-memory userId → ts ultima scrittura lastActiveAt. Evita di
+// scrivere ad ogni richiesta. Si svuota a riavvio del processo: accettabile,
+// la prossima richiesta dopo il restart fa un solo update.
+const lastActiveCache = new Map();
+
 async function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -22,6 +27,19 @@ async function requireAuth(req, res, next) {
       return res.status(401).json({ error: 'Sessione revocata. Esegui di nuovo il login.' });
     }
     req.user = user;
+
+    // Bump lastActiveAt in background, throttled a 1 update / 5 min per utente
+    // per non martellare il DB. Errori loggati, mai propagati.
+    const now = Date.now();
+    const last = lastActiveCache.get(user.id) || 0;
+    if (now - last > 5 * 60 * 1000) {
+      lastActiveCache.set(user.id, now);
+      prisma.user.update({
+        where: { id: user.id },
+        data: { lastActiveAt: new Date(now) },
+      }).catch(err => console.error('[auth] lastActiveAt update error:', err.message));
+    }
+
     next();
   } catch {
     return res.status(401).json({ error: 'Token non valido o scaduto' });

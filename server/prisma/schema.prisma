@@ -37,6 +37,10 @@ model User {
   // invalidare TUTTI i JWT esistenti dell'utente. Middleware requireAuth
   // compara payload.tv === user.tokenVersion.
   tokenVersion       Int                @default(0)
+  // lastActiveAt: aggiornato (best-effort, fire-and-forget) ad ogni
+  // richiesta autenticata che passa da requireAuth. Serve per analytics
+  // di retention: identificare utenti dormienti da N giorni.
+  lastActiveAt       DateTime?
   quitReasons       String[]
   cravingsBattled   Int                @default(0)
   // Freemium gating: contatore messaggi chat AI usati nella settimana
