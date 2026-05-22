@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { track } from '../lib/tracker';
 
 const TOTAL_STEPS = 7;
 
@@ -28,6 +29,9 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
+
+  useEffect(() => { track('onboarding_started'); }, []);
+  useEffect(() => { track('onboarding_step', { step }); }, [step]);
   const [loading, setLoading] = useState(false);
 
   const [cigarettesPerDay, setCigarettesPerDay] = useState('');
@@ -117,6 +121,13 @@ export default function Onboarding() {
         cytisineStartDate: usesCytisine ? cytisineStartDate : null,
         firstDoseTime: usesCytisine ? firstDoseTime : null,
         quitReasons,
+      });
+      track('onboarding_completed', {
+        cigarettesPerDay: parseInt(cigarettesPerDay),
+        dependencyLevel,
+        usesCytisine: Boolean(usesCytisine),
+        reasonsCount: quitReasons.length,
+        momentsCount: selectedMoments.length,
       });
       updateUser(user);
       navigate('/home', { replace: true });
