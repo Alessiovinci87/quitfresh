@@ -14,18 +14,23 @@ export default function PrivacyPolicy() {
         </button>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-        <p className="text-xs text-gray-400 mb-8">Ultimo aggiornamento: 16 maggio 2026</p>
+        <p className="text-xs text-gray-400 mb-8">Ultimo aggiornamento: 22 maggio 2026</p>
 
         <Section title="1. Titolare del trattamento">
-          Alessio Vinci, P.IVA IT03014680908<br />
-          Via Alessandro Fleming 41, 07041 Alghero (SS), Italia<br />
+          QuitFresh<br />
+          Servizio gestito da Alessio Vinci<br />
+          P.IVA IT03014680908<br />
           Email:{' '}
           <a href="mailto:info@quitfresh.it" className="text-sage-600 underline">
             info@quitfresh.it
           </a>
         </Section>
 
-        <Section title="2. Dati raccolti">
+        <Section title="2. Destinatari del servizio">
+          Il servizio è destinato esclusivamente a utenti maggiorenni.
+        </Section>
+
+        <Section title="3. Dati raccolti">
           <p className="mb-2">QuitFresh raccoglie i seguenti dati personali:</p>
           <ul className="space-y-2 list-disc list-inside">
             <li>
@@ -53,7 +58,7 @@ export default function PrivacyPolicy() {
           </ul>
         </Section>
 
-        <Section title="3. Finalità e base giuridica">
+        <Section title="4. Finalità e base giuridica">
           <ul className="space-y-2 list-disc list-inside mb-3">
             <li>
               <strong>Erogazione del servizio</strong> (contratto, art. 6.1.b
@@ -79,12 +84,21 @@ export default function PrivacyPolicy() {
           </p>
         </Section>
 
-        <Section title="4. Servizi terzi">
+        <Section title="5. Disclaimer medico">
+          QuitFresh è uno strumento digitale di supporto motivazionale e
+          organizzativo per il percorso antifumo. Non è un dispositivo medico
+          e non sostituisce diagnosi, pareri o trattamenti sanitari
+          professionali.
+        </Section>
+
+        <Section title="6. Servizi terzi">
           <ul className="space-y-2 list-disc list-inside">
             <li>
               <strong>OpenAI</strong> (chat AI coach): i messaggi vengono
-              inviati alle API OpenAI. OpenAI non utilizza i dati degli utenti
-              API per addestrare i propri modelli (opt-out attivo).
+              inviati alle API OpenAI. Le richieste inviate tramite API OpenAI
+              sono configurate con modalità che escludono l'utilizzo per
+              addestramento dei modelli. L'utente è responsabile delle
+              informazioni volontariamente condivise nella chat AI.
             </li>
             <li>
               <strong>Stripe</strong> (pagamenti): soggetto alla propria{' '}
@@ -113,7 +127,7 @@ export default function PrivacyPolicy() {
           </ul>
         </Section>
 
-        <Section title="5. Conservazione dei dati">
+        <Section title="7. Conservazione dei dati">
           I dati dell'account vengono conservati fino alla cancellazione
           dell'account da parte dell'utente. I dati fiscali sono conservati per
           10 anni come previsto dalla normativa italiana. L'utente può
@@ -121,7 +135,7 @@ export default function PrivacyPolicy() {
           Profilo → Zona Pericolosa → Elimina account.
         </Section>
 
-        <Section title="6. Diritti dell'interessato">
+        <Section title="8. Diritti dell'interessato">
           <p className="mb-2">
             Ai sensi del GDPR hai diritto di: accesso, rettifica, cancellazione,
             limitazione del trattamento, portabilità, opposizione.
@@ -162,7 +176,7 @@ export default function PrivacyPolicy() {
           </p>
         </Section>
 
-        <Section title="7. Cookie e localStorage">
+        <Section title="9. Cookie e localStorage">
           QuitFresh <strong>non utilizza cookie di profilazione o di tracciamento
           pubblicitario</strong>. Vengono utilizzati esclusivamente:
           <ul className="space-y-1 list-disc list-inside mt-2">
@@ -182,7 +196,7 @@ export default function PrivacyPolicy() {
           </p>
         </Section>
 
-        <Section title="8. Modifiche">
+        <Section title="10. Modifiche">
           Eventuali modifiche alla presente Privacy Policy saranno comunicate
           via email agli utenti registrati e pubblicate su questa pagina con
           aggiornamento della data in cima al documento.
