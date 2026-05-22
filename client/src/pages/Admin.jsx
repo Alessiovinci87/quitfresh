@@ -101,6 +101,12 @@ export default function Admin() {
             </button>
             <h1 className="text-xl font-bold text-gray-900">Codici promo</h1>
           </div>
+          <button
+            onClick={() => navigate('/admin/analytics')}
+            className="text-xs font-semibold bg-sage-600 text-white px-3 py-2 rounded-lg active:scale-95 transition-transform"
+          >
+            📊 Analytics
+          </button>
         </div>
 
         {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}
