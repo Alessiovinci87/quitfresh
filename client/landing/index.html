@@ -338,9 +338,131 @@
       font-size: 17px;
     }
     .hero-cta .meta { font-size: 13px; color: #6b7280; }
+
+    /* Trust chips sotto CTA. Visibili da subito, niente click attivi. */
+    .trust-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .trust-chips .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.14);
+      color: #41553e;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 11px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .trust-chips .chip::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: #688361;
+      border-radius: 50%;
+    }
+
+    /* Mini-demo "Ho bisogno ORA" inline nell'hero.
+       Risponde alla domanda "ma in pratica cosa fa quando ho la voglia?" */
+    .demo-card {
+      margin-top: 28px;
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.14);
+      border-radius: 18px;
+      padding: 18px;
+      max-width: 460px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 22px rgba(15, 23, 42, 0.06);
+    }
+    .demo-card .demo-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      color: #a8654a;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .demo-card .demo-scene {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 17px;
+      color: #2c372c;
+      margin: 0 0 14px;
+      line-height: 1.35;
+    }
+    .demo-btn {
+      width: 100%;
+      background: #a8654a;
+      color: #fdfcf9;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .demo-btn:hover { background: #92563f; }
+    .demo-btn:active { transform: translateY(1px); }
+    .demo-response {
+      margin-top: 14px;
+      padding: 14px 14px 12px;
+      background: #f3f7f1;
+      border-radius: 12px;
+      border-left: 3px solid #688361;
+      display: none;
+    }
+    .demo-response.show { display: block; animation: demoFade 0.4s ease; }
+    @keyframes demoFade {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .demo-response p {
+      margin: 0;
+      font-size: 14.5px;
+      color: #41553e;
+      line-height: 1.5;
+    }
+    .demo-response p + p { margin-top: 8px; }
+    .demo-response .demo-cta {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #41553e;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .demo-timer {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #5a6b62;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-timer-bar {
+      flex: 1;
+      height: 4px;
+      background: #e9efe7;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .demo-timer-bar > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: #688361;
+      transition: width 1s linear;
+    }
+
     /* Phone hero a destra solo su desktop (≥960). Su mobile e tablet
        resta nascosto — l'utente vede subito copy + CTA. */
     .hero-phone { display: none; }
+    .hero-phone a { display: block; text-decoration: none; }
 
     /* ===== Sticky CTA mobile (solo mobile) ===== */
     .sticky-cta {
@@ -960,20 +1082,53 @@
 
 <main>
 
-  <!-- ===== HERO ===== -->
+  <!-- ===== HERO =====
+       Dati Clarity 2026-05: <10% scrolla oltre il 50% della pagina e
+       l'hero raccoglie il 37,5% dei click (con alcuni "dead click").
+       Conseguenza: tutto il valore va trasmesso qui, sopra la piega,
+       e ogni elemento visibile deve essere o chiaramente cliccabile
+       o chiaramente informativo. -->
   <section class="hero">
     <div class="container-wide">
       <div class="hero-grid">
         <div class="hero-text">
-          <h1 class="display">Smetti davvero. Iniziando a vedere quando fumi, e perché.</h1>
-          <p class="lead">QuitFresh ti aiuta a riconoscere i tuoi automatismi e ti accompagna nel percorso con la citisina.</p>
+          <span class="eyebrow" style="margin-bottom: 14px;">Dopo cena · In macchina · Pausa caffè</span>
+          <h1 class="display">Quando arriva la voglia, qualcuno che sa cosa fare è già lì.</h1>
+          <p class="lead">QuitFresh ti accompagna nei momenti difficili — dopo pranzo, in macchina, prima di dormire — e ti aiuta a smettere davvero. Anche con la citisina.</p>
           <div class="hero-cta">
-            <a href="https://quitfresh.it/register" class="btn btn-primary">Inizia gratis</a>
-            <span class="meta">Senza carta · Funziona dal browser, anche offline</span>
+            <a href="https://quitfresh.it/register" class="btn btn-primary">Provala gratis</a>
+            <span class="meta">Funziona dal browser · Setup in 1 minuto</span>
+          </div>
+          <div class="trust-chips" aria-hidden="true">
+            <span class="chip">Gratis</span>
+            <span class="chip">Niente carta</span>
+            <span class="chip">Da browser</span>
+            <span class="chip">Dati tuoi, privati</span>
+          </div>
+
+          <!-- Mini-demo: simula in poche righe come l'app reagisce in un
+               craving reale. Risponde a "ma in pratica cosa fa?" senza
+               costringere a registrarsi. -->
+          <div class="demo-card" id="demoCard">
+            <div class="demo-label">Provalo qui · 10 secondi</div>
+            <p class="demo-scene">Sono le 22, hai appena finito di cenare. La voglia arriva, come ogni sera.</p>
+            <button class="demo-btn" id="demoBtn" type="button">Ho bisogno ORA</button>
+
+            <div class="demo-response" id="demoResponse" aria-live="polite">
+              <p><strong>Respira. Bevi un bicchiere d'acqua.</strong> La voglia che senti ora dura 3 minuti, poi cala da sola. È sempre così.</p>
+              <p>Alzati, fai cinque passi, guarda fuori dalla finestra. Non devi resistere — devi solo lasciare passare.</p>
+              <div class="demo-timer">
+                <span id="demoTimerText">3 minuti</span>
+                <span class="demo-timer-bar"><span id="demoTimerFill"></span></span>
+              </div>
+              <a href="https://quitfresh.it/register" class="demo-cta">Voglio averla con me ogni sera →</a>
+            </div>
           </div>
         </div>
-        <div class="hero-phone" aria-hidden="true">
-          <div class="phone"><div class="phone-screen"><img src="./screens/1-home.jpg" alt="" /></div></div>
+        <div class="hero-phone">
+          <a href="https://quitfresh.it/register" aria-label="Provala gratis">
+            <div class="phone"><div class="phone-screen"><img src="./screens/1-home.jpg" alt="Schermata principale QuitFresh" /></div></div>
+          </a>
         </div>
       </div>
     </div>
@@ -1066,11 +1221,11 @@
         </div>
         <div class="preview-item">
           <div class="phone"><div class="phone-screen"><img src="./screens/2-sos.jpg" alt="SOS Craving" loading="lazy" /></div></div>
-          <p class="caption"><strong>SOS Craving</strong>Azione guidata 2–3 minuti</p>
+          <p class="caption"><strong>Nel momento</strong>Ti accompagna 3 minuti, finché passa</p>
         </div>
         <div class="preview-item">
-          <div class="phone"><div class="phone-screen"><img src="./screens/3-chat.jpg" alt="Chat di supporto" loading="lazy" /></div></div>
-          <p class="caption"><strong>Chat</strong>Supporto sui tuoi dati reali</p>
+          <div class="phone"><div class="phone-screen"><img src="./screens/3-chat.jpg" alt="Supporto QuitFresh" loading="lazy" /></div></div>
+          <p class="caption"><strong>Supporto</strong>Risponde sui tuoi momenti reali</p>
         </div>
         <div class="preview-item">
           <div class="phone"><div class="phone-screen"><img src="./screens/4-stats.jpg" alt="Statistiche" loading="lazy" /></div></div>
@@ -1194,7 +1349,7 @@
             <li><span class="mark">✓</span><span>Tracker giorni senza fumo, sigarette evitate, risparmio</span></li>
             <li><span class="mark">✓</span><span>SOS Craving — azione guidata anti-craving, sempre disponibile</span></li>
             <li><span class="mark">✓</span><span>Calendario citisina e diario capsule</span></li>
-            <li><span class="mark">✓</span><span>Chat di supporto: 10 messaggi a settimana</span></li>
+            <li><span class="mark">✓</span><span>Supporto scritto: 10 messaggi a settimana</span></li>
             <li><span class="mark">✓</span><span>Diario osservazioni: 7 giorni</span></li>
             <li><span class="mark">✓</span><span>Promemoria citisina: primi 3 giorni del protocollo</span></li>
           </ul>
@@ -1208,7 +1363,7 @@
           <p class="tag">Pagamento unico. Nessun abbonamento.</p>
           <ul>
             <li><span class="mark">✓</span><span><strong>Tutto del piano Free, senza limiti</strong></span></li>
-            <li><span class="mark">✓</span><span>Chat di supporto illimitata</span></li>
+            <li><span class="mark">✓</span><span>Supporto scritto illimitato</span></li>
             <li><span class="mark">✓</span><span>Diario osservazioni senza limite di giorni</span></li>
             <li><span class="mark">✓</span><span>Promemoria citisina per tutti i 25 giorni</span></li>
             <li><span class="mark">✓</span><span>Statistiche avanzate: trend, breakdown orario dei craving</span></li>
@@ -1275,9 +1430,9 @@
   <section class="band-dark">
     <div class="container">
       <div class="cta-final">
-        <h2 class="display">Inizia a guardare come fumi davvero.</h2>
-        <p>Cinque minuti di setup. Niente carta richiesta.</p>
-        <a href="https://quitfresh.it/register" class="btn btn-primary">Inizia gratis</a>
+        <h2 class="display">La prossima voglia non sarai da solo.</h2>
+        <p>Setup in 1 minuto. Niente carta. Funziona dal browser.</p>
+        <a href="https://quitfresh.it/register" class="btn btn-primary">Provala gratis</a>
       </div>
     </div>
   </section>
@@ -1370,6 +1525,43 @@
     window.addEventListener('scroll', update, { passive: true });
     window.addEventListener('resize', update);
     update();
+  })();
+
+  // ── Mini-demo "Ho bisogno ORA" ──────────────────────────────
+  // Mostra la risposta dell'app e avvia una progress bar di 30s
+  // (compressione visiva dei 3 minuti reali) come prova tangibile
+  // di "cosa fa nel momento del craving". Una sola volta per sessione.
+  (function() {
+    var btn = document.getElementById('demoBtn');
+    var resp = document.getElementById('demoResponse');
+    var fill = document.getElementById('demoTimerFill');
+    var label = document.getElementById('demoTimerText');
+    if (!btn || !resp || !fill) return;
+    var started = false;
+    btn.addEventListener('click', function() {
+      if (started) return;
+      started = true;
+      btn.disabled = true;
+      btn.style.opacity = '0.55';
+      btn.textContent = 'È con te adesso';
+      resp.classList.add('show');
+      // Compressione: 30s reali = 3 minuti narrativi.
+      var total = 30;
+      var elapsed = 0;
+      requestAnimationFrame(function() { fill.style.width = '100%'; fill.style.transitionDuration = total + 's'; });
+      var iv = setInterval(function() {
+        elapsed++;
+        var remainingNarrative = Math.max(0, Math.ceil((total - elapsed) * 6));
+        if (label) label.textContent = remainingNarrative > 0 ? ('~' + remainingNarrative + ' secondi narrativi') : 'È passata.';
+        if (elapsed >= total) {
+          clearInterval(iv);
+          if (label) label.textContent = 'È passata. Sempre così.';
+        }
+      }, 1000);
+      // Telemetria leggera per Clarity/GA.
+      if (window.clarity) window.clarity('event', 'demo_craving_clicked');
+      if (window.gtag) window.gtag('event', 'demo_craving_clicked', { event_category: 'engagement' });
+    });
   })();
 </script>
 
