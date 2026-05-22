@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
-const { sendVerifyEmail, sendWelcomeEmail } = require('../lib/email');
+const { sendVerifyEmail, sendWelcomeEmail, sendNewUserAdminEmail } = require('../lib/email');
 
 // JWT include tokenVersion (tv). Il middleware requireAuth confronta
 // payload.tv con user.tokenVersion: se differiscono, il token e' stato
@@ -65,6 +65,15 @@ router.post('/register', loginLimiter, async (req, res) => {
     // Invio email in background — un fallimento non deve bloccare la registrazione.
     sendVerifyEmail(user.email, buildVerifyLink(verifyToken))
       .catch(err => console.error('[register] email error:', err));
+
+    // Notifica admin nuova registrazione, in background, non-bloccante.
+    sendNewUserAdminEmail({
+      userEmail: user.email,
+      createdAt: user.createdAt,
+      ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim(),
+      userAgent: req.headers['user-agent'] || '',
+      referer: req.headers['referer'] || req.headers['referrer'] || '',
+    }).catch(err => console.error('[register] admin notify error:', err));
 
     const token = signToken(user.id, user.tokenVersion);
     res.status(201).json({ token, user: sanitize(user) });

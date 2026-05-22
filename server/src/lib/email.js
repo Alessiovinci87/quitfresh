@@ -10,14 +10,14 @@ function isEnabled() {
 }
 
 // Wrapper unico per gestire dev/prod e logging consistente.
-async function send({ to, subject, html }) {
+async function send({ to, subject, html, from }) {
   if (!isEnabled()) {
     console.log(`[email] skipped (Resend non configurato) → ${to}: ${subject}`);
     return { skipped: true };
   }
   try {
     const result = await resend.emails.send({
-      from: fromEmail,
+      from: from || fromEmail,
       to,
       subject,
       html,
@@ -260,4 +260,46 @@ function sendPromoUsedAdminEmail({ userEmail, userId, code, discountPct, channel
   return send({ to, subject: `Codice ${code} usato — ${userEmail || userId}`, html });
 }
 
-module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, sendPromoUsedAdminEmail, isEnabled };
+// Notifica admin: nuovo utente registrato. Non-bloccante. Destinatario
+// fissato (alessio.vinci87@gmail.com) come richiesto; mittente forzato a
+// noreply@quitfresh.it indipendentemente da RESEND_FROM_EMAIL.
+function sendNewUserAdminEmail({ userEmail, createdAt, ip, userAgent, referer }) {
+  const to = 'alessio.vinci87@gmail.com';
+  const when = new Date(createdAt || Date.now()).toLocaleString('it-IT', {
+    timeZone: 'Europe/Rome',
+    dateStyle: 'full',
+    timeStyle: 'medium',
+  });
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:28px;">
+        <tr><td>
+          <p style="margin:0 0 8px;color:#84a98c;font-size:13px;font-weight:600;letter-spacing:0.5px;">QUITFRESH · ADMIN</p>
+          <h1 style="margin:0 0 16px;font-size:20px;color:#111827;">Nuovo utente registrato 🌱</h1>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;background:#f5f5f4;border-radius:12px;padding:14px 16px;font-size:13px;color:#374151;">
+            <tr><td style="padding:4px 0;">Email</td><td style="text-align:right;font-weight:600;">${userEmail || '—'}</td></tr>
+            <tr><td style="padding:4px 0;">Quando</td><td style="text-align:right;">${when}</td></tr>
+            <tr><td style="padding:4px 0;">IP</td><td style="text-align:right;font-family:'SF Mono',Menlo,monospace;font-size:11px;">${ip || '—'}</td></tr>
+            <tr><td style="padding:4px 0;">Referer</td><td style="text-align:right;font-size:11px;color:#6b7280;word-break:break-all;">${referer || '—'}</td></tr>
+            <tr><td style="padding:4px 0;vertical-align:top;">User-Agent</td><td style="text-align:right;font-size:11px;color:#6b7280;word-break:break-all;">${userAgent || '—'}</td></tr>
+          </table>
+          <p style="margin:0;font-size:12px;color:#9ca3af;">Notifica automatica registrazione. Per disabilitarla rimuovi la chiamata in <code>auth.js</code>.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  return send({
+    to,
+    from: 'QuitFresh <noreply@quitfresh.it>',
+    subject: `Nuova registrazione: ${userEmail || 'utente'}`,
+    html,
+  });
+}
+
+module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, sendPromoUsedAdminEmail, sendNewUserAdminEmail, isEnabled };
