@@ -125,7 +125,10 @@ async function getChatResponse({ user, messages, context }) {
       content: `[L'utente ha aperto la chat. È ${timeOfDay}, giorno ${ctx.progress.daysSinceQuit} del percorso. Salutalo brevemente (1 frase) e fai una domanda concreta — non riassumere i suoi dati, lui li conosce già.]`,
     });
   } else {
-    openaiMessages.push(...messages);
+    // Cap a ultimi 10 messaggi: costo token altrimenti quadratico nella
+    // lunghezza chat. Il contesto persistente (progressi, pattern, citisina)
+    // è già nel system prompt ricostruito da DB ad ogni turno.
+    openaiMessages.push(...messages.slice(-10));
   }
 
   const response = await openai.chat.completions.create({
