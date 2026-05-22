@@ -147,7 +147,10 @@
       margin: 0 auto;
     }
     .logo { display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0; }
-    .logo img { height: 30px; width: auto; display: block; }
+    .logo img, .logo picture img { height: 44px; width: auto; display: block; }
+    @media (min-width: 720px) {
+      .logo img, .logo picture img { height: 52px; }
+    }
     .header-nav {
       display: none;            /* nascosto su mobile */
       gap: 2px;
