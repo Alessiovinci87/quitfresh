@@ -120,10 +120,24 @@ async function getChatResponse({ user, messages, context }) {
   const openaiMessages = [{ role: 'system', content: systemPrompt }];
 
   if (messages.length === 0) {
-    openaiMessages.push({
-      role: 'user',
-      content: `[L'utente ha aperto la chat. È ${timeOfDay}, giorno ${ctx.progress.daysSinceQuit} del percorso. Salutalo brevemente (1 frase) e fai una domanda concreta — non riassumere i suoi dati, lui li conosce già.]`,
-    });
+    // Bootstrap: saluto contestuale. Adattiamo il prompt-stub in base a:
+    // - trigger di apertura (sos / welcome)
+    // - sessione SOS appena conclusa (<5min)
+    // - prima chat del giorno o conversazione continuata
+    let hint;
+    if (ctx.trigger === 'sos' || ctx.recentSos) {
+      const sosInfo = ctx.recentSos
+        ? ` (intensita' prima: ${ctx.recentSos.intensityBefore}/10, dopo: ${ctx.recentSos.intensityAfter ?? 'n.d.'}/10, azione: ${ctx.recentSos.type})`
+        : '';
+      hint = `[L'utente ha appena usato SOS Craving${sosInfo} e ora ha aperto la chat. Chiedi come sta ADESSO, brevemente, senza ripetere i numeri. 1 frase.]`;
+    } else if (ctx.trigger === 'welcome') {
+      hint = `[Primo accesso post-onboarding. Saluta caldo (1 frase) e proponi di provare insieme un primo craving simulato per capire come funziona il supporto. Non elencare feature.]`;
+    } else if (ctx.isFirstChatToday) {
+      hint = `[Prima chat del giorno. È ${timeOfDay}, giorno ${ctx.progress.daysSinceQuit} del percorso. Saluto breve (1 frase) + 1 domanda concreta sul momento.]`;
+    } else {
+      hint = `[L'utente ha riaperto la chat oggi. È ${timeOfDay}. Niente saluto formale, riprendi col tono di una conversazione gia' in corso. 1 frase + domanda.]`;
+    }
+    openaiMessages.push({ role: 'user', content: hint });
   } else {
     // Cap a ultimi 10 messaggi: costo token altrimenti quadratico nella
     // lunghezza chat. Il contesto persistente (progressi, pattern, citisina)

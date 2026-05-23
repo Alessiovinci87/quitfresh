@@ -275,6 +275,7 @@ export default function Sos() {
                 }
               }}
               onClose={() => navigate('/home', { replace: true })}
+              onTalkToCoach={() => navigate('/craving', { state: { trigger: 'sos' } })}
             />
           )}
         </div>
@@ -569,7 +570,7 @@ function StepTimer({ action, eurPerSec, onDone }) {
   );
 }
 
-function StepAfter({ before, after, onChangeAfter, saving, savedCounter, onSave, onClose }) {
+function StepAfter({ before, after, onChangeAfter, saving, savedCounter, onSave, onClose, onTalkToCoach }) {
   const delta = before - after;
   const saved = savedCounter != null;
 
@@ -603,6 +604,12 @@ function StepAfter({ before, after, onChangeAfter, saving, savedCounter, onSave,
           className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all"
         >
           Torna alla home
+        </button>
+        <button
+          onClick={onTalkToCoach}
+          className="w-full mt-2 py-3 bg-white border border-sage-200 text-sage-800 rounded-xl-soft font-semibold text-sm active:scale-[0.98] transition-all"
+        >
+          Parla col coach
         </button>
       </div>
     );

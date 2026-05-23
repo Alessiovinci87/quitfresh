@@ -25,7 +25,14 @@ async function buildChatContext(user, now = new Date()) {
   const cravingSince = new Date(now.getTime() - CRAVING_WINDOW_DAYS * 86400000);
   const diarySince = new Date(now.getTime() - DIARY_WINDOW_DAYS * 86400000);
 
-  const [cravingLogs, diaryEntries, cravingsBattled] = await Promise.all([
+  // Soglia "appena tornato da SOS": ultima sessione SOS negli ultimi 5min
+  // → l'AI puo' aprire con "ho visto che hai appena usato SOS...".
+  const sosRecentSince = new Date(now.getTime() - 5 * 60 * 1000);
+  // "Prima chat del giorno": nessun ChatMessage utente oggi (00:00 locale).
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+
+  const [cravingLogs, diaryEntries, cravingsBattled, recentSos, chatToday] = await Promise.all([
     prisma.cravingLog.findMany({
       where: { userId: user.id, timestamp: { gte: cravingSince } },
       orderBy: { timestamp: 'desc' },
@@ -37,6 +44,13 @@ async function buildChatContext(user, now = new Date()) {
       take: 7,
     }),
     prisma.cravingSession.count({ where: { userId: user.id } }),
+    prisma.cravingSession.findFirst({
+      where: { userId: user.id, completedAt: { gte: sosRecentSince } },
+      orderBy: { completedAt: 'desc' },
+    }),
+    prisma.chatMessage.count({
+      where: { userId: user.id, role: 'user', createdAt: { gte: todayStart } },
+    }),
   ]);
 
   // Aggregazione orari (bucket di mezz'ora) e fasce
@@ -84,6 +98,18 @@ async function buildChatContext(user, now = new Date()) {
     topCravingBuckets: topN(bucketCounts, 2).map(([b, n]) => ({ bucket: b, count: n })),
     topTriggers: topN(contextWords, 3).map(([w, n]) => ({ trigger: w, count: n })),
     diarySummary,
+    // Segnali "momento": usati dal prompt e dai trigger di apertura.
+    timeOfDay: timeBucket(now.getHours()),
+    hour: now.getHours(),
+    recentSos: recentSos
+      ? {
+          minutesAgo: Math.round((now - recentSos.completedAt) / 60000),
+          intensityBefore: recentSos.intensityBefore,
+          intensityAfter: recentSos.intensityAfter,
+          type: recentSos.type,
+        }
+      : null,
+    isFirstChatToday: chatToday === 0,
   };
 }
 

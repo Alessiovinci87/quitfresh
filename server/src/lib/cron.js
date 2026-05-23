@@ -86,6 +86,20 @@ function startCron() {
     }
   }, { timezone: 'Europe/Rome' });
 
+  // Retention ChatMessage: cancella messaggi più vecchi di 90 giorni.
+  // Privacy (conversazioni con dati sanitari sensibili) + cost control DB.
+  // L'utente puo' sempre cancellare manualmente prima da UI (menu chat).
+  // Settimanale, domenica 03:45 (sfasato da analytics per non sovrapporre).
+  cron.schedule('45 3 * * 0', async () => {
+    try {
+      const cutoff = new Date(Date.now() - 90 * 86400000);
+      const result = await prisma.chatMessage.deleteMany({ where: { createdAt: { lt: cutoff } } });
+      console.log(`[chat-retention] cancellati ${result.count} messaggi chat >90gg`);
+    } catch (err) {
+      console.error('[chat-retention] errore:', err.message);
+    }
+  }, { timezone: 'Europe/Rome' });
+
   // Backup DB giornaliero 08:00 Europe/Rome — INDIPENDENTE da push.
   // Lo schedulo PRIMA della guard isEnabled() così funziona anche se
   // VAPID/web-push non è configurato.

@@ -97,7 +97,13 @@ export default function PrivacyPolicy() {
               <strong>OpenAI</strong> (chat AI coach): i messaggi vengono
               inviati alle API OpenAI. Le richieste inviate tramite API OpenAI
               sono configurate con modalità che escludono l'utilizzo per
-              addestramento dei modelli. L'utente è responsabile delle
+              addestramento dei modelli. Le conversazioni con il coach vengono
+              inoltre salvate sui nostri server per un massimo di 90 giorni
+              (oltre tale soglia sono cancellate automaticamente), così da
+              poter ricaricare la cronologia all'apertura della chat e dare
+              al coach contesto sui messaggi recenti. L'utente può cancellare
+              l'intera conversazione in qualsiasi momento dal menu della
+              chat (icona ⋯ in alto a destra). L'utente è responsabile delle
               informazioni volontariamente condivise nella chat AI.
             </li>
             <li>

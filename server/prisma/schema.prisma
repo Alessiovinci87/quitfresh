@@ -62,6 +62,26 @@ model User {
   pushSubscriptions PushSubscription[]
   cravingSessions   CravingSession[]
   usageEvents       UsageEvent[]
+  chatMessages      ChatMessage[]
+}
+
+// Chat AI: cronologia conversazione utente. Retention 90gg via cron
+// (vedi lib/cron.js). L'utente puo' cancellare manualmente da UI.
+// Storage persistente serve a: ricaricare conversazione all'apertura,
+// dare contesto storico al modello (cap a ultimi 10 in openai.js).
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String   // 'user' | 'assistant'
+  content   String   @db.Text
+  // Trigger di apertura: 'sos' = chat aperta subito dopo SOS,
+  // 'welcome' = primo flow post-onboarding. Null per messaggi normali.
+  trigger   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 // Telemetria di prodotto: evento di utilizzo (page_view, sos_started,

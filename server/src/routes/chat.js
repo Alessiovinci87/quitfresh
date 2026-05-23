@@ -6,47 +6,57 @@ const { chatLimiter } = require('../middleware/rateLimit');
 const { getChatResponse } = require('../lib/openai');
 const { buildChatContext } = require('../lib/chatContext');
 
-// POST /api/chat
-// Modello freemium: utenti free hanno 3 messaggi totali. Premium e
-// grandfathered illimitati. Al superamento → 402 FREE_LIMIT_REACHED.
+// Quanti messaggi storici caricare dal DB per dare contesto al modello.
+// 10 = stesso cap gia' applicato in openai.js (commit 9331de3).
+const HISTORY_CONTEXT_LIMIT = 10;
+// Quanti messaggi ritornare al client all'apertura della chat.
+const HISTORY_FETCH_LIMIT = 50;
+// Limite hard di lunghezza singolo messaggio utente (anti-DoS + costi token).
+const MAX_TEXT_LEN = 4000;
+
+// GET /api/chat/history — cronologia chat ordinata asc.
+// Limite 50: copre tipica sessione di lavoro. Il client puo' paginare in
+// futuro con ?before=createdAt se servisse.
+router.get('/history', requireAuth, requireVerifiedEmail, async (req, res) => {
+  const rows = await prisma.chatMessage.findMany({
+    where: { userId: req.user.id },
+    orderBy: { createdAt: 'desc' },
+    take: HISTORY_FETCH_LIMIT,
+    select: { id: true, role: true, content: true, createdAt: true },
+  });
+  res.json({ messages: rows.reverse() });
+});
+
+// DELETE /api/chat/history — wipe conversazione utente.
+// Non resetta il counter freemium: cancellare la storia non deve essere
+// un workaround per ottenere altri messaggi gratuiti.
+router.delete('/history', requireAuth, requireVerifiedEmail, async (req, res) => {
+  await prisma.chatMessage.deleteMany({ where: { userId: req.user.id } });
+  res.json({ ok: true });
+});
+
+// POST /api/chat — invia messaggio (o bootstrap saluto se text vuoto).
+// Body: { text?: string, trigger?: 'sos' | 'welcome' }
+// - text vuoto/assente → bootstrap: l'AI saluta, niente count freemium.
+// - text presente → turno utente: count + persist user msg + reply.
 router.post('/', requireAuth, requireVerifiedEmail, chatLimiter, async (req, res) => {
-  const { messages = [] } = req.body;
+  const rawText = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+  const trigger = ['sos', 'welcome'].includes(req.body?.trigger) ? req.body.trigger : null;
 
-  // Validation: messages array, max 100 entries (anti-DoS sull'API OpenAI
-  // + costi). Ogni entry deve avere role 'user'|'assistant' e content
-  // stringa max 4000 char (~1000 token).
-  if (!Array.isArray(messages) || messages.length > 100) {
-    return res.status(400).json({ error: 'Formato messages non valido' });
-  }
-  for (const m of messages) {
-    if (!m || typeof m !== 'object') {
-      return res.status(400).json({ error: 'Formato messages non valido' });
-    }
-    if (!['user', 'assistant'].includes(m.role)) {
-      return res.status(400).json({ error: 'Role messages non valido' });
-    }
-    if (typeof m.content !== 'string' || m.content.length > 4000) {
-      return res.status(400).json({ error: 'Content messages troppo lungo' });
-    }
+  if (rawText.length > MAX_TEXT_LEN) {
+    return res.status(400).json({ error: 'Messaggio troppo lungo' });
   }
 
-  // Il primo "avvio chat" dal frontend manda messages=[] per ricevere il
-  // saluto iniziale: non lo contiamo come messaggio utente. Si conta solo
-  // se l'utente ha effettivamente scritto qualcosa.
-  const isUserTurn = messages.length > 0 && messages[messages.length - 1].role === 'user';
-
-  // Finestra settimanale: 10 messaggi ogni 7gg dalla prima interazione.
-  // Se la finestra e' scaduta, il counter viene resettato qui (used=0)
-  // e verra' persistito al primo increment piu' sotto.
+  const isUserTurn = rawText.length > 0;
   const gated = isFreeGated(req.user);
   const win = getChatWindow(req.user);
+
   if (gated && isUserTurn && win.used >= FREE_LIMITS.chat) {
     return res.status(402).json({
       error: 'FREE_LIMIT_REACHED',
       feature: 'chat',
       limit: FREE_LIMITS.chat,
       used: win.used,
-      // Quando si riapre la finestra (epoch ms) per messaggio UI.
       windowResetsAt: win.weekStart
         ? new Date(win.weekStart.getTime() + 7 * 86400000).toISOString()
         : null,
@@ -54,20 +64,54 @@ router.post('/', requireAuth, requireVerifiedEmail, chatLimiter, async (req, res
   }
 
   try {
-    const context = await buildChatContext(req.user);
-    const reply = await getChatResponse({ user: req.user, messages, context });
+    // Storia dal DB: il client non puo' falsificarla. Cap a ultimi 10
+    // per costo token. Reverse perche' findMany torna desc.
+    const historyRows = await prisma.chatMessage.findMany({
+      where: { userId: req.user.id },
+      orderBy: { createdAt: 'desc' },
+      take: HISTORY_CONTEXT_LIMIT,
+      select: { role: true, content: true },
+    });
+    const history = historyRows.reverse();
 
-    // Increment + reset finestra se necessario.
-    // shouldCount: turno utente reale + utente gated.
-    const shouldCount = isUserTurn && gated;
+    // Se turno utente, lo aggiungiamo solo al payload OpenAI (verra'
+    // persistito sotto). Se bootstrap, payload vuoto → openai.js usa
+    // il branch di saluto contestuale.
+    const openaiMessages = isUserTurn
+      ? [...history, { role: 'user', content: rawText }]
+      : history;
+
+    const context = await buildChatContext(req.user);
+    // Trigger di apertura passato al builder del prompt: openai.js usa
+    // questi flag per personalizzare il saluto bootstrap.
+    const reply = await getChatResponse({
+      user: req.user,
+      messages: openaiMessages,
+      context: { ...context, trigger },
+    });
+
+    // Persistenza: una sola transaction per atomicita'.
+    // - Turno utente: salva user msg + assistant reply.
+    // - Bootstrap: salva solo assistant reply (con eventuale trigger).
+    const writes = [];
+    if (isUserTurn) {
+      writes.push(prisma.chatMessage.create({
+        data: { userId: req.user.id, role: 'user', content: rawText, trigger },
+      }));
+    }
+    writes.push(prisma.chatMessage.create({
+      data: { userId: req.user.id, role: 'assistant', content: reply, trigger: isUserTurn ? null : trigger },
+    }));
+    await prisma.$transaction(writes);
+
+    // Increment freemium counter solo per turno utente di utente gated.
     let newUsed = win.used;
-    if (shouldCount) {
+    if (isUserTurn && gated) {
       newUsed = win.used + 1;
       await prisma.user.update({
         where: { id: req.user.id },
         data: {
           chatMessagesUsed: newUsed,
-          // Apre nuova finestra se era scaduta o mai aperta.
           ...(win.expired ? { chatWeekStart: new Date() } : {}),
         },
       });

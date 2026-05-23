@@ -77,7 +77,14 @@ export const api = {
     history: () => request('/api/craving/history'),
   },
   chat: {
-    send: (messages) => request('/api/chat', { method: 'POST', body: JSON.stringify({ messages }) }),
+    // text vuoto/null = bootstrap saluto (non conta nel freemium).
+    // trigger opzionale: 'sos' | 'welcome' per saluto contestuale.
+    send: (text, trigger = null) => request('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ text: text || '', trigger }),
+    }),
+    history: () => request('/api/chat/history'),
+    clear: () => request('/api/chat/history', { method: 'DELETE' }),
   },
   relapse: {
     log: () => request('/api/relapse', { method: 'POST' }),
