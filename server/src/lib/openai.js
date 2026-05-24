@@ -316,7 +316,7 @@ async function getChatResponse({ user, messages, context }) {
   const cognitiveFramework = buildCognitiveFramework(selectedPhrases);
   const registerKey = pickRegister();
   const registerBlock = buildRegisterBlock(registerKey);
-  console.log(`[cognitive] register=${registerKey} phrases=${selectedPhrases.map((p) => p.id).join(',')}`);
+  console.log(`[cognitive] chat register=${registerKey} phrases=${selectedPhrases.map((p) => p.id).join(',')}`);
 
   const systemPrompt = buildSystemPrompt({ user, timeOfDay, hour, context: ctx, cognitiveFramework, registerBlock });
 

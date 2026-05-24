@@ -143,6 +143,9 @@ router.get('/phrases', async (req, res) => {
       markUsed(req.user.id, p.id, { context: 'sos' }).catch(() => {});
     }
 
+    // Logging leggero grep-abile (pre-B2): conteggi giornalieri + frasi scelte.
+    console.log(`[cognitive] sos intensity=${intensity} trigger=${trigger || 'none'} phrases=${phrases.map((p) => p.id).join(',')}`);
+
     res.json({
       phrases: phrases.map((p) => ({
         id: p.id,
