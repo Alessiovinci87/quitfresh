@@ -1,6 +1,7 @@
 const OpenAI = require('openai');
 const { getUserProgress } = require('./progress');
 const { selectPhrases, markUsed } = require('./cognitiveSelector');
+const { extractKeywords } = require('./voiceMining');
 
 // GDPR: assicurarsi di aver disabilitato "Improve model for everyone" su
 // platform.openai.com → Settings → Data Controls, altrimenti i messaggi
@@ -316,7 +317,31 @@ async function getChatResponse({ user, messages, context }) {
   const cognitiveFramework = buildCognitiveFramework(selectedPhrases);
   const registerKey = pickRegister();
   const registerBlock = buildRegisterBlock(registerKey);
-  console.log(`[cognitive] chat register=${registerKey} phrases=${selectedPhrases.map((p) => p.id).join(',')}`);
+
+  // Telemetria tecnica grep-abile (pre-B2). Solo console.log, niente DB/UI.
+  console.log(JSON.stringify({
+    type: 'chat_telemetry',
+    ts: new Date().toISOString(),
+    userId: user.id,
+    registro: registerKey,
+    trigger_context: cognitiveContext.trigger_context || 'universal',
+    craving_phase: cognitiveContext.craving_phase || 'none',
+    phrase_ids: selectedPhrases.map((p) => p.id),
+    hour: new Date().getHours(),
+  }));
+
+  // Voice mining: keyword ANONIME dal messaggio utente (mai testo completo,
+  // mai userId accanto alle keyword). Solo se c'è un messaggio reale dell'utente.
+  if (lastUserMessage?.content) {
+    console.log(JSON.stringify({
+      type: 'voice_mining',
+      ts: new Date().toISOString(),
+      trigger_context: cognitiveContext.trigger_context || 'universal',
+      craving_phase: cognitiveContext.craving_phase || 'none',
+      hour: new Date().getHours(),
+      keywords: extractKeywords(lastUserMessage.content),
+    }));
+  }
 
   const systemPrompt = buildSystemPrompt({ user, timeOfDay, hour, context: ctx, cognitiveFramework, registerBlock });
 

@@ -143,8 +143,16 @@ router.get('/phrases', async (req, res) => {
       markUsed(req.user.id, p.id, { context: 'sos' }).catch(() => {});
     }
 
-    // Logging leggero grep-abile (pre-B2): conteggi giornalieri + frasi scelte.
-    console.log(`[cognitive] sos intensity=${intensity} trigger=${trigger || 'none'} phrases=${phrases.map((p) => p.id).join(',')}`);
+    // Telemetria tecnica grep-abile (pre-B2). Solo console.log, niente DB/UI.
+    console.log(JSON.stringify({
+      type: 'sos_telemetry',
+      ts: new Date().toISOString(),
+      userId: req.user.id,
+      intensity,
+      trigger_context: ctx.trigger_context || 'universal',
+      phrase_ids: phrases.map((p) => p.id),
+      hour: new Date().getHours(),
+    }));
 
     res.json({
       phrases: phrases.map((p) => ({

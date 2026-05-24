@@ -107,6 +107,14 @@ export default function PrivacyPolicy() {
               informazioni volontariamente condivise nella chat AI.
             </li>
             <li>
+              Per migliorare il servizio, estraiamo in forma aggregata e
+              anonima parole-chiave dai messaggi inviati alla chat AI. Questa
+              estrazione non conserva il testo completo dei messaggi né li
+              collega all'identità dell'utente. Le keyword aggregate vengono
+              usate esclusivamente per comprendere quali temi affrontare nei
+              contenuti pubblici e nei contenuti dell'app.
+            </li>
+            <li>
               <strong>Stripe</strong> (pagamenti): soggetto alla propria{' '}
               <a
                 href="https://stripe.com/it/privacy"
