@@ -201,7 +201,25 @@ export default function Sos() {
               value={intensityBefore}
               onChange={setIntensityBefore}
               cta="Vai avanti"
-              onCta={() => setStep(2)}
+              onCta={() => setStep(1.5)}
+            />
+          )}
+
+          {step === 1.5 && (
+            <StepCognitiveCarousel
+              intensity={intensityBefore >= 8 ? 'emergenza' : intensityBefore >= 6 ? 'alta' : intensityBefore >= 3 ? 'media' : 'bassa'}
+              onOverpowered={() => {
+                setAction({
+                  type: 'cognitive',
+                  icon: '🧠',
+                  title: 'Frasi che fermano il craving',
+                  duration: 180,
+                  coach: [],
+                });
+                setStep(5);
+              }}
+              onWantAction={() => setStep(2)}
+              onTalkToCoach={() => navigate('/craving', { state: { trigger: 'sos' } })}
             />
           )}
 
@@ -280,6 +298,134 @@ export default function Sos() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+const CAROUSEL_AUTO_MS = 60_000;
+
+function StepCognitiveCarousel({ intensity, onOverpowered, onWantAction, onTalkToCoach }) {
+  const [phrases, setPhrases] = useState(null);
+  const [idx, setIdx] = useState(0);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.sos.getPhrases({ intensity, count: 3 })
+      .then((res) => { if (!cancelled) setPhrases(res.phrases || []); })
+      .catch(() => { if (!cancelled) setError(true); });
+    track('sos_carousel_started', { intensity });
+    return () => { cancelled = true; };
+  }, [intensity]);
+
+  useEffect(() => {
+    if (!phrases || phrases.length === 0) return;
+    if (idx >= phrases.length - 1) return;
+    const t = setTimeout(() => setIdx((i) => i + 1), CAROUSEL_AUTO_MS);
+    return () => clearTimeout(t);
+  }, [phrases, idx]);
+
+  const next = () => {
+    if (!phrases) return;
+    setIdx((i) => Math.min(phrases.length - 1, i + 1));
+  };
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full">
+        <h2 className="font-display text-2xl font-semibold text-sage-900 mb-4">Connessione assente.</h2>
+        <p className="text-sage-700/80 text-sm mb-6">Vai avanti con un'azione fisica, può bastare.</p>
+        <button
+          onClick={onWantAction}
+          className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all"
+        >
+          Scegli un'azione
+        </button>
+      </div>
+    );
+  }
+
+  if (!phrases) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-sage-700/60 text-sm">
+        <div className="w-8 h-8 rounded-full border-2 border-sage-300 border-t-sage-700 animate-spin mb-3" />
+        Un momento.
+      </div>
+    );
+  }
+
+  if (phrases.length === 0) {
+    return (
+      <div className="flex flex-col h-full">
+        <p className="text-sage-700/80 text-sm mb-6">Vai avanti con un'azione fisica.</p>
+        <button
+          onClick={onWantAction}
+          className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all"
+        >
+          Scegli un'azione
+        </button>
+      </div>
+    );
+  }
+
+  const isLast = idx >= phrases.length - 1;
+  const phrase = phrases[idx];
+
+  return (
+    <div className="flex flex-col h-full">
+      <p className="text-[10px] font-semibold text-sage-600/70 uppercase tracking-[0.2em] mb-2">Respira con queste parole</p>
+
+      <div
+        onClick={!isLast ? next : undefined}
+        className={`flex-1 bg-white rounded-2xl-soft border border-sage-100/60 shadow-soft p-8 mb-4 flex flex-col justify-center min-h-[280px] ${!isLast ? 'cursor-pointer active:scale-[0.99]' : ''} transition-transform`}
+        role={!isLast ? 'button' : undefined}
+        aria-label={!isLast ? 'Vai alla prossima frase' : undefined}
+      >
+        <p className="font-display text-2xl text-sage-900 leading-snug text-center animate-fade-in" key={idx}>
+          {phrase.text}
+        </p>
+      </div>
+
+      <div className="flex justify-center gap-2 mb-6" aria-label="Progresso">
+        {phrases.map((_, i) => (
+          <div
+            key={i}
+            className={`h-1.5 rounded-full transition-all ${
+              i === idx ? 'w-8 bg-sage-700' : i < idx ? 'w-3 bg-sage-400' : 'w-3 bg-sage-200'
+            }`}
+          />
+        ))}
+      </div>
+
+      {!isLast ? (
+        <button
+          onClick={next}
+          className="w-full py-3 text-sm text-sage-700/80 hover:text-sage-900"
+        >
+          Avanti →
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <button
+            onClick={onOverpowered}
+            className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all"
+          >
+            Ho superato il momento
+          </button>
+          <button
+            onClick={onWantAction}
+            className="w-full py-3 bg-white border border-sage-200 text-sage-800 rounded-xl-soft font-medium text-sm active:scale-[0.98] transition-all"
+          >
+            Voglio fare anche un'azione
+          </button>
+          <button
+            onClick={onTalkToCoach}
+            className="w-full py-2.5 text-sm text-sage-700/70 hover:text-sage-900"
+          >
+            Mi serve parlare
+          </button>
+        </div>
+      )}
     </div>
   );
 }

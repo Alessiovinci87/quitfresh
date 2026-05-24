@@ -116,6 +116,8 @@ export const api = {
   sos: {
     createSession: (body) => request('/api/sos/sessions', { method: 'POST', body: JSON.stringify(body) }),
     stats: () => request('/api/sos/stats'),
+    getPhrases: ({ intensity = 'alta', count = 3 } = {}) =>
+      request(`/api/sos/phrases?intensity=${encodeURIComponent(intensity)}&count=${count}`),
   },
   admin: {
     listPromoCodes: () => request('/api/admin/promo-codes'),
