@@ -5,6 +5,7 @@ const { getActivePhase, getDoseTimes } = require('./cytisine');
 const { runScheduledBackup } = require('./backup');
 const { buildDailyReportData } = require('./analytics');
 const { sendDailyReportEmail } = require('./email');
+const { cleanupOldUsage } = require('./cognitiveSelector');
 
 // Dedup cache primaria citisina (chiave: userId_YYYYMMDD_doseIndex).
 // Vive in memoria: al restart del container si svuota — accettabile perché
@@ -97,6 +98,17 @@ function startCron() {
       console.log(`[chat-retention] cancellati ${result.count} messaggi chat >90gg`);
     } catch (err) {
       console.error('[chat-retention] errore:', err.message);
+    }
+  }, { timezone: 'Europe/Rome' });
+
+  // Retention CognitivePhraseUsage: il tracking anti-ripescaggio guarda solo
+  // gli ultimi 30gg, quindi i record oltre 35gg sono inutili. Giornaliero 03:50.
+  cron.schedule('50 3 * * *', async () => {
+    try {
+      const count = await cleanupOldUsage();
+      console.log(`[cognitive-retention] cancellati ${count} record uso frasi >35gg`);
+    } catch (err) {
+      console.error('[cognitive-retention] errore:', err.message);
     }
   }, { timezone: 'Europe/Rome' });
 

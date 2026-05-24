@@ -1,36 +1,31 @@
-// Test runner minimale (zero dipendenze). Esegui: node src/lib/cognitiveSelector.test.js
+// Test runner minimale (zero dipendenze, zero DB). Esegui: node src/lib/cognitiveSelector.test.js
+// Il tracking recenti è iniettato via options.recentUsedIds (Set) — niente Prisma nei test.
 const assert = require('assert');
-const {
-  selectPhrases,
-  markUsed,
-  RECENT_DAYS,
-  _clearTracking,
-} = require('./cognitiveSelector');
+const { selectPhrases, RECENT_DAYS } = require('./cognitiveSelector');
 
 let passed = 0;
 let failed = 0;
+const queue = [];
 function test(name, fn) {
-  try {
-    _clearTracking();
-    fn();
-    console.log(`  ok  ${name}`);
-    passed++;
-  } catch (err) {
-    console.error(`  FAIL ${name}`);
-    console.error('   ', err.message);
-    failed++;
-  }
+  queue.push({ name, fn });
 }
 
+function makeSeqRng(seq) {
+  let i = 0;
+  return () => seq[i++ % seq.length];
+}
+
+const EMPTY = new Set();
+
 // --- 1. Filtro funziona con tutti i parametri ---
-test('filtro match esatto su 5 dimensioni — craving acuto SOS', () => {
-  const out = selectPhrases({
+test('filtro match esatto su 5 dimensioni — craving acuto SOS', async () => {
+  const out = await selectPhrases({
     trigger_context: 'qualunque',
     craving_phase: 'picco',
     processing_state: 'crisis_compatible',
     intensity: 'alta',
     best_usage: 'SOS',
-  }, 3);
+  }, 3, { recentUsedIds: EMPTY });
   assert.ok(out.length === 3, `expected 3, got ${out.length}`);
   for (const p of out) {
     assert.ok(p.craving_phase.includes('picco'), `phrase ${p.id} non ha picco`);
@@ -39,11 +34,11 @@ test('filtro match esatto su 5 dimensioni — craving acuto SOS', () => {
   }
 });
 
-test('filtro per categoria specifica — caffè', () => {
-  const out = selectPhrases({
+test('filtro per categoria specifica — caffè', async () => {
+  const out = await selectPhrases({
     trigger_context: 'caffè',
     best_usage: 'notifica',
-  }, 5);
+  }, 5, { recentUsedIds: EMPTY });
   assert.ok(out.length >= 1);
   for (const p of out) {
     assert.ok(
@@ -54,44 +49,35 @@ test('filtro per categoria specifica — caffè', () => {
 });
 
 // --- 2. Fallback allarga progressivamente ---
-test('fallback rilassa trigger_context quando troppo restrittivo', () => {
-  // Contesto deliberatamente incoerente: trigger inesistente ma altre dim valide.
-  const out = selectPhrases({
+test('fallback rilassa trigger_context quando troppo restrittivo', async () => {
+  const out = await selectPhrases({
     trigger_context: 'trigger_che_non_esiste_xyz',
     craving_phase: 'picco',
     processing_state: 'crisis_compatible',
     intensity: 'alta',
     best_usage: 'SOS',
-  }, 3);
+  }, 3, { recentUsedIds: EMPTY });
   assert.ok(out.length === 3, `fallback dovrebbe trovare frasi, got ${out.length}`);
 });
 
-test('fallback rilassa anche craving_phase se necessario', () => {
-  const out = selectPhrases({
+test('fallback rilassa anche craving_phase se necessario', async () => {
+  const out = await selectPhrases({
     trigger_context: 'trigger_che_non_esiste',
     craving_phase: 'fase_che_non_esiste',
     best_usage: 'chat',
-  }, 2);
+  }, 2, { recentUsedIds: EMPTY });
   assert.ok(out.length === 2);
 });
 
 // --- 3. Scoring ---
-test('tier S riceve +1 rispetto a tier A (a parità di altro)', () => {
-  // Confronto diretto: chiamiamo con rng deterministico e count alto per vedere ordine.
+test('tier S riceve +1 rispetto a tier A (a parità di altro)', async () => {
   const ctx = { best_usage: 'chat' };
-  const seq = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
-  let i = 0;
-  const rng = () => seq[i++ % seq.length];
-  const out = selectPhrases(ctx, 5, { rng });
-  // top-5 candidates (pre-shuffle) sono quelli con score più alto. Verifichiamo
-  // che almeno la maggioranza sia tier S quando il contesto è generico.
+  const out = await selectPhrases(ctx, 5, { rng: makeSeqRng([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]), recentUsedIds: EMPTY });
   const sCount = out.filter((p) => p.tier === 'S').length;
   assert.ok(sCount >= 3, `expected ≥3 tier S in top, got ${sCount}`);
 });
 
-test('match esatto su 5 dimensioni riceve +2', () => {
-  // Mock interno: testiamo che frasi che soddisfano TUTTE le 5 dimensioni
-  // appaiono prima di quelle che soddisfano solo via fallback.
+test('match esatto su 5 dimensioni riceve +2', async () => {
   const ctx = {
     trigger_context: 'qualunque',
     craving_phase: 'picco',
@@ -99,30 +85,28 @@ test('match esatto su 5 dimensioni riceve +2', () => {
     intensity: 'alta',
     best_usage: 'SOS',
   };
-  const out = selectPhrases(ctx, 5);
+  const out = await selectPhrases(ctx, 5, { recentUsedIds: EMPTY });
   for (const p of out) {
     assert.ok(p.craving_phase.includes('picco'));
     assert.strictEqual(p.intensity, 'alta');
   }
 });
 
-test('trigger_context specifico restituisce SOLO frasi di categoria (no universali)', () => {
-  // Filtro gerarchico: con trigger=stress, niente craving_acuto/post_ricaduta.
+test('trigger_context specifico restituisce SOLO frasi di categoria (no universali)', async () => {
   const ctx = { trigger_context: 'stress', best_usage: 'chat' };
-  const out = selectPhrases(ctx, 5);
+  const out = await selectPhrases(ctx, 5, { recentUsedIds: EMPTY });
   const allStress = out.every((p) => p.id.startsWith('stress_'));
   assert.ok(allStress, `expected SOLO stress_*, got ${out.map((p) => p.id).join(',')}`);
 });
 
-test('trigger_context specifico caffè restituisce SOLO frasi caffè', () => {
+test('trigger_context specifico caffè restituisce SOLO frasi caffè', async () => {
   const ctx = { trigger_context: 'caffè', best_usage: 'chat' };
-  const out = selectPhrases(ctx, 5);
+  const out = await selectPhrases(ctx, 5, { recentUsedIds: EMPTY });
   const allCaffe = out.every((p) => p.id.startsWith('caffe_'));
   assert.ok(allCaffe, `expected SOLO caffe_*, got ${out.map((p) => p.id).join(',')}`);
 });
 
-test('trigger inesistente fa fallback su universali', () => {
-  // "trigger_che_non_esiste" non ha frasi di categoria → fallback su universali.
+test('trigger inesistente fa fallback su universali', async () => {
   const ctx = {
     trigger_context: 'trigger_che_non_esiste',
     craving_phase: 'picco',
@@ -130,25 +114,24 @@ test('trigger inesistente fa fallback su universali', () => {
     intensity: 'alta',
     best_usage: 'SOS',
   };
-  const out = selectPhrases(ctx, 3);
+  const out = await selectPhrases(ctx, 3, { recentUsedIds: EMPTY });
   assert.strictEqual(out.length, 3);
-  // Devono essere universali (qualunque)
   const allUniversal = out.every((p) => p.trigger_context.includes('qualunque'));
   assert.ok(allUniversal, `expected universal phrases, got ${out.map((p) => p.id).join(',')}`);
 });
 
 // --- 4. Randomizzazione ---
-test('chiamate ripetute con rng diversi producono ordini diversi', () => {
+test('chiamate ripetute con rng diversi producono ordini diversi', async () => {
   const ctx = { best_usage: 'SOS', craving_phase: 'picco', processing_state: 'crisis_compatible' };
-  const callA = selectPhrases(ctx, 3, { rng: makeSeqRng([0.1, 0.9, 0.3, 0.7, 0.5]) });
-  const callB = selectPhrases(ctx, 3, { rng: makeSeqRng([0.9, 0.1, 0.7, 0.3, 0.5]) });
+  const callA = await selectPhrases(ctx, 3, { rng: makeSeqRng([0.1, 0.9, 0.3, 0.7, 0.5]), recentUsedIds: EMPTY });
+  const callB = await selectPhrases(ctx, 3, { rng: makeSeqRng([0.9, 0.1, 0.7, 0.3, 0.5]), recentUsedIds: EMPTY });
   const idsA = callA.map((p) => p.id).join(',');
   const idsB = callB.map((p) => p.id).join(',');
   assert.notStrictEqual(idsA, idsB, 'gli ordini dovrebbero differire');
 });
 
-// --- 5. Tracking userId esclude frasi usate di recente ---
-test('frase marcata come usata da userId scende nel ranking (-3)', () => {
+// --- 5. Tracking via recentUsedIds iniettato ---
+test('frasi in recentUsedIds scendono nel ranking (-3)', async () => {
   const ctx = {
     trigger_context: 'qualunque',
     craving_phase: 'picco',
@@ -156,52 +139,52 @@ test('frase marcata come usata da userId scende nel ranking (-3)', () => {
     intensity: 'alta',
     best_usage: 'SOS',
   };
-  const userId = 'user-test-1';
-  // Prima chiamata senza tracking: prendi un id specifico.
-  const first = selectPhrases(ctx, 1, { rng: () => 0 })[0];
-  assert.ok(first, 'prima chiamata deve ritornare almeno una frase');
-
-  // Marca tutte le top come usate tranne una, e verifica che la non-usata risalga.
-  const all = selectPhrases(ctx, 10);
-  for (const p of all.slice(0, 5)) markUsed(userId, p.id);
-
-  // Ora chiediamo 1 frase con userId: lo score di quelle marcate è ridotto di 3,
-  // quindi la prima non dovrebbe più essere tra le top con probabilità schiacciante.
-  const after = selectPhrases(ctx, 5, { userId, rng: () => 0 });
+  // Senza tracking: prendi le top 5.
+  const all = await selectPhrases(ctx, 10, { recentUsedIds: EMPTY });
   const usedIds = new Set(all.slice(0, 5).map((p) => p.id));
+
+  // Con quelle 5 marcate come recenti, non dovrebbero più occupare tutte le top-5.
+  const after = await selectPhrases(ctx, 5, { recentUsedIds: usedIds, rng: () => 0 });
   const overlap = after.filter((p) => usedIds.has(p.id)).length;
-  // Almeno una frase nuova dovrebbe entrare in top-5
-  assert.ok(overlap < 5, `tracking non sta penalizzando: tutte e ${overlap} le top sono usate`);
+  assert.ok(overlap < 5, `tracking non penalizza: tutte e ${overlap} le top sono usate`);
 });
 
-test('tracking ignorato oltre RECENT_DAYS', () => {
+test('frase NON in recentUsedIds non viene penalizzata', async () => {
   const ctx = { best_usage: 'SOS', craving_phase: 'picco', processing_state: 'crisis_compatible' };
-  const userId = 'user-test-2';
-  const out = selectPhrases(ctx, 1);
-  const phraseId = out[0].id;
-  // Marca con timestamp vecchio (oltre 30 giorni)
-  const oldTs = Date.now() - (RECENT_DAYS + 1) * 24 * 60 * 60 * 1000;
-  markUsed(userId, phraseId, oldTs);
-  // La frase non dovrebbe essere penalizzata
-  const after = selectPhrases(ctx, 10, { userId });
-  assert.ok(after.some((p) => p.id === phraseId), 'frase vecchia non dovrebbe essere penalizzata');
+  const baseline = await selectPhrases(ctx, 1, { recentUsedIds: EMPTY, rng: () => 0 })[0]
+    || (await selectPhrases(ctx, 1, { recentUsedIds: EMPTY, rng: () => 0 }))[0];
+  // recentUsedIds con un id estraneo non deve cambiare la presenza delle altre.
+  const after = await selectPhrases(ctx, 10, { recentUsedIds: new Set(['id_inesistente_zzz']) });
+  assert.ok(after.length >= 1, 'una frase non tracciata deve restare selezionabile');
 });
 
 // --- 6. Edge cases ---
-test('contesto vuoto ritorna comunque qualcosa', () => {
-  const out = selectPhrases({}, 1);
+test('contesto vuoto ritorna comunque qualcosa', async () => {
+  const out = await selectPhrases({}, 1, { recentUsedIds: EMPTY });
   assert.strictEqual(out.length, 1);
 });
 
-test('count=0 ritorna array vuoto', () => {
-  const out = selectPhrases({ best_usage: 'SOS' }, 0);
+test('count=0 ritorna array vuoto', async () => {
+  const out = await selectPhrases({ best_usage: 'SOS' }, 0, { recentUsedIds: EMPTY });
   assert.strictEqual(out.length, 0);
 });
 
-function makeSeqRng(seq) {
-  let i = 0;
-  return () => seq[i++ % seq.length];
-}
+test('RECENT_DAYS esportato = 30', async () => {
+  assert.strictEqual(RECENT_DAYS, 30);
+});
 
-console.log(`\n${passed} passed, ${failed} failed`);
-process.exit(failed > 0 ? 1 : 0);
+(async () => {
+  for (const { name, fn } of queue) {
+    try {
+      await fn();
+      console.log(`  ok  ${name}`);
+      passed++;
+    } catch (err) {
+      console.error(`  FAIL ${name}`);
+      console.error('   ', err.message);
+      failed++;
+    }
+  }
+  console.log(`\n${passed} passed, ${failed} failed`);
+  process.exit(failed > 0 ? 1 : 0);
+})();

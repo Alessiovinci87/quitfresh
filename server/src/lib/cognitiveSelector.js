@@ -1,38 +1,48 @@
 const library = require('./cognitiveLibrary.json');
+const prisma = require('./prisma');
 
 const PHRASES = library.phrases;
 const RECENT_DAYS = 30;
-const RECENT_MS = RECENT_DAYS * 24 * 60 * 60 * 1000;
+const CLEANUP_DAYS = 35;
 
-// In-memory tracking: Map<userId, Map<phraseId, timestampMs>>
-// Sostituibile in futuro con storage Prisma. Esposto via _store per test.
-const _store = new Map();
-
-function _now() {
-  return Date.now();
-}
-
-function _isUsedRecently(userId, phraseId, now = _now()) {
-  if (!userId) return false;
-  const userMap = _store.get(userId);
-  if (!userMap) return false;
-  const ts = userMap.get(phraseId);
-  if (!ts) return false;
-  return now - ts < RECENT_MS;
-}
-
-function markUsed(userId, phraseId, ts = _now()) {
-  if (!userId || !phraseId) return;
-  let userMap = _store.get(userId);
-  if (!userMap) {
-    userMap = new Map();
-    _store.set(userId, userMap);
+// Carica i phraseId usati dall'utente negli ultimi RECENT_DAYS come Set.
+// Una sola query (no N+1). Best-effort: se il DB fallisce, ritorna Set vuoto
+// (peggio: una frase potrebbe ripetersi, mai un crash).
+async function loadRecentUsedIds(userId) {
+  if (!userId) return new Set();
+  try {
+    const since = new Date(Date.now() - RECENT_DAYS * 24 * 60 * 60 * 1000);
+    const rows = await prisma.cognitivePhraseUsage.findMany({
+      where: { userId, usedAt: { gt: since } },
+      select: { phraseId: true },
+    });
+    return new Set(rows.map((r) => r.phraseId));
+  } catch (err) {
+    console.warn('[cognitiveSelector] loadRecentUsedIds fallita, fallback Set vuoto:', err.message);
+    return new Set();
   }
-  userMap.set(phraseId, ts);
 }
 
-function _clearTracking() {
-  _store.clear();
+// Registra l'uso di una frase. Best-effort: non blocca mai il chiamante.
+async function markUsed(userId, phraseId, options = {}) {
+  if (!userId || !phraseId) return;
+  const { context = null } = options;
+  try {
+    await prisma.cognitivePhraseUsage.create({
+      data: { userId, phraseId, context },
+    });
+  } catch (err) {
+    console.warn('[cognitiveSelector] markUsed fallita (best-effort):', err.message);
+  }
+}
+
+// Cleanup retention per il cron giornaliero: cancella record oltre CLEANUP_DAYS.
+async function cleanupOldUsage(olderThanDays = CLEANUP_DAYS) {
+  const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
+  const { count } = await prisma.cognitivePhraseUsage.deleteMany({
+    where: { usedAt: { lt: cutoff } },
+  });
+  return count;
 }
 
 // Match esatto su singola dimensione, con supporto per "qualunque" / "any"
@@ -102,7 +112,7 @@ function _filterWithFallback(ctx, count) {
   return { candidates, relaxedDimensions: ['trigger_context', 'craving_phase'] };
 }
 
-function _scorePhrase(phrase, ctx, userId, relaxedDimensions, now) {
+function _scorePhrase(phrase, ctx, relaxedDimensions, recentUsedIds) {
   let score = 0;
   // +2 se match esatto su TUTTE e 5 le dimensioni (nessun fallback applicato).
   if (relaxedDimensions.length === 0 && _matchAll(phrase, ctx)) {
@@ -119,7 +129,7 @@ function _scorePhrase(phrase, ctx, userId, relaxedDimensions, now) {
     score += 2;
   }
   if (phrase.tier === 'S') score += 1;
-  if (_isUsedRecently(userId, phrase.id, now)) score -= 3;
+  if (recentUsedIds.has(phrase.id)) score -= 3;
   return score;
 }
 
@@ -133,13 +143,19 @@ function _shuffle(arr, rng = Math.random) {
   return a;
 }
 
-function selectPhrases(context = {}, count = 1, options = {}) {
-  const { userId = null, rng = Math.random, now = _now() } = options;
+// Async: una query upfront per i recenti (o Set iniettato nei test).
+async function selectPhrases(context = {}, count = 1, options = {}) {
+  const { userId = null, rng = Math.random } = options;
+  // recentUsedIds iniettabile per i test (Set). Se assente, query Prisma.
+  const recentUsedIds = options.recentUsedIds instanceof Set
+    ? options.recentUsedIds
+    : await loadRecentUsedIds(userId);
+
   const { candidates, relaxedDimensions } = _filterWithFallback(context, count);
   if (candidates.length === 0) return [];
 
   const scored = candidates
-    .map((p) => ({ phrase: p, score: _scorePhrase(p, context, userId, relaxedDimensions, now) }))
+    .map((p) => ({ phrase: p, score: _scorePhrase(p, context, relaxedDimensions, recentUsedIds) }))
     .sort((a, b) => b.score - a.score);
 
   // Randomizza tra le top 5 per evitare output sempre identico.
@@ -151,7 +167,8 @@ function selectPhrases(context = {}, count = 1, options = {}) {
 module.exports = {
   selectPhrases,
   markUsed,
+  cleanupOldUsage,
+  loadRecentUsedIds,
   RECENT_DAYS,
-  _store,
-  _clearTracking,
+  CLEANUP_DAYS,
 };

@@ -131,7 +131,7 @@ router.get('/phrases', async (req, res) => {
       ...(trigger ? { trigger_context: trigger } : {}),
     };
 
-    let phrases = selectPhrases(ctx, count + 2, { userId: req.user.id });
+    let phrases = await selectPhrases(ctx, count + 2, { userId: req.user.id });
     // Filtra per delivery_mode che include standalone o sequence (no follow-up chat).
     phrases = phrases.filter((p) => {
       const dm = p.delivery_mode || [];
@@ -139,7 +139,9 @@ router.get('/phrases', async (req, res) => {
     });
     phrases = phrases.slice(0, count);
 
-    for (const p of phrases) markUsed(req.user.id, p.id);
+    for (const p of phrases) {
+      markUsed(req.user.id, p.id, { context: 'sos' }).catch(() => {});
+    }
 
     res.json({
       phrases: phrases.map((p) => ({

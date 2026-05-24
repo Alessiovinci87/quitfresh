@@ -63,6 +63,23 @@ model User {
   cravingSessions   CravingSession[]
   usageEvents       UsageEvent[]
   chatMessages      ChatMessage[]
+  cognitivePhraseUsages CognitivePhraseUsage[]
+}
+
+// Tracking anti-ripescaggio frasi della libreria cognitiva.
+// Sostituisce lo store in-memory: persiste tra restart/redeploy.
+// Retention 35gg via cron giornaliero (la finestra di esclusione è 30gg).
+model CognitivePhraseUsage {
+  id        String   @id @default(cuid())
+  userId    String
+  phraseId  String
+  usedAt    DateTime @default(now())
+  context   String? // 'chat' | 'sos' | 'notifica' per analytics
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, phraseId])
+  @@index([userId, usedAt])
 }
 
 // Chat AI: cronologia conversazione utente. Retention 90gg via cron

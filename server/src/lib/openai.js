@@ -312,7 +312,7 @@ async function getChatResponse({ user, messages, context }) {
     ctx,
     hour,
   });
-  const selectedPhrases = selectPhrases(cognitiveContext, 3, { userId: user.id });
+  const selectedPhrases = await selectPhrases(cognitiveContext, 3, { userId: user.id });
   const cognitiveFramework = buildCognitiveFramework(selectedPhrases);
   const registerKey = pickRegister();
   const registerBlock = buildRegisterBlock(registerKey);
@@ -357,8 +357,11 @@ async function getChatResponse({ user, messages, context }) {
     frequency_penalty: 0.6,
   });
 
-  // Tracking: marca le frasi usate per evitare ripescaggio nei 30gg successivi.
-  for (const p of selectedPhrases) markUsed(user.id, p.id);
+  // Tracking: marca le frasi usate (fire-and-forget, best-effort). La risposta
+  // è già pronta — un errore di tracking non deve mai rompere la chat.
+  for (const p of selectedPhrases) {
+    markUsed(user.id, p.id, { context: 'chat' }).catch(() => {});
+  }
 
   return response.choices[0].message.content;
 }
