@@ -42,6 +42,7 @@ const notificationsRoutes = require('./routes/notifications');
 const paymentsRoutes = require('./routes/payments');
 const adminRoutes = require('./routes/admin');
 const sosRoutes = require('./routes/sos');
+const userRoutes = require('./routes/user');
 const eventsRoutes = require('./routes/events');
 
 const { init: initPush } = require('./lib/push');
@@ -131,6 +132,7 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/sos', sosRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/events', eventsRoutes);
 
 // Health check usato da UptimeRobot. Testa anche il DB: se Postgres e' down

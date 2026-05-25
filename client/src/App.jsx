@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Onboarding from './pages/Onboarding';
+import WelcomeFlow from './pages/WelcomeFlow';
 import Home from './pages/Home';
 import Craving from './pages/Craving';
 import Sos from './pages/Sos';
@@ -227,6 +228,7 @@ function AppShell() {
           <Route path="/admin/analytics" element={<PrivateRoute><AdminAnalytics /></PrivateRoute>} />
           <Route path="/admin/analytics/users/:id" element={<PrivateRoute><AdminUserDetail /></PrivateRoute>} />
           <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
+          <Route path="/welcome-flow" element={<PrivateRoute><WelcomeFlow /></PrivateRoute>} />
           <Route path="/home" element={<PrivateRoute><Layout><Home /></Layout></PrivateRoute>} />
           <Route path="/craving" element={<PrivateRoute><Craving /></PrivateRoute>} />
           <Route path="/sos" element={<PrivateRoute><Sos /></PrivateRoute>} />

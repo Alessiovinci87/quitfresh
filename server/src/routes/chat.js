@@ -43,6 +43,31 @@ router.post('/', requireAuth, requireVerifiedEmail, chatLimiter, async (req, res
   const rawText = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
   const trigger = ['sos', 'welcome'].includes(req.body?.trigger) ? req.body.trigger : null;
 
+  // Welcome flow (activation): bolla AI generata al volo per la micro-esperienza
+  // post-onboarding. NON e' una vera conversazione:
+  // - non consuma il limite freemium (niente chatMessagesUsed++)
+  // - non viene salvata nella cronologia (niente ChatMessage.create)
+  // - niente check 402: e' un messaggio dimostrativo, non un turno utente.
+  // Il context welcomeScenario forza registro + scenario in openai.js.
+  if (req.body?.isWelcomeFlow === true) {
+    try {
+      // Stesso context del path normale (progress, pattern, citisina) cosi'
+      // il system prompt e' completo; welcomeScenario forza registro + scenario.
+      const context = await buildChatContext(req.user);
+      const reply = await getChatResponse({
+        user: req.user,
+        messages: [],
+        context: { ...context, trigger: 'welcome', welcomeScenario: true },
+      });
+      return res.json({ reply, freemium: null });
+    } catch (err) {
+      console.error('Welcome flow chat error:', err);
+      return res.status(502).json({
+        error: 'Servizio AI temporaneamente non disponibile. Riprova tra qualche momento.',
+      });
+    }
+  }
+
   if (rawText.length > MAX_TEXT_LEN) {
     return res.status(400).json({ error: 'Messaggio troppo lungo' });
   }

@@ -83,6 +83,12 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ text: text || '', trigger }),
     }),
+    // Welcome flow: bolla AI dimostrativa. Non conta nel freemium, non salvata
+    // in cronologia (backend skippa increment + ChatMessage.create).
+    welcome: () => request('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ isWelcomeFlow: true }),
+    }),
     history: () => request('/api/chat/history'),
     clear: () => request('/api/chat/history', { method: 'DELETE' }),
   },
@@ -116,8 +122,14 @@ export const api = {
   sos: {
     createSession: (body) => request('/api/sos/sessions', { method: 'POST', body: JSON.stringify(body) }),
     stats: () => request('/api/sos/stats'),
-    getPhrases: ({ intensity = 'alta', count = 3 } = {}) =>
-      request(`/api/sos/phrases?intensity=${encodeURIComponent(intensity)}&count=${count}`),
+    getPhrases: ({ intensity = 'alta', count = 3, triggerContext = null } = {}) => {
+      const qs = `intensity=${encodeURIComponent(intensity)}&count=${count}`
+        + (triggerContext ? `&trigger_context=${encodeURIComponent(triggerContext)}` : '');
+      return request(`/api/sos/phrases?${qs}`);
+    },
+  },
+  user: {
+    completeWelcomeFlow: () => request('/api/user/complete-welcome-flow', { method: 'POST' }),
   },
   admin: {
     listPromoCodes: () => request('/api/admin/promo-codes'),

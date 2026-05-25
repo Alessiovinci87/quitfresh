@@ -24,6 +24,7 @@ const PAYWALL_EXEMPT = new Set([
   '/stats',
   '/tools',
   '/sos',
+  '/welcome-flow',
 ]);
 
 // Route accessibili anche se l'utente NON ha ancora completato l'onboarding
@@ -48,6 +49,20 @@ const EMAIL_VERIFY_EXEMPT = new Set([
   '/terms',
 ]);
 
+// Route accessibili anche se l'utente NON ha ancora visto il welcome flow.
+// Tutto il resto, finché welcomeFlowCompleted === false, viene reindirizzato
+// a /welcome-flow (l'esperienza di attivazione post-onboarding). Gli utenti
+// pre-deploy sono backfillati a true → non vengono mai intrappolati.
+const WELCOME_FLOW_EXEMPT = new Set([
+  '/welcome-flow',
+  '/onboarding',
+  '/check-email',
+  '/profile',
+  '/privacy',
+  '/terms',
+  '/admin/promo-codes',
+]);
+
 export default function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -70,6 +85,14 @@ export default function PrivateRoute({ children }) {
   // Onboarding incompleto → forza il completamento prima di tutto.
   if (!user.quitDate && !ONBOARDING_EXEMPT.has(location.pathname)) {
     return <Navigate to="/onboarding" replace />;
+  }
+
+  // Welcome flow → mostrato una sola volta ai nuovi utenti dopo l'onboarding,
+  // prima della home. Strict === false: utenti grandfathered (true) e quelli
+  // senza il campo non vengono mai reindirizzati.
+  if (user.quitDate && user.welcomeFlowCompleted === false
+      && !WELCOME_FLOW_EXEMPT.has(location.pathname)) {
+    return <Navigate to="/welcome-flow" replace />;
   }
 
   if (!user.isPremium && !PAYWALL_EXEMPT.has(location.pathname)) {

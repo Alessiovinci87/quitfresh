@@ -53,6 +53,11 @@ model User {
   // mantengono accesso illimitato a chat/diario/citisina push.
   // Settato via migration data per tutti gli User esistenti.
   freemiumGrandfathered  Boolean @default(false)
+  // Welcome flow post-onboarding: micro-esperienza mostrata una sola volta
+  // ai NUOVI utenti subito dopo l'onboarding, prima della home. Gli utenti
+  // pre-deploy vengono backfillati a true (non lo vedono mai). Vedi
+  // routes/user.js + client WelcomeFlow.jsx.
+  welcomeFlowCompleted   Boolean @default(false)
   // Telemetria di prodotto: se true, il middleware salta gli insert in
   // UsageEvent per questo utente. Default false (raccolta attiva).
   analyticsOptOut   Boolean            @default(false)

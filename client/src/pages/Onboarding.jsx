@@ -130,7 +130,10 @@ export default function Onboarding() {
         momentsCount: selectedMoments.length,
       });
       updateUser(user);
-      navigate('/home', { replace: true });
+      // Nuovi utenti → welcome flow (attivazione) prima della home. Chi è già
+      // grandfathered (welcomeFlowCompleted=true) viene rimbalzato a /home dal
+      // guard interno di WelcomeFlow.
+      navigate('/welcome-flow', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

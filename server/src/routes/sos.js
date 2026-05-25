@@ -113,6 +113,11 @@ router.get('/stats', async (req, res) => {
 router.get('/phrases', async (req, res) => {
   const intensity = ALLOWED_INTENSITIES.has(req.query.intensity) ? req.query.intensity : 'alta';
   const count = Math.max(1, Math.min(5, parseInt(req.query.count, 10) || 3));
+  // trigger_context esplicito opzionale: se il chiamante lo passa (es. welcome
+  // flow con scenario "dopo cena") lo usiamo invece di inferirlo dall'utente.
+  const explicitTrigger = typeof req.query.trigger_context === 'string' && req.query.trigger_context.trim()
+    ? req.query.trigger_context.trim().slice(0, 40)
+    : null;
 
   try {
     // Fetch criticalMoments dell'utente per inferenza trigger.
@@ -121,7 +126,7 @@ router.get('/phrases', async (req, res) => {
       select: { criticalMoments: true },
     });
     const hour = new Date().getHours();
-    const trigger = inferSosTrigger(hour, userRow?.criticalMoments || []);
+    const trigger = explicitTrigger || inferSosTrigger(hour, userRow?.criticalMoments || []);
 
     const ctx = {
       best_usage: 'SOS',

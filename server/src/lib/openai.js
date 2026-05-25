@@ -308,14 +308,26 @@ async function getChatResponse({ user, messages, context }) {
   // Libreria cognitiva: seleziona 3 frasi pertinenti come framework invisibile.
   // Le frasi NON vengono mostrate all'utente: orientano solo il ragionamento AI.
   const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
-  const cognitiveContext = inferCognitiveContext({
-    userMessage: lastUserMessage?.content || '',
-    ctx,
-    hour,
-  });
+  // Welcome flow: scenario fissato (divano dopo cena, craving al picco) e
+  // registro forzato secco/osservazione, per una voce lucida da "momento reale".
+  const cognitiveContext = ctx.welcomeScenario
+    ? {
+        best_usage: 'chat',
+        trigger_context: 'dopo cena',
+        craving_phase: 'picco',
+        intensity: 'alta',
+        processing_state: 'crisis_compatible',
+      }
+    : inferCognitiveContext({
+        userMessage: lastUserMessage?.content || '',
+        ctx,
+        hour,
+      });
   const selectedPhrases = await selectPhrases(cognitiveContext, 3, { userId: user.id });
   const cognitiveFramework = buildCognitiveFramework(selectedPhrases);
-  const registerKey = pickRegister();
+  const registerKey = ctx.welcomeScenario
+    ? (Math.random() < 0.5 ? 'SECCO' : 'OSSERVAZIONE_BREVE')
+    : pickRegister();
   const registerBlock = buildRegisterBlock(registerKey);
 
   // Telemetria tecnica grep-abile (pre-B2). Solo console.log, niente DB/UI.
@@ -353,7 +365,9 @@ async function getChatResponse({ user, messages, context }) {
     // - sessione SOS appena conclusa (<5min)
     // - prima chat del giorno o conversazione continuata
     let hint;
-    if (ctx.trigger === 'sos' || ctx.recentSos) {
+    if (ctx.welcomeScenario) {
+      hint = `[L'utente e' seduto sul divano dopo cena. La sigaretta e' un automatismo e il craving e' al picco. Rispondi come faresti nel momento esatto in cui sta per cedere: una voce lucida e diretta. NON salutare, NON spiegare l'app, NON fare domande di onboarding, NON elencare feature. Reagisci solo al momento.]`;
+    } else if (ctx.trigger === 'sos' || ctx.recentSos) {
       const sosInfo = ctx.recentSos
         ? ` (intensita' prima: ${ctx.recentSos.intensityBefore}/10, dopo: ${ctx.recentSos.intensityAfter ?? 'n.d.'}/10, azione: ${ctx.recentSos.type})`
         : '';
@@ -384,8 +398,12 @@ async function getChatResponse({ user, messages, context }) {
 
   // Tracking: marca le frasi usate (fire-and-forget, best-effort). La risposta
   // è già pronta — un errore di tracking non deve mai rompere la chat.
-  for (const p of selectedPhrases) {
-    markUsed(user.id, p.id, { context: 'chat' }).catch(() => {});
+  // Welcome flow escluso: e' una demo, non deve bruciare frasi reali
+  // nell'anti-ripescaggio dell'utente.
+  if (!ctx.welcomeScenario) {
+    for (const p of selectedPhrases) {
+      markUsed(user.id, p.id, { context: 'chat' }).catch(() => {});
+    }
   }
 
   return response.choices[0].message.content;
