@@ -2,95 +2,68 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { track } from '../lib/tracker';
-import { CHAPTERS, TOTAL_DAYS, getCurrentDay, getChapter } from '../data/percorso';
+import ScenePlayer from '../components/ScenePlayer';
+import { TOTAL_DAYS, getCurrentDay, getChapter } from '../data/percorso';
 
-// PLACEHOLDER — non è la UI finale. Mostra i 4 campi strutturali del capitolo
-// di oggi + l'elenco dei 7 giorni con stato locked/unlocked, per validare la
-// meccanica (derivazione currentDay, sblocco temporale). Il design e il copy
-// definitivi arrivano dopo l'allineamento della mappa.
+// /percorso — NON è una pagina, è un momento.
+// Player a tap di micro-scene a tutto schermo (no Layout/nav). La lista dei 7
+// giorni è ridotta a pallini faint in fondo: presente ma mai dominante.
 export default function Percorso() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const currentDay = getCurrentDay(user?.quitDate);
-  const today = getChapter(currentDay);
+  const day = getCurrentDay(user?.quitDate);
+  const chapter = getChapter(day);
 
   useEffect(() => {
-    track('percorso_opened', { currentDay });
-  }, [currentDay]);
+    track('percorso_opened', { day });
+  }, [day]);
+
+  function handleComplete() {
+    track('percorso_completed_day', { day, totalScenes: chapter?.scenes?.length || 0 });
+    navigate('/home');
+  }
+
+  function handleSkip() {
+    track('percorso_skipped', { day });
+    navigate('/home');
+  }
 
   return (
-    <div className="mobile-container bg-gradient-to-b from-cream-50 to-cream-100 px-6 py-8 animate-fade-in">
-      <div className="max-w-mobile w-full mx-auto">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">
-          Percorso · placeholder
-        </p>
-        <h1 className="font-display text-2xl font-semibold text-sage-900 mt-1 mb-6">
-          Giorno {currentDay} di {TOTAL_DAYS}
-        </h1>
-
-        {today && (
-          <div className="bg-white rounded-2xl-soft border border-sage-100/60 shadow-soft p-6 mb-8">
-            {today.body ? (
-              // Copy definitivo (micro). Ogni frase respira su una riga propria.
-              <div className="space-y-3">
-                {today.body.map((line, i) => (
-                  <p key={i} className="font-display text-lg text-sage-900 leading-snug">{line}</p>
-                ))}
-              </div>
-            ) : (
-              // Fallback: capitolo senza copy ancora scritto → campi strutturali.
-              <div className="space-y-4">
-                <Field label="Illusione" value={today.illusione} />
-                <Field label="Nuova percezione" value={today.nuovaPercezione} />
-                <Field label="Osservazione reale" value={today.osservazione} />
-                <Field label="Stato mentale finale" value={today.statoFinale} />
-              </div>
-            )}
+    <div className="mobile-container relative bg-gradient-to-b from-cream-50 via-cream-50 to-sage-50 px-6 overflow-hidden">
+      <div className="max-w-mobile w-full mx-auto flex-1 flex flex-col">
+        {chapter?.scenes ? (
+          <ScenePlayer
+            scenes={chapter.scenes}
+            cta={chapter.cta}
+            day={day}
+            onComplete={handleComplete}
+            onSkip={handleSkip}
+          />
+        ) : (
+          // Fallback estremo (capitolo senza scene): non blocchiamo l'utente.
+          <div className="flex-1 flex flex-col items-center justify-center text-center">
+            <p className="font-display text-2xl text-sage-900">Il momento di oggi arriva presto.</p>
+            <button onClick={() => navigate('/home')} className="mt-6 text-sm text-sage-700/80 hover:text-sage-900">
+              ← Torna alla home
+            </button>
           </div>
         )}
 
-        <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold mb-2">
-          I 7 giorni
-        </p>
-        <ul className="space-y-1.5">
-          {CHAPTERS.map((c) => {
-            const unlocked = c.day <= currentDay;
-            const isToday = c.day === currentDay;
+        {/* I 7 giorni — secondario, faint. Solo indicatore, non navigabile. */}
+        <div className="shrink-0 flex justify-center gap-1.5 pb-5" aria-label={`Giorno ${day} di ${TOTAL_DAYS}`}>
+          {Array.from({ length: TOTAL_DAYS }, (_, idx) => {
+            const d = idx + 1;
             return (
-              <li
-                key={c.day}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl-soft border text-sm ${
-                  isToday
-                    ? 'border-sage-400 bg-sage-50 text-sage-900 font-medium'
-                    : unlocked
-                    ? 'border-sage-100 bg-white text-sage-800'
-                    : 'border-sage-100/50 bg-white/50 text-sage-400'
+              <div
+                key={d}
+                className={`h-1 rounded-full transition-all ${
+                  d === day ? 'w-5 bg-sage-400' : d < day ? 'w-1.5 bg-sage-300/70' : 'w-1.5 bg-sage-200/40'
                 }`}
-              >
-                <span className="tabular-nums w-6">{c.day}</span>
-                <span className="flex-1 truncate">{unlocked ? c.illusione : '— bloccato —'}</span>
-                {!unlocked && <span className="text-xs">🔒</span>}
-              </li>
+              />
             );
           })}
-        </ul>
-
-        <button
-          onClick={() => navigate('/home')}
-          className="mt-8 w-full py-3 text-sm text-sage-700/80 hover:text-sage-900"
-        >
-          ← Torna alla home
-        </button>
+        </div>
       </div>
-    </div>
-  );
-}
-
-function Field({ label, value }) {
-  return (
-    <div>
-      <p className="text-[10px] uppercase tracking-[0.15em] text-sage-500 font-semibold mb-0.5">{label}</p>
-      <p className="text-sage-900 leading-snug">{value}</p>
     </div>
   );
 }

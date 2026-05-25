@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { getActivePhase, getDoseTimes, totalDays } from '../lib/cytisine';
-import { getCurrentDay, getChapter, TOTAL_DAYS } from '../data/percorso';
+import { track } from '../lib/tracker';
+import { getCurrentDay, getChapter, isInPercorsoWindow } from '../data/percorso';
 
 const BADGE_EMOJI = {
   day1: '🌱', day3: '🌿', week1: '⭐', day14: '🌟', month1: '🏅', month3: '🏆',
@@ -199,20 +200,25 @@ export default function Home() {
     >
       {verifyBanner}
 
-      {/* Card percorso — PLACEHOLDER temporaneo (scaffold, non UI finale) */}
-      {user.quitDate && (() => {
+      {/* Momento di oggi — porta d'ingresso emotiva (solo nei primi 7 giorni).
+          Blocco dominante: non deve sembrare un link, ma il cuore dell'app. */}
+      {user.quitDate && isInPercorsoWindow(user.quitDate) && (() => {
         const day = getCurrentDay(user.quitDate);
         const ch = getChapter(day);
         if (!ch) return null;
         return (
           <button
-            onClick={() => navigate('/percorso')}
-            className="mb-3 w-full text-left bg-white border border-sage-100/60 shadow-soft rounded-xl-soft px-4 py-3 active:scale-[0.99] transition-transform"
+            onClick={() => { track('percorso_cta_clicked', { day, source: 'home' }); navigate('/percorso'); }}
+            className="mb-6 w-full text-left bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-2xl-soft shadow-sage px-6 py-7 active:scale-[0.99] transition-transform"
           >
-            <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">
-              Percorso · Giorno {day} di {TOTAL_DAYS}
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/70 font-semibold">
+              Il momento di oggi · Giorno {day}
             </p>
-            <p className="text-sage-900 text-sm mt-0.5 leading-snug">{ch.illusione}</p>
+            <h2 className="font-display text-[28px] leading-tight mt-2.5">{ch.headline}</h2>
+            <p className="text-white/75 text-sm mt-3">2 minuti. Una cosa da notare oggi.</p>
+            <span className="inline-flex items-center gap-1.5 mt-5 bg-white/15 px-4 py-2 rounded-full text-sm font-medium">
+              Entra nel momento →
+            </span>
           </button>
         );
       })()}

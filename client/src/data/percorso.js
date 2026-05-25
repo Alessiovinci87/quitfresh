@@ -1,43 +1,72 @@
 // ─────────────────────────────────────────────────────────────────────────
-// PERCORSO — mappa mentale dei 7 giorni (v3 stabile)
+// PERCORSO — mappa mentale dei 7 giorni (v3) + scene interattive
 //
-// Struttura narrativa validata. Campi:
+// Ogni capitolo ha:
+//   - headline   : titolo corto, usato dal blocco "Momento di oggi" in Home
+//   - scenes[]   : micro-scene mostrate UNA alla volta nel player a tap
+//                  type: 'title' | 'thought' | 'break' | 'notice'
+//   - cta        : etichetta del bottone sull'ultima scena
+//   - body       : copy "lineare" (fallback / riferimento)
 //   - illusione / nuovaPercezione / osservazione / statoFinale = la MAPPA
-//     (regia interna, non necessariamente mostrata all'utente)
-//   - body = il COPY definitivo mostrato all'utente (micro, 3-5 frasi)
 //
-// Stato copy: G3-G7 scritti e fissati. G1-G2 ancora senza `body` (mappa ok,
-// copy da rifinire) → la pagina mostra i campi strutturali come fallback.
-//
-// Scelta architetturale (regola "no nuova complessità"): contenuto STATICO,
-// currentDay DERIVATO da user.quitDate. Nessun DB, migration o endpoint.
+// Stato: G1-G7 hanno scene complete. Contenuto STATICO, currentDay DERIVATO
+// da quitDate. Nessun DB, migration o endpoint (regola "no nuova complessità").
 // ─────────────────────────────────────────────────────────────────────────
 
 export const TOTAL_DAYS = 7;
+const CTA_DEFAULT = 'Lo terrò d’occhio oggi';
 
 export const CHAPTERS = [
   {
     day: 1,
+    headline: 'Il gesto parte prima del pensiero.',
     illusione: 'Scelgo io ogni sigaretta.',
     nuovaPercezione: 'Il corpo spesso accende prima che la mente decida: il gesto parte da solo.',
     osservazione: 'Cogliere l’istante in cui la mano si muove prima di qualsiasi pensiero.',
     statoFinale: 'Osservazione inquieta. Prima crepa nell’idea di avere il controllo dell’atto.',
-    body: null, // copy da scrivere
+    cta: CTA_DEFAULT,
+    scenes: [
+      { type: 'title', text: 'Alcuni craving arrivano prima del pensiero.' },
+      { type: 'thought', text: 'A volte hai già la sigaretta in mano prima ancora di aver deciso.' },
+      { type: 'break', text: 'Non è debolezza.' },
+      { type: 'thought', text: 'Il cervello esegue una sequenza. Solo dopo costruisce la motivazione.' },
+      { type: 'notice', text: 'Il momento preciso in cui il gesto parte da solo.' },
+    ],
+    body: null,
   },
   {
     day: 2,
+    headline: 'Il craving non è casuale.',
     illusione: 'Mi viene voglia di fumare casualmente.',
     nuovaPercezione: 'Il cervello collega sequenze e rituali.',
     osservazione: 'Vedere i trigger automatici: caffè, pausa, auto, dopo cena.',
     statoFinale: 'Sensazione che molti craving siano appresi, non spontanei.',
-    body: null, // copy da scrivere
+    cta: CTA_DEFAULT,
+    scenes: [
+      { type: 'title', text: 'Pensi che la voglia arrivi a caso.' },
+      { type: 'thought', text: 'Quasi mai. Arriva col caffè. Con la pausa. In auto. Dopo cena.' },
+      { type: 'break', text: 'Sono sequenze.' },
+      { type: 'thought', text: 'Il cervello ha imparato ad accendere in certi momenti. Sempre gli stessi.' },
+      { type: 'notice', text: 'I momenti in cui la voglia torna puntuale, come un orario.' },
+    ],
+    body: null,
   },
   {
     day: 3,
+    headline: 'Il volere arriva dopo.',
     illusione: 'Fumo perché lo voglio.',
     nuovaPercezione: 'Il "lo voglio" è il racconto che la mente costruisce per dare senso a un gesto già innescato, non la causa che lo ha deciso.',
-    osservazione: 'Notare quanto in fretta arriva il "lo voglio" e quanto suona ovvio, come se fosse sempre stato lì.',
+    osservazione: 'Notare quanto in fretta arriva il "lo voglio" e quanto suona ovvio.',
     statoFinale: 'Il proprio "volere" inizia a sembrare una spiegazione, non un’origine.',
+    cta: CTA_DEFAULT,
+    scenes: [
+      { type: 'title', text: 'Fumo perché lo voglio.' },
+      { type: 'thought', text: 'Ma guarda l’ordine delle cose.' },
+      { type: 'thought', text: 'Quel “lo voglio” arriva già pronto. Troppo in fretta per essere una scelta.' },
+      { type: 'break', text: 'Non è da lì che parte.' },
+      { type: 'thought', text: 'È la spiegazione che la mente incolla sopra qualcosa già iniziato.' },
+      { type: 'notice', text: 'Quando senti “lo voglio”, chiediti: è arrivato prima o dopo?' },
+    ],
     body: [
       'Pensi: fumo perché lo voglio.',
       'Ma guarda l’ordine delle cose. Quel "lo voglio" arriva in un lampo, già pronto, troppo in fretta per essere una scelta.',
@@ -47,10 +76,20 @@ export const CHAPTERS = [
   },
   {
     day: 4,
+    headline: 'Non è la nicotina. È la pausa.',
     illusione: 'La sigaretta mi rilassa.',
-    nuovaPercezione: 'Molte sigarette cercano un’interruzione, una pausa, un cambio di stato, non nicotina. E la paura non è perdere il fumo: è restare senza la pausa.',
+    nuovaPercezione: 'Molte sigarette cercano un’interruzione, una pausa, un cambio di stato, non nicotina.',
     osservazione: 'Notare quando il bisogno arriva nei momenti di sovraccarico o saturazione.',
     statoFinale: 'Confusione iniziale tra bisogno di pausa e bisogno di fumare.',
+    cta: CTA_DEFAULT,
+    scenes: [
+      { type: 'title', text: 'La sigaretta mi rilassa.' },
+      { type: 'thought', text: 'Ma nota quando la cerchi: quasi mai nella calma.' },
+      { type: 'break', text: 'Quasi sempre nel troppo.' },
+      { type: 'thought', text: 'Non chiami la nicotina. Chiami una pausa, un’interruzione, un confine.' },
+      { type: 'thought', text: 'E sotto, la paura non è restare senza fumo. È restare senza quella pausa.' },
+      { type: 'notice', text: 'Cosa stavi facendo nell’istante prima del bisogno.' },
+    ],
     body: [
       'La sigaretta ti rilassa, dici.',
       'Ma nota quando la cerchi: quasi mai nella calma, quasi sempre nel troppo.',
@@ -60,10 +99,19 @@ export const CHAPTERS = [
   },
   {
     day: 5,
+    headline: 'È memoria, non piacere.',
     illusione: 'Mi manca davvero fumare.',
-    nuovaPercezione: 'Alcune sigarette sembrano nostalgia perché legate a identità e rituali, non al piacere. E il vuoto che lasciano è meno permanente di quanto sembri.',
-    osservazione: 'Notare quando manca più il gesto che la nicotina, e i momenti in cui il craving passa da solo, anche senza riempirlo.',
-    statoFinale: 'La sigaretta come memoria automatica, non piacere puro. Prima sensazione che il vuoto del gesto passa anche se non lo riempio.',
+    nuovaPercezione: 'Alcune sigarette sembrano nostalgia perché legate a identità e rituali, non al piacere.',
+    osservazione: 'Notare quando manca più il gesto che la nicotina.',
+    statoFinale: 'La sigaretta come memoria automatica, non piacere puro.',
+    cta: CTA_DEFAULT,
+    scenes: [
+      { type: 'title', text: 'Mi manca davvero fumare.' },
+      { type: 'thought', text: 'A volte non manca la sigaretta. Manca il gesto. L’ora. Il posto dove arrivava sempre.' },
+      { type: 'break', text: 'È memoria, non piacere.' },
+      { type: 'thought', text: 'E quando il vuoto arriva e non lo riempi, guarda bene: passa lo stesso.' },
+      { type: 'notice', text: 'I momenti in cui il vuoto passa da solo, più in fretta di quanto credevi.' },
+    ],
     body: [
       'A volte non manca la sigaretta. Manca il gesto. L’ora. Il posto dove arrivava sempre.',
       'È memoria, non piacere — un rituale che cerca ancora il suo posto.',
@@ -73,10 +121,19 @@ export const CHAPTERS = [
   },
   {
     day: 6,
+    headline: 'Vederlo gli toglie presa.',
     illusione: 'Una sola non cambia nulla.',
     nuovaPercezione: 'Il cervello usa la sensazione di controllo per riaprire il ciclo.',
-    osservazione: 'Notare quanto "solo una" sembri sempre ragionevole, e cosa succede quando lo si vede arrivare invece di seguirlo.',
-    statoFinale: 'Diffidenza verso le razionalizzazioni improvvise. Primo assaggio: vedere la scusa nell’istante in cui arriva le toglie un po’ di presa.',
+    osservazione: 'Notare quanto "solo una" sembri sempre ragionevole.',
+    statoFinale: 'Diffidenza verso le razionalizzazioni improvvise.',
+    cta: CTA_DEFAULT,
+    scenes: [
+      { type: 'title', text: 'Una sola non cambia nulla.' },
+      { type: 'thought', text: 'Sembra sempre ragionevole. È costruita per sembrarlo.' },
+      { type: 'thought', text: 'È così che il cervello riapre la porta: usando la tua sensazione di controllo contro di te.' },
+      { type: 'break', text: 'Oggi non discutere con il pensiero. Guardalo arrivare.' },
+      { type: 'notice', text: 'Nel momento in cui lo vedi per quello che è, perde un po’ di presa.' },
+    ],
     body: [
       '"Solo una" sembra sempre ragionevole. È costruita per sembrarlo: è così che il cervello riapre la porta, usando la tua sensazione di controllo contro di te.',
       'Oggi non discutere con il pensiero. Guardalo arrivare.',
@@ -85,10 +142,20 @@ export const CHAPTERS = [
   },
   {
     day: 7,
+    headline: 'Non è resistere per sempre.',
     illusione: 'Smettere significa resistere per sempre.',
     nuovaPercezione: 'Non è una battaglia eterna di volontà: gli automatismi che hai osservato stanno già svanendo da soli.',
     osservazione: 'Notare i momenti in cui il craving non arriva dove prima arrivava sempre.',
-    statoFinale: 'Primo spostamento identitario silenzioso. Non euforia, non vittoria: solo "qualcosa sta cambiando", e non è una sorpresa, è una conferma.',
+    statoFinale: 'Primo spostamento identitario silenzioso. Non euforia, non vittoria: solo "qualcosa sta cambiando".',
+    cta: 'Vado avanti',
+    scenes: [
+      { type: 'title', text: 'Smettere significa resistere per sempre.' },
+      { type: 'thought', text: 'Ma la resistenza serve contro qualcosa di vivo.' },
+      { type: 'thought', text: 'E alcuni di questi automatismi li hai già visti spegnersi.' },
+      { type: 'notice', text: 'I posti dove il craving non si è presentato. Quelli dove prima arrivava sempre.' },
+      { type: 'break', text: 'Non è euforia. Non è una vittoria.' },
+      { type: 'break', text: 'È solo qualcosa che sta cambiando.' },
+    ],
     body: [
       'Hai immaginato lo smettere come una resistenza infinita.',
       'Ma la resistenza serve contro qualcosa di vivo — e alcuni di questi automatismi li hai già visti spegnersi.',
@@ -107,6 +174,16 @@ export function getCurrentDay(quitDate, now = new Date()) {
   if (Number.isNaN(start.getTime())) return 1;
   const days = Math.floor((now - start) / 86_400_000);
   return Math.max(1, Math.min(TOTAL_DAYS, days + 1));
+}
+
+// True se l'utente è ancora dentro la finestra dei 7 giorni (giorni 1..7).
+// Dopo il giorno 7 il "Momento di oggi" non si mostra più in Home.
+export function isInPercorsoWindow(quitDate, now = new Date()) {
+  if (!quitDate) return false;
+  const start = new Date(quitDate);
+  if (Number.isNaN(start.getTime())) return false;
+  const days = Math.floor((now - start) / 86_400_000);
+  return days >= 0 && days < TOTAL_DAYS;
 }
 
 export function getChapter(day) {
