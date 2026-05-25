@@ -41,7 +41,19 @@ router.delete('/history', requireAuth, requireVerifiedEmail, async (req, res) =>
 // - text presente → turno utente: count + persist user msg + reply.
 router.post('/', requireAuth, requireVerifiedEmail, chatLimiter, async (req, res) => {
   const rawText = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
-  const trigger = ['sos', 'welcome'].includes(req.body?.trigger) ? req.body.trigger : null;
+  const trigger = ['sos', 'welcome', 'percorso'].includes(req.body?.trigger) ? req.body.trigger : null;
+
+  // Contesto percorso (solo trigger 'percorso'): la scelta fatta dall'utente
+  // nel capitolo del giorno, per un'apertura chat ponderata. Validato e cappato.
+  let percorso = null;
+  if (trigger === 'percorso' && req.body?.percorso && typeof req.body.percorso === 'object') {
+    const p = req.body.percorso;
+    percorso = {
+      day: Number.isInteger(p.day) ? p.day : null,
+      optionLabel: typeof p.optionLabel === 'string' ? p.optionLabel.slice(0, 80) : null,
+      feedback: typeof p.feedback === 'string' ? p.feedback.slice(0, 400) : null,
+    };
+  }
 
   // Welcome flow (activation): bolla AI generata al volo per la micro-esperienza
   // post-onboarding. NON e' una vera conversazione:
@@ -112,7 +124,7 @@ router.post('/', requireAuth, requireVerifiedEmail, chatLimiter, async (req, res
     const reply = await getChatResponse({
       user: req.user,
       messages: openaiMessages,
-      context: { ...context, trigger },
+      context: { ...context, trigger, percorso },
     });
 
     // Persistenza: una sola transaction per atomicita'.

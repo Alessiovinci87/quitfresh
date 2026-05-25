@@ -374,6 +374,9 @@ async function getChatResponse({ user, messages, context }) {
       hint = `[L'utente ha appena usato SOS Craving${sosInfo} e ora ha aperto la chat. Chiedi come sta ADESSO, brevemente, senza ripetere i numeri. 1 frase.]`;
     } else if (ctx.trigger === 'welcome') {
       hint = `[Primo accesso post-onboarding. Saluta caldo (1 frase) e proponi di provare insieme un primo craving simulato per capire come funziona il supporto. Non elencare feature.]`;
+    } else if (ctx.trigger === 'percorso' && ctx.percorso) {
+      const p = ctx.percorso;
+      hint = `[L'utente ha appena completato il capitolo ${p.day || ''} del percorso e ha scelto "${p.optionLabel || ''}".${p.feedback ? ` Riflessione mostrata: "${p.feedback}".` : ''} Apri la chat riprendendo la SUA scelta in modo concreto e personale (1 frase), poi UNA domanda che lo porti dentro il momento adesso. Niente saluto formale, non spiegare l'app, non elencare feature.]`;
     } else if (ctx.isFirstChatToday) {
       hint = `[Prima chat del giorno. È ${timeOfDay}, giorno ${ctx.progress.daysSinceQuit} del percorso. Saluto breve (1 frase) + 1 domanda concreta sul momento.]`;
     } else {

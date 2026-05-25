@@ -36,8 +36,12 @@ export default function Craving() {
   const location = useLocation();
   const { user } = useAuth();
   // Trigger di apertura passato via navigate('/craving', { state: { trigger } }).
-  // 'sos' = chat aperta dopo SOS Craving; 'welcome' = primo flow post-onboarding.
+  // 'sos' = chat aperta dopo SOS Craving; 'welcome' = primo flow post-onboarding;
+  // 'percorso' = chat aperta dopo un capitolo, con la scelta fatta dall'utente.
   const trigger = location.state?.trigger || null;
+  // Contesto percorso opzionale: { day, optionLabel, feedback }. Permette
+  // all'AI di aprire riprendendo la scelta del giorno invece che generico.
+  const percorso = location.state?.percorso || null;
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -249,11 +253,11 @@ export default function Craving() {
         content: m.content,
         createdAt: m.createdAt,
       }));
-      const needsGreeting = normalized.length === 0 || trigger === 'sos' || trigger === 'welcome';
+      const needsGreeting = normalized.length === 0 || trigger === 'sos' || trigger === 'welcome' || trigger === 'percorso';
       setMessages(normalized);
       setHistoryLoaded(true);
       if (needsGreeting) {
-        const { reply } = await api.chat.send('', trigger);
+        const { reply } = await api.chat.send('', trigger, percorso ? { percorso } : {});
         setMessages(prev => [...prev, { role: 'assistant', content: reply, createdAt: new Date().toISOString() }]);
       }
     } catch {

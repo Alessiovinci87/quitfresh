@@ -78,10 +78,12 @@ export const api = {
   },
   chat: {
     // text vuoto/null = bootstrap saluto (non conta nel freemium).
-    // trigger opzionale: 'sos' | 'welcome' per saluto contestuale.
-    send: (text, trigger = null) => request('/api/chat', {
+    // trigger opzionale: 'sos' | 'welcome' | 'percorso' per saluto contestuale.
+    // extra: payload aggiuntivo (es. { percorso: {day, optionLabel, feedback} })
+    // per ponderare l'apertura sulla scelta fatta nel percorso.
+    send: (text, trigger = null, extra = {}) => request('/api/chat', {
       method: 'POST',
-      body: JSON.stringify({ text: text || '', trigger }),
+      body: JSON.stringify({ text: text || '', trigger, ...extra }),
     }),
     // Welcome flow: bolla AI dimostrativa. Non conta nel freemium, non salvata
     // in cronologia (backend skippa increment + ChatMessage.create).

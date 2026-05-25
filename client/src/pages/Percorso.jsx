@@ -21,25 +21,31 @@ export default function Percorso() {
 
   // Scene finite: se c'è una micro-interazione la mostriamo, altrimenti chiudiamo.
   function handleScenesDone() {
-    if (chapter?.interaction) setPhase('interaction');
-    else finishDay('home');
+    if (chapter?.interaction) {
+      setPhase('interaction');
+    } else {
+      track('percorso_completed_day', { day, totalScenes: chapter?.scenes?.length || 0 });
+      navigate('/home');
+    }
   }
 
-  // Chiusura del giorno (con o senza interazione). next = 'home' | 'sos' | 'chat'.
-  function finishDay(next) {
-    track('percorso_completed_day', { day, totalScenes: chapter?.scenes?.length || 0 });
-    goTo(next);
-  }
-
-  function finishInteraction(next) {
+  function finishInteraction(next, option) {
     track('percorso_interaction_completed', { day, next });
-    finishDay(next);
-  }
-
-  function goTo(next) {
-    if (next === 'sos') navigate('/sos');
-    else if (next === 'chat') navigate('/craving');
-    else navigate('/home');
+    track('percorso_completed_day', { day, totalScenes: chapter?.scenes?.length || 0 });
+    if (next === 'sos') {
+      navigate('/sos');
+    } else if (next === 'chat') {
+      // Apertura chat ponderata: passiamo la scelta del giorno così l'AI
+      // riprende il momento invece di aprire generico.
+      navigate('/craving', {
+        state: {
+          trigger: 'percorso',
+          percorso: { day, optionLabel: option?.label, feedback: option?.feedback },
+        },
+      });
+    } else {
+      navigate('/home');
+    }
   }
 
   function handleSkip() {
@@ -153,20 +159,20 @@ function InteractionScreen({ day, interaction, onSkip, onFinish }) {
           </p>
           <div className="mt-10 space-y-2.5">
             <button
-              onClick={() => onFinish('home')}
+              onClick={() => onFinish('home', selected)}
               className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all"
             >
               Torno alla home
             </button>
             <div className="flex gap-2.5">
               <button
-                onClick={() => onFinish('sos')}
+                onClick={() => onFinish('sos', selected)}
                 className="flex-1 py-3 bg-white border border-sage-200 text-sage-800 rounded-xl-soft font-medium text-sm active:scale-[0.98] transition-all"
               >
                 Apri SOS
               </button>
               <button
-                onClick={() => onFinish('chat')}
+                onClick={() => onFinish('chat', selected)}
                 className="flex-1 py-3 bg-white border border-sage-200 text-sage-800 rounded-xl-soft font-medium text-sm active:scale-[0.98] transition-all"
               >
                 Parlane in chat
