@@ -25,6 +25,7 @@ const PAYWALL_EXEMPT = new Set([
   '/tools',
   '/sos',
   '/welcome-flow',
+  '/percorso',
 ]);
 
 // Route accessibili anche se l'utente NON ha ancora completato l'onboarding

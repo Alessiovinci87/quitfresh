@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { getActivePhase, getDoseTimes, totalDays } from '../lib/cytisine';
+import { getCurrentDay, getChapter, TOTAL_DAYS } from '../data/percorso';
 
 const BADGE_EMOJI = {
   day1: '🌱', day3: '🌿', week1: '⭐', day14: '🌟', month1: '🏅', month3: '🏆',
@@ -197,6 +198,24 @@ export default function Home() {
       style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.5rem)' }}
     >
       {verifyBanner}
+
+      {/* Card percorso — PLACEHOLDER temporaneo (scaffold, non UI finale) */}
+      {user.quitDate && (() => {
+        const day = getCurrentDay(user.quitDate);
+        const ch = getChapter(day);
+        if (!ch) return null;
+        return (
+          <button
+            onClick={() => navigate('/percorso')}
+            className="mb-3 w-full text-left bg-white border border-sage-100/60 shadow-soft rounded-xl-soft px-4 py-3 active:scale-[0.99] transition-transform"
+          >
+            <p className="text-[10px] uppercase tracking-[0.2em] text-sage-600/70 font-semibold">
+              Percorso · Giorno {day} di {TOTAL_DAYS}
+            </p>
+            <p className="text-sage-900 text-sm mt-0.5 leading-snug">{ch.illusione}</p>
+          </button>
+        );
+      })()}
 
       {/* Header compatto */}
       <header className="flex items-start justify-between gap-3">
