@@ -20,6 +20,14 @@ export const CHAPTERS = [
   {
     day: 1,
     headline: 'Il gesto parte prima del pensiero.',
+    interaction: {
+      question: 'Quante sigarette oggi potrebbero partire da sole?',
+      options: [
+        { label: 'Poche', feedback: 'Anche solo notarle cambia il momento. Prima sembrava scelta, ora inizi a vedere il gesto.' },
+        { label: 'Alcune', feedback: 'Già notarlo cambia il momento. Prima sembrava scelta, ora inizi a vedere il gesto.' },
+        { label: 'Quasi tutte', feedback: 'Sembra tanto. Ma vederle è esattamente ciò che inizia a togliere l’automatismo.' },
+      ],
+    },
     illusione: 'Scelgo io ogni sigaretta.',
     nuovaPercezione: 'Il corpo spesso accende prima che la mente decida: il gesto parte da solo.',
     osservazione: 'Cogliere l’istante in cui la mano si muove prima di qualsiasi pensiero.',
@@ -37,6 +45,15 @@ export const CHAPTERS = [
   {
     day: 2,
     headline: 'Il craving non è casuale.',
+    interaction: {
+      question: 'Quale sequenza senti più forte?',
+      options: [
+        { label: 'Caffè', feedback: 'Il caffè e la sigaretta sono cresciuti insieme. Separarli è più questione di sequenza che di voglia.' },
+        { label: 'Auto', feedback: 'Spesso il craving non arriva in auto. Arriva un secondo dopo aver chiuso la portiera.' },
+        { label: 'Pausa', feedback: 'Non è la pausa a chiedere il fumo. È l’abitudine ad averlo riempito.' },
+        { label: 'Dopo cena', feedback: 'Dopo cena il corpo aspetta il segnale di sempre. È un orario, più che un desiderio.' },
+      ],
+    },
     illusione: 'Mi viene voglia di fumare casualmente.',
     nuovaPercezione: 'Il cervello collega sequenze e rituali.',
     osservazione: 'Vedere i trigger automatici: caffè, pausa, auto, dopo cena.',
@@ -54,6 +71,14 @@ export const CHAPTERS = [
   {
     day: 3,
     headline: 'Il volere arriva dopo.',
+    interaction: {
+      question: 'Quando senti "lo voglio", di solito arriva...',
+      options: [
+        { label: 'Prima del gesto', feedback: 'Forse. Ma prova a guardare ancora: a volte la mano si muove un attimo prima.' },
+        { label: 'Insieme al gesto', feedback: 'Quasi sempre è così veloce da sembrare insieme. È lì che la mente copre il gesto.' },
+        { label: 'Lo capisco solo dopo', feedback: 'Ecco il punto. Il "voglio" è la spiegazione, non l’origine.' },
+      ],
+    },
     illusione: 'Fumo perché lo voglio.',
     nuovaPercezione: 'Il "lo voglio" è il racconto che la mente costruisce per dare senso a un gesto già innescato, non la causa che lo ha deciso.',
     osservazione: 'Notare quanto in fretta arriva il "lo voglio" e quanto suona ovvio.',
@@ -77,6 +102,15 @@ export const CHAPTERS = [
   {
     day: 4,
     headline: 'Non è la nicotina. È la pausa.',
+    interaction: {
+      question: 'Quando ti manca di più quella pausa?',
+      options: [
+        { label: 'Stress', feedback: 'Questo è il punto: spesso non manca il fumo. Manca l’interruzione.' },
+        { label: 'Dopo lavoro', feedback: 'Non è nicotina. È il confine tra il prima e il dopo.' },
+        { label: 'Dopo cena', feedback: 'Spesso non manca il fumo. Manca lo stacco, il "è finita".' },
+        { label: 'Quando sono solo', feedback: 'Non è compagnia di fumo. È qualcosa che riempie il silenzio.' },
+      ],
+    },
     illusione: 'La sigaretta mi rilassa.',
     nuovaPercezione: 'Molte sigarette cercano un’interruzione, una pausa, un cambio di stato, non nicotina.',
     osservazione: 'Notare quando il bisogno arriva nei momenti di sovraccarico o saturazione.',
@@ -100,6 +134,15 @@ export const CHAPTERS = [
   {
     day: 5,
     headline: 'È memoria, non piacere.',
+    interaction: {
+      question: 'Cosa ti manca davvero, quando ti manca?',
+      options: [
+        { label: 'Il gesto', feedback: 'È memoria del corpo, non bisogno. E la memoria sbiadisce.' },
+        { label: 'L’odore, il sapore', feedback: 'È il rituale legato ai sensi, non il piacere puro. Anche questo si slega.' },
+        { label: 'Il momento', feedback: 'Ti manca il momento, non la sigaretta. Il momento puoi tenerlo, senza.' },
+        { label: 'Non lo so', feedback: 'Va bene non saperlo. Spesso, quando guardi bene, dentro non c’è il fumo.' },
+      ],
+    },
     illusione: 'Mi manca davvero fumare.',
     nuovaPercezione: 'Alcune sigarette sembrano nostalgia perché legate a identità e rituali, non al piacere.',
     osservazione: 'Notare quando manca più il gesto che la nicotina.',
@@ -122,6 +165,14 @@ export const CHAPTERS = [
   {
     day: 6,
     headline: 'Vederlo gli toglie presa.',
+    interaction: {
+      question: 'Quanto suona ragionevole, adesso, "solo una"?',
+      options: [
+        { label: 'Per niente', feedback: 'Lo stai già vedendo per quello che è. È così che perde presa.' },
+        { label: 'Un po’', feedback: 'Quel "un po’" è la porta. Vederla aperta basta per non passarci.' },
+        { label: 'Molto', feedback: 'Suona ragionevole perché è costruita così. Riconoscerlo è già mezzo passo fuori.' },
+      ],
+    },
     illusione: 'Una sola non cambia nulla.',
     nuovaPercezione: 'Il cervello usa la sensazione di controllo per riaprire il ciclo.',
     osservazione: 'Notare quanto "solo una" sembri sempre ragionevole.',
@@ -143,6 +194,15 @@ export const CHAPTERS = [
   {
     day: 7,
     headline: 'Non è resistere per sempre.',
+    interaction: {
+      question: 'Dov’è il primo posto dove il craving non si è più presentato?',
+      options: [
+        { label: 'Il mattino', feedback: 'Un posto dove prima arrivava sempre. Ora è vuoto. Non l’hai deciso: è successo.' },
+        { label: 'Dopo i pasti', feedback: 'Era uno dei più automatici. Se lì si allenta, si allenta ovunque.' },
+        { label: 'In auto', feedback: 'Uno dei trigger più forti. La sua assenza dice più di mille buoni propositi.' },
+        { label: 'Non ancora', feedback: 'Va bene. Non è una gara. Stai solo iniziando a guardare nei posti giusti.' },
+      ],
+    },
     illusione: 'Smettere significa resistere per sempre.',
     nuovaPercezione: 'Non è una battaglia eterna di volontà: gli automatismi che hai osservato stanno già svanendo da soli.',
     osservazione: 'Notare i momenti in cui il craving non arriva dove prima arrivava sempre.',
