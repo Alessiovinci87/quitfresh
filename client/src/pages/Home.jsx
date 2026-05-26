@@ -200,7 +200,8 @@ export default function Home() {
     >
       {verifyBanner}
 
-      {/* Momento di oggi — porta d'ingresso emotiva (solo nei primi 7 giorni).
+      {/* Momento di oggi — porta d'ingresso emotiva (solo nella finestra dei 28
+          giorni del percorso).
           Blocco dominante: non deve sembrare un link, ma il cuore dell'app. */}
       {user.quitDate && isInPercorsoWindow(user.quitDate) && (() => {
         const day = getCurrentDay(user.quitDate);
@@ -222,6 +223,17 @@ export default function Home() {
           </button>
         );
       })()}
+
+      {/* Percorso concluso — oltre la finestra dei 28 giorni. Niente CTA, niente
+          gradient: solo una chiusura sobria, coerente col tono osservativo.
+          NB: getCurrentDay è cappato a 28, quindi il caso "oltre" è >= 28 in
+          combinazione con !isInPercorsoWindow (che esclude il quit nel futuro). */}
+      {user.quitDate && !isInPercorsoWindow(user.quitDate) && getCurrentDay(user.quitDate) >= 28 && (
+        <div className="mb-6 w-full bg-white border border-sage-100/70 rounded-2xl-soft shadow-soft px-6 py-7 text-center">
+          <h2 className="font-display text-[24px] leading-tight text-sage-900">Il percorso è finito.</h2>
+          <p className="text-sage-700/70 text-sm mt-2">Quello che hai visto in questi 28 giorni resta con te.</p>
+        </div>
+      )}
 
       {/* Header compatto */}
       <header className="flex items-start justify-between gap-3">
