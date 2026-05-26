@@ -2,13 +2,14 @@ const router = require('express').Router();
 const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { normalizeSchedule } = require('../lib/cytisine');
+const { deriveTriggerBand, BAND_SEND_TIME } = require('../lib/triggerNotify');
 
 // POST /api/quiz — partial update: aggiorna solo i campi forniti
 router.post('/', requireAuth, requireVerifiedEmail, async (req, res) => {
   const {
     cigarettesPerDay, criticalMoments, dependencyLevel, quitDate,
     cytisineStartDate, firstDoseTime, cytisineSchedule, cigarettePackPrice,
-    quitReasons,
+    quitReasons, triggerBand,
   } = req.body;
 
   if (dependencyLevel != null && (dependencyLevel < 1 || dependencyLevel > 5)) {
@@ -21,6 +22,13 @@ router.post('/', requireAuth, requireVerifiedEmail, async (req, res) => {
   }
   if (Array.isArray(criticalMoments)) {
     data.criticalMoments = criticalMoments;
+    // Deriva la fascia per la push giornaliera del percorso (se non passata
+    // esplicitamente sotto). criticalMoments è la fonte di verità.
+    data.triggerBand = deriveTriggerBand(criticalMoments);
+  }
+  // Override esplicito della fascia (UI futura): deve essere una fascia nota.
+  if (triggerBand !== undefined) {
+    data.triggerBand = triggerBand && BAND_SEND_TIME[triggerBand] ? triggerBand : null;
   }
   if (dependencyLevel !== undefined) {
     data.dependencyLevel = dependencyLevel == null ? null : parseInt(dependencyLevel);

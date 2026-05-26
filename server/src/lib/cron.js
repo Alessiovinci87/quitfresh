@@ -6,6 +6,7 @@ const { runScheduledBackup } = require('./backup');
 const { buildDailyReportData } = require('./analytics');
 const { sendDailyReportEmail } = require('./email');
 const { cleanupOldUsage } = require('./cognitiveSelector');
+const { bandForSendTime, percorsoDayIndex, isInPercorsoWindow, momentMessageForDay } = require('./triggerNotify');
 
 // Dedup cache primaria citisina (chiave: userId_YYYYMMDD_doseIndex).
 // Vive in memoria: al restart del container si svuota — accettabile perché
@@ -254,6 +255,34 @@ function startCron() {
           title: 'QuitFresh',
           body: buildEncouragementMessage(days),
         });
+      }
+
+      // 5. Push giornaliera del "momento di oggi" — UNA al giorno, 45 min prima
+      // della fascia di craving dichiarata (triggerBand). Si attiva solo nei 4
+      // minuti d'invio (07:15/12:15/15:00/19:30): negli altri minuti bandForSendTime
+      // è null e saltiamo la query. Testo rotante autonomo (non anteprima del
+      // contenuto), un messaggio per giorno del percorso. Niente reminder/streak.
+      const sendBand = bandForSendTime(timeStr);
+      if (sendBand) {
+        const momentUsers = await prisma.user.findMany({
+          where: {
+            triggerBand: sendBand,
+            quitDate: { not: null },
+            pushSubscriptions: { some: {} },
+          },
+          include: { pushSubscriptions: true },
+        });
+
+        for (const user of momentUsers) {
+          // Solo dentro la finestra dei 28 giorni: oltre, non c'è un "momento
+          // di oggi" da osservare, quindi la nudge tacerebbe a vuoto.
+          if (!isInPercorsoWindow(user.quitDate, romeNow)) continue;
+          const dayIndex = percorsoDayIndex(user.quitDate, romeNow);
+          await dispatchToUser(user, {
+            title: 'QuitFresh',
+            body: momentMessageForDay(dayIndex),
+          });
+        }
       }
 
       // 4. Notifica "giorno 5 citisina" — punto chiave del protocollo.

@@ -8,66 +8,70 @@ datasource db {
 }
 
 model User {
-  id                String             @id @default(cuid())
-  email             String             @unique
-  passwordHash      String
-  createdAt         DateTime           @default(now())
-  cigarettesPerDay  Int?
-  criticalMoments   String[]
-  dependencyLevel   Int?
-  quitDate           DateTime?
-  cytisineStartDate  DateTime?
-  firstDoseTime      String?
-  smokeFreeSince     DateTime?
-  notificationTimes  String[]
-  encouragementTime  String?
-  streakFreezesUsed  Int                @default(0)
-  cytisineSchedule   Json?
-  cigarettePackPrice Float              @default(5.80)
-  isPremium          Boolean            @default(false)
-  premiumSince       DateTime?
-  stripeCustomerId   String?            @unique
-  promoCodeUsed      String?
-  resetToken         String?            @unique
-  resetTokenExp      DateTime?
-  emailVerified      Boolean            @default(false)
-  verifyToken        String?            @unique
-  isAdmin            Boolean            @default(false)
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  passwordHash          String
+  createdAt             DateTime               @default(now())
+  cigarettesPerDay      Int?
+  criticalMoments       String[]
+  dependencyLevel       Int?
+  quitDate              DateTime?
+  cytisineStartDate     DateTime?
+  firstDoseTime         String?
+  smokeFreeSince        DateTime?
+  notificationTimes     String[]
+  encouragementTime     String?
+  // triggerBand: fascia oraria del craving (mattino|primo_pomeriggio|
+  // pomeriggio|sera). Derivata da criticalMoments al salvataggio quiz.
+  // Usata per la push giornaliera "momento di oggi" (vedi lib/triggerNotify.js).
+  triggerBand           String?
+  streakFreezesUsed     Int                    @default(0)
+  cytisineSchedule      Json?
+  cigarettePackPrice    Float                  @default(5.80)
+  isPremium             Boolean                @default(false)
+  premiumSince          DateTime?
+  stripeCustomerId      String?                @unique
+  promoCodeUsed         String?
+  resetToken            String?                @unique
+  resetTokenExp         DateTime?
+  emailVerified         Boolean                @default(false)
+  verifyToken           String?                @unique
+  isAdmin               Boolean                @default(false)
   // tokenVersion: incrementato al reset password e a logout-all per
   // invalidare TUTTI i JWT esistenti dell'utente. Middleware requireAuth
   // compara payload.tv === user.tokenVersion.
-  tokenVersion       Int                @default(0)
+  tokenVersion          Int                    @default(0)
   // lastActiveAt: aggiornato (best-effort, fire-and-forget) ad ogni
   // richiesta autenticata che passa da requireAuth. Serve per analytics
   // di retention: identificare utenti dormienti da N giorni.
-  lastActiveAt       DateTime?
-  quitReasons       String[]
-  cravingsBattled   Int                @default(0)
+  lastActiveAt          DateTime?
+  quitReasons           String[]
+  cravingsBattled       Int                    @default(0)
   // Freemium gating: contatore messaggi chat AI usati nella settimana
   // corrente del piano free. Si azzera quando chatWeekStart > 7gg fa
   // (logica in routes/chat.js). Incrementato solo per non-premium e
   // non-grandfathered.
-  chatMessagesUsed       Int       @default(0)
-  chatWeekStart          DateTime?
+  chatMessagesUsed      Int                    @default(0)
+  chatWeekStart         DateTime?
   // Grandfathering: utenti registrati prima del rollout freemium
   // mantengono accesso illimitato a chat/diario/citisina push.
   // Settato via migration data per tutti gli User esistenti.
-  freemiumGrandfathered  Boolean @default(false)
+  freemiumGrandfathered Boolean                @default(false)
   // Welcome flow post-onboarding: micro-esperienza mostrata una sola volta
   // ai NUOVI utenti subito dopo l'onboarding, prima della home. Gli utenti
   // pre-deploy vengono backfillati a true (non lo vedono mai). Vedi
   // routes/user.js + client WelcomeFlow.jsx.
-  welcomeFlowCompleted   Boolean @default(false)
+  welcomeFlowCompleted  Boolean                @default(false)
   // Telemetria di prodotto: se true, il middleware salta gli insert in
   // UsageEvent per questo utente. Default false (raccolta attiva).
-  analyticsOptOut   Boolean            @default(false)
-  cravingLogs       CravingLog[]
-  quitAttempts      QuitAttempt[]
-  diaryEntries      DiaryEntry[]
-  pushSubscriptions PushSubscription[]
-  cravingSessions   CravingSession[]
-  usageEvents       UsageEvent[]
-  chatMessages      ChatMessage[]
+  analyticsOptOut       Boolean                @default(false)
+  cravingLogs           CravingLog[]
+  quitAttempts          QuitAttempt[]
+  diaryEntries          DiaryEntry[]
+  pushSubscriptions     PushSubscription[]
+  cravingSessions       CravingSession[]
+  usageEvents           UsageEvent[]
+  chatMessages          ChatMessage[]
   cognitivePhraseUsages CognitivePhraseUsage[]
 }
 
@@ -75,13 +79,13 @@ model User {
 // Sostituisce lo store in-memory: persiste tra restart/redeploy.
 // Retention 35gg via cron giornaliero (la finestra di esclusione è 30gg).
 model CognitivePhraseUsage {
-  id        String   @id @default(cuid())
-  userId    String
-  phraseId  String
-  usedAt    DateTime @default(now())
-  context   String? // 'chat' | 'sos' | 'notifica' per analytics
+  id       String   @id @default(cuid())
+  userId   String
+  phraseId String
+  usedAt   DateTime @default(now())
+  context  String? // 'chat' | 'sos' | 'notifica' per analytics
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, phraseId])
   @@index([userId, usedAt])
@@ -94,7 +98,7 @@ model CognitivePhraseUsage {
 model ChatMessage {
   id        String   @id @default(cuid())
   userId    String
-  role      String   // 'user' | 'assistant'
+  role      String // 'user' | 'assistant'
   content   String   @db.Text
   // Trigger di apertura: 'sos' = chat aperta subito dopo SOS,
   // 'welcome' = primo flow post-onboarding. Null per messaggi normali.
@@ -128,27 +132,27 @@ model UsageEvent {
 // Registra intensita' prima/dopo + tipo azione scelta per misurare il delta
 // e popolare il counter "craving battuti".
 model CravingSession {
-  id               String   @id @default(cuid())
-  userId           String
-  intensityBefore  Int
-  intensityAfter   Int?
-  type             String   // 'water' | 'teeth' | 'squats' | 'walk' | 'gum'
-  completedAt      DateTime @default(now())
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  userId          String
+  intensityBefore Int
+  intensityAfter  Int?
+  type            String // 'water' | 'teeth' | 'squats' | 'walk' | 'gum'
+  completedAt     DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, completedAt])
 }
 
 model PromoCode {
-  id           String    @id @default(cuid())
-  code         String    @unique
-  discountPct  Int
-  active       Boolean   @default(true)
-  usageCount   Int       @default(0)
-  maxUses      Int?
-  expiresAt    DateTime?
-  notes        String?
-  createdAt    DateTime  @default(now())
+  id          String    @id @default(cuid())
+  code        String    @unique
+  discountPct Int
+  active      Boolean   @default(true)
+  usageCount  Int       @default(0)
+  maxUses     Int?
+  expiresAt   DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
 }
 
 model CravingLog {
