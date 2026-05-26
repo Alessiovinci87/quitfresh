@@ -7,6 +7,7 @@ const { buildDailyReportData } = require('./analytics');
 const { sendDailyReportEmail } = require('./email');
 const { cleanupOldUsage } = require('./cognitiveSelector');
 const { bandForSendTime, percorsoDayIndex, isInPercorsoWindow, momentMessageForDay } = require('./triggerNotify');
+const { isFreeGated } = require('../middleware/premium');
 
 // Dedup cache primaria citisina (chiave: userId_YYYYMMDD_doseIndex).
 // Vive in memoria: al restart del container si svuota — accettabile perché
@@ -278,6 +279,10 @@ function startCron() {
           // di oggi" da osservare, quindi la nudge tacerebbe a vuoto.
           if (!isInPercorsoWindow(user.quitDate, romeNow)) continue;
           const dayIndex = percorsoDayIndex(user.quitDate, romeNow);
+          // Paywall G7→G8: G1-G7 a tutti; da G8 in poi solo chi ha accesso
+          // pieno (premium o grandfathered). I free non ricevono la notifica
+          // momento dopo il giorno 7. dayIndex è 0-based → giorno = dayIndex+1.
+          if (dayIndex + 1 > 7 && isFreeGated(user)) continue;
           await dispatchToUser(user, {
             title: 'QuitFresh',
             body: momentMessageForDay(dayIndex),

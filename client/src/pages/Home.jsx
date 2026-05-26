@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { getActivePhase, getDoseTimes, totalDays } from '../lib/cytisine';
 import { track } from '../lib/tracker';
 import { getCurrentDay, getChapter, isInPercorsoWindow } from '../data/percorso';
+import PercorsoUpgrade from '../components/PercorsoUpgrade';
 
 const BADGE_EMOJI = {
   day1: '🌱', day3: '🌿', week1: '⭐', day14: '🌟', month1: '🏅', month3: '🏆',
@@ -207,6 +208,10 @@ export default function Home() {
         const day = getCurrentDay(user.quitDate);
         const ch = getChapter(day);
         if (!ch) return null;
+        // Paywall tra G7 e G8: free (non premium/grandfathered) oltre il G7
+        // vede la schermata di upgrade al posto del CTA "Entra nel momento".
+        const locked = day > 7 && !(user.isPremium || user.freemiumGrandfathered);
+        if (locked) return <PercorsoUpgrade className="mb-6" />;
         return (
           <button
             onClick={() => { track('percorso_cta_clicked', { day, source: 'home' }); navigate('/percorso'); }}
@@ -229,10 +234,17 @@ export default function Home() {
           NB: getCurrentDay è cappato a 28, quindi il caso "oltre" è >= 28 in
           combinazione con !isInPercorsoWindow (che esclude il quit nel futuro). */}
       {user.quitDate && !isInPercorsoWindow(user.quitDate) && getCurrentDay(user.quitDate) >= 28 && (
-        <div className="mb-6 w-full bg-white border border-sage-100/70 rounded-2xl-soft shadow-soft px-6 py-7 text-center">
-          <h2 className="font-display text-[24px] leading-tight text-sage-900">Il percorso è finito.</h2>
-          <p className="text-sage-700/70 text-sm mt-2">Quello che hai visto in questi 28 giorni resta con te.</p>
-        </div>
+        // I free (non premium/grandfathered) non hanno mai sbloccato G8-G28:
+        // invece di una chiusura, vedono l'upgrade. Chi ha accesso pieno vede
+        // il messaggio di chiusura sobrio.
+        (!user.isPremium && !user.freemiumGrandfathered) ? (
+          <PercorsoUpgrade className="mb-6" />
+        ) : (
+          <div className="mb-6 w-full bg-white border border-sage-100/70 rounded-2xl-soft shadow-soft px-6 py-7 text-center">
+            <h2 className="font-display text-[24px] leading-tight text-sage-900">Il percorso è finito.</h2>
+            <p className="text-sage-700/70 text-sm mt-2">Quello che hai visto in questi 28 giorni resta con te.</p>
+          </div>
+        )
       )}
 
       {/* Header compatto */}

@@ -5,6 +5,7 @@ import { track } from '../lib/tracker';
 import ScenePlayer from '../components/ScenePlayer';
 import FraseSingolaPlayer from '../components/FraseSingolaPlayer';
 import SilenzioPlayer from '../components/SilenzioPlayer';
+import PercorsoUpgrade from '../components/PercorsoUpgrade';
 import { TOTAL_DAYS, getCurrentDay, getChapter } from '../data/percorso';
 
 // Formati player alternativi. Qualsiasi giorno senza `formato` (o con un
@@ -24,10 +25,19 @@ export default function Percorso() {
   const day = getCurrentDay(user?.quitDate);
   const chapter = getChapter(day);
   const Player = playerMap[chapter?.formato] ?? ScenePlayer;
+  // Paywall tra G7 e G8: G1-G7 liberi, G8+ richiedono accesso pieno (premium o
+  // grandfathered, come chat/diario). getCurrentDay è cappato a 28, quindi
+  // questo copre anche la fase post-G28.
+  const hasFullAccess = !!(user?.isPremium || user?.freemiumGrandfathered);
+  const percorsoLocked = day > 7 && !hasFullAccess;
 
   useEffect(() => {
     track('percorso_opened', { day });
   }, [day]);
+
+  useEffect(() => {
+    if (percorsoLocked) track('percorso_paywall_viewed', { day });
+  }, [percorsoLocked, day]);
 
   // Scene finite: se c'è una micro-interazione la mostriamo, altrimenti chiudiamo.
   function handleScenesDone() {
@@ -61,6 +71,27 @@ export default function Percorso() {
   function handleSkip() {
     track('percorso_skipped', { day, phase });
     navigate('/home');
+  }
+
+  // Paywall G8+: niente player, solo la schermata di upgrade.
+  if (percorsoLocked) {
+    return (
+      <div className="mobile-container relative bg-gradient-to-b from-cream-50 via-cream-50 to-sage-50 px-6 overflow-hidden">
+        <div className="max-w-mobile w-full mx-auto flex-1 flex flex-col">
+          <div className="flex items-center justify-start pt-4">
+            <button
+              onClick={() => navigate('/home')}
+              className="text-[11px] text-sage-400/70 hover:text-sage-500 tracking-wide"
+            >
+              ← Home
+            </button>
+          </div>
+          <div className="flex-1 flex flex-col justify-center">
+            <PercorsoUpgrade />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
