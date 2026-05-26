@@ -13,7 +13,11 @@
 // da quitDate. Nessun DB, migration o endpoint (regola "no nuova complessità").
 // ─────────────────────────────────────────────────────────────────────────
 
-export const TOTAL_DAYS = 7;
+import { week2 } from './week2';
+import { week3 } from './week3';
+import { week4 } from './week4';
+
+export const TOTAL_DAYS = 28;
 const CTA_DEFAULT = 'Lo terrò d’occhio oggi';
 
 export const CHAPTERS = [
@@ -246,6 +250,22 @@ export function isInPercorsoWindow(quitDate, now = new Date()) {
   return days >= 0 && days < TOTAL_DAYS;
 }
 
+// week1 = i 7 capitoli storici (CHAPTERS), invariati. Le settimane 2-4 vivono
+// in file separati (week2/3/4.js) con lo stesso schema. allMoments è l'elenco
+// completo dei 28 momenti, ordinato per giorno.
+export const week1 = CHAPTERS;
+export const allMoments = [...week1, ...week2, ...week3, ...week4];
+
 export function getChapter(day) {
-  return CHAPTERS.find((c) => c.day === day) || null;
+  return allMoments.find((c) => c.day === day) || null;
+}
+
+// Comodità per il flusso "momenti": ritorna il momento del giorno corrente.
+export function getMomentOfDay(quitDate, now = new Date()) {
+  return getChapter(getCurrentDay(quitDate, now));
+}
+
+// True se il momento di quel giorno è già sbloccato (giorno <= giorno corrente).
+export function isMomentUnlocked(giorno, quitDate, now = new Date()) {
+  return giorno >= 1 && giorno <= getCurrentDay(quitDate, now);
 }
