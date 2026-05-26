@@ -67,13 +67,21 @@ router.post('/register', loginLimiter, async (req, res) => {
       .catch(err => console.error('[register] email error:', err));
 
     // Notifica admin nuova registrazione, in background, non-bloccante.
+    // Esito loggato esplicitamente: send() non lancia mai (cattura internamente),
+    // quindi senza questo .then() un errore Resend/destinatario passava muto.
     sendNewUserAdminEmail({
       userEmail: user.email,
       createdAt: user.createdAt,
       ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim(),
       userAgent: req.headers['user-agent'] || '',
       referer: req.headers['referer'] || req.headers['referrer'] || '',
-    }).catch(err => console.error('[register] admin notify error:', err));
+    })
+      .then((r) => {
+        if (r?.error) console.error('[register] admin notify FAILED:', r.error);
+        else if (r?.skipped) console.warn('[register] admin notify SKIPPED:', user.email);
+        else console.log('[register] admin notify sent:', user.email, r?.id || '');
+      })
+      .catch(err => console.error('[register] admin notify exception:', err));
 
     const token = signToken(user.id, user.tokenVersion);
     res.status(201).json({ token, user: sanitize(user) });
@@ -125,7 +133,7 @@ router.get('/verify-email', async (req, res) => {
     const user = await prisma.user.findUnique({ where: { verifyToken: String(token) } });
     if (!user) return res.status(400).json({ error: 'Token non valido' });
 
-    await prisma.user.update({
+    const verified = await prisma.user.update({
       where: { id: user.id },
       data: { emailVerified: true, verifyToken: null },
     });
@@ -135,7 +143,12 @@ router.get('/verify-email', async (req, res) => {
     // con "Token non valido" prima di arrivare qui.
     sendWelcomeEmail(user.email)
       .catch(err => console.error('[verify] welcome email error:', err));
-    res.json({ message: 'Email verificata' });
+    // Magic-link: restituiamo un JWT fresco + user. Cosi' il contesto che apre
+    // il link (es. browser MIUI/in-app che NON condivide il localStorage della
+    // registrazione) diventa autenticato senza dover rifare il login, evitando
+    // il blocco "ho verificato ma non ho il token".
+    const authToken = signToken(verified.id, verified.tokenVersion);
+    res.json({ message: 'Email verificata', token: authToken, user: sanitize(verified) });
   } catch (err) {
     console.error('verify-email error:', err);
     res.status(500).json({ error: 'Errore durante la verifica email' });

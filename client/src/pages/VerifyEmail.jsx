@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 export default function VerifyEmail() {
   const [params] = useSearchParams();
   const token = params.get('token') || '';
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, login } = useAuth();
   // 'idle' = utente non ha ancora cliccato, 'verifying' | 'success' | 'error'.
   // L'auto-fire al mount è stato rimosso perché scanner email (Outlook Safe
   // Links, Defender) eseguono il link in headless e consumavano il token
@@ -20,11 +20,18 @@ export default function VerifyEmail() {
     inFlight.current = true;
     setState('verifying');
     try {
-      await api.auth.verifyEmail(token);
-      // Aggiorna subito il context così PrivateRoute non rimanda a /check-email.
-      // Se l'utente ha verificato da un device diverso (nessuna sessione locale),
-      // user è null: skippiamo l'update e mostriamo CTA "Accedi".
-      if (user) updateUser({ emailVerified: true });
+      const res = await api.auth.verifyEmail(token);
+      // Magic-link: se il backend restituisce token+user, autentichiamo la
+      // sessione corrente. Indispensabile su browser MIUI/in-app dove il link
+      // si apre in un contesto SENZA il token della registrazione: senza questo
+      // l'utente verificava ma restava di fatto sloggato ("non ottiene il token").
+      if (res?.token && res?.user) {
+        login(res.token, res.user);
+      } else if (user) {
+        // Stessa sessione della registrazione: basta aggiornare il flag così
+        // PrivateRoute non rimanda a /check-email.
+        updateUser({ emailVerified: true });
+      }
       setState('success');
     } catch (err) {
       setState('error');

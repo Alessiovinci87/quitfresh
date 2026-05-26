@@ -260,11 +260,19 @@ function sendPromoUsedAdminEmail({ userEmail, userId, code, discountPct, channel
   return send({ to, subject: `Codice ${code} usato — ${userEmail || userId}`, html });
 }
 
-// Notifica admin: nuovo utente registrato. Non-bloccante. Destinatario
-// fissato (alessio.vinci87@gmail.com) come richiesto; mittente forzato a
-// noreply@quitfresh.it indipendentemente da RESEND_FROM_EMAIL.
+// Notifica admin: nuovo utente registrato. Non-bloccante. Destinatari letti
+// da ADMIN_NOTIFY_EMAIL (CSV), con fallback su entrambe le caselle admin se
+// la env non e' configurata. Mittente forzato a noreply@quitfresh.it
+// indipendentemente da RESEND_FROM_EMAIL.
 function sendNewUserAdminEmail({ userEmail, createdAt, ip, userAgent, referer }) {
-  const to = 'alessio.vinci87@gmail.com';
+  const raw = (process.env.ADMIN_NOTIFY_EMAIL || process.env.BACKUP_EMAIL_TO
+    || 'info@quitfresh.it').trim();
+  const recipients = raw.split(',').map(s => s.trim()).filter(Boolean);
+  if (recipients.length === 0) {
+    console.warn('[email] new-user admin notify skipped: nessun destinatario');
+    return Promise.resolve({ skipped: true });
+  }
+  const to = recipients.length === 1 ? recipients[0] : recipients;
   const when = new Date(createdAt || Date.now()).toLocaleString('it-IT', {
     timeZone: 'Europe/Rome',
     dateStyle: 'full',
