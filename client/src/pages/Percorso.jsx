@@ -3,7 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { track } from '../lib/tracker';
 import ScenePlayer from '../components/ScenePlayer';
+import FraseSingolaPlayer from '../components/FraseSingolaPlayer';
+import SilenzioPlayer from '../components/SilenzioPlayer';
 import { TOTAL_DAYS, getCurrentDay, getChapter } from '../data/percorso';
+
+// Formati player alternativi. Qualsiasi giorno senza `formato` (o con un
+// valore ignoto) cade su ScenePlayer — il default sequenziale a tap.
+const playerMap = {
+  frase_singola: FraseSingolaPlayer,
+  silenzio: SilenzioPlayer,
+};
 
 // /percorso — NON è una pagina, è un momento.
 // Flusso: scene a tap → micro-interazione (un piccolo momento di verità) → CTA
@@ -14,6 +23,7 @@ export default function Percorso() {
   const [phase, setPhase] = useState('scenes'); // 'scenes' | 'interaction'
   const day = getCurrentDay(user?.quitDate);
   const chapter = getChapter(day);
+  const Player = playerMap[chapter?.formato] ?? ScenePlayer;
 
   useEffect(() => {
     track('percorso_opened', { day });
@@ -57,10 +67,11 @@ export default function Percorso() {
     <div className="mobile-container relative bg-gradient-to-b from-cream-50 via-cream-50 to-sage-50 px-6 overflow-hidden">
       <div className="max-w-mobile w-full mx-auto flex-1 flex flex-col">
         {chapter?.scenes && phase === 'scenes' && (
-          <ScenePlayer
+          <Player
             scenes={chapter.scenes}
             cta={chapter.cta}
             day={day}
+            formato={chapter?.formato ?? 'player_sequenziale'}
             onComplete={handleScenesDone}
             onSkip={handleSkip}
           />

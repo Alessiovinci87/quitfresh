@@ -11,16 +11,17 @@ import { track } from '../lib/tracker';
 //   cta: etichetta del bottone sull'ultima scena
 //   day: numero giorno (per analytics)
 //   onComplete(), onSkip()
-export default function ScenePlayer({ scenes, cta, day, onComplete, onSkip }) {
+//   formato: opzionale, solo per etichettare l'evento analytics
+export default function ScenePlayer({ scenes, cta, day, onComplete, onSkip, formato = 'player_sequenziale' }) {
   const [i, setI] = useState(0);
   const total = scenes.length;
   const isLast = i >= total - 1;
   const scene = scenes[i];
 
-  // Analytics: ogni scena vista (incluso sceneIndex/totalScenes).
+  // Analytics: ogni scena vista (incluso sceneIndex/totalScenes/formato).
   useEffect(() => {
-    track('percorso_scene_viewed', { day, sceneIndex: i, totalScenes: total });
-  }, [i, day, total]);
+    track('percorso_scene_viewed', { day, sceneIndex: i, totalScenes: total, formato });
+  }, [i, day, total, formato]);
 
   const next = () => { if (!isLast) setI((n) => n + 1); };
 

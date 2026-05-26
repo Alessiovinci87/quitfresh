@@ -88,6 +88,7 @@ export const week4 = [
   {
     day: 25,
     fase: 4,
+    formato: 'frase_singola',
     headline: 'Quando bevi, cala la guardia.',
     interaction: {
       question: 'Con un bicchiere in mano, il pensiero del fumo come arriva?',
@@ -166,6 +167,7 @@ export const week4 = [
   {
     day: 28,
     fase: 4,
+    formato: 'silenzio',
     headline: 'Cosa vedi, adesso.',
     interaction: {
       question: 'Alla fine di tutto questo guardare — cosa vedi ora che all’inizio non vedevi?',

@@ -140,6 +140,7 @@ export const week3 = [
   {
     day: 20,
     fase: 3,
+    formato: 'frase_singola',
     headline: 'Attraversare, non aggirare.',
     interaction: {
       question: 'Hai attraversato un momento difficile senza fumare. Cosa hai imparato?',
@@ -166,6 +167,7 @@ export const week3 = [
   {
     day: 21,
     fase: 3,
+    formato: 'frase_singola',
     headline: 'Non è uno sforzo.',
     interaction: {
       question: 'Quando non hai pensato al fumo per ore — com’è successo?',
