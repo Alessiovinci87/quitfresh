@@ -94,7 +94,6 @@ export const CHAPTERS = [
       { type: 'thought', text: 'Quel “lo voglio” arriva già pronto. Troppo in fretta per essere una scelta.' },
       { type: 'break', text: 'Non è da lì che parte.' },
       { type: 'thought', text: 'È la spiegazione che la mente incolla sopra qualcosa già iniziato.' },
-      { type: 'notice', text: 'Quando senti “lo voglio”, chiediti: è arrivato prima o dopo?' },
     ],
     body: [
       'Pensi: fumo perché lo voglio.',
@@ -126,7 +125,7 @@ export const CHAPTERS = [
       { type: 'break', text: 'Quasi sempre nel troppo.' },
       { type: 'thought', text: 'Non chiami la nicotina. Chiami una pausa, un’interruzione, un confine.' },
       { type: 'thought', text: 'E sotto, la paura non è restare senza fumo. È restare senza quella pausa.' },
-      { type: 'notice', text: 'Cosa stavi facendo nell’istante prima del bisogno.' },
+      { type: 'notice', text: 'Non era la sigaretta che cercavi. Era un confine.' },
     ],
     body: [
       'La sigaretta ti rilassa, dici.',
@@ -218,7 +217,7 @@ export const CHAPTERS = [
       { type: 'thought', text: 'E alcuni di questi automatismi li hai già visti spegnersi.' },
       { type: 'notice', text: 'I posti dove il craving non si è presentato. Quelli dove prima arrivava sempre.' },
       { type: 'break', text: 'Non è euforia. Non è una vittoria.' },
-      { type: 'break', text: 'È solo qualcosa che sta cambiando.' },
+      { type: 'break', text: 'Non sai ancora quanto. Ma qualcosa, lì, si è allentato.' },
     ],
     body: [
       'Hai immaginato lo smettere come una resistenza infinita.',
