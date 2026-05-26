@@ -6,13 +6,14 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta name="theme-color" content="#516A4C" />
-  <title>QuitFresh — Vedi meglio il meccanismo del fumo</title>
-  <meta name="description" content="QuitFresh non prova a motivarti. Ti aiuta a vedere cosa succede nella tua testa prima di accendere — un solo momento al giorno, per ventotto giorni." />
+  <meta name="theme-color" content="#688361" />
+  <title>QuitFresh — Capisci il tuo rapporto col fumo</title>
+  <meta name="description" content="QuitFresh non è una chat motivazionale. È uno strumento che ti aiuta a riconoscere i tuoi automatismi col fumo — trigger, orari, situazioni — e ti supporta nel percorso con la citisina. Gratis per sempre, €4,99 per sbloccare tutto." />
+  <meta name="keywords" content="smettere di fumare, citisina, trigger fumo, automatismi nicotina, app citisina, promemoria citisina, percorso 25 giorni" />
 
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="QuitFresh — Vedi meglio il meccanismo del fumo" />
-  <meta property="og:description" content="Non per motivarti. Per aiutarti a vedere meglio. Un solo momento al giorno." />
+  <meta property="og:title" content="QuitFresh — Capisci il tuo rapporto col fumo" />
+  <meta property="og:description" content="Riconosci i tuoi automatismi, segui il percorso citisina, smetti per davvero. Gratis per sempre con limiti, €4,99 per sbloccare tutto." />
   <meta property="og:url" content="https://quitfresh.com" />
   <meta property="og:image" content="https://quitfresh.com/logo.png" />
   <meta property="og:locale" content="it_IT" />
@@ -22,9 +23,9 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet" />
 
-  <!-- Microsoft Clarity -->
+  <!-- Microsoft Clarity — heatmap + session recording. -->
   <script>
     (function(c,l,a,r,i,t,y){
       c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -51,292 +52,967 @@
     body {
       margin: 0;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: #faf8f2;          /* crema caldo */
-      color: #3a443a;
-      line-height: 1.6;
+      background: #faf8f2;       /* cream-100 */
+      color: #1f2937;
+      line-height: 1.55;
       -webkit-font-smoothing: antialiased;
       -webkit-tap-highlight-color: transparent;
       overflow-x: hidden;
     }
     img { max-width: 100%; display: block; }
     a { color: inherit; }
-    ::selection { background: #d9e1d6; color: #2c372c; }
+    ::selection { background: #d2dccf; color: #2c372c; }
 
-    /* Palette: verde #516A4C, crema #faf8f2, superficie #fdfcf9,
-       inchiostro #2c372c, testo tenue #6b756a. */
+    /* Palette sage-500 #688361, sage-600 #516a4c, sage-700 #41553e,
+       terracotta-500 #a8654a, cream-100 #faf8f2 (bg), cream-50 #fdfcf9 (surface) */
 
-    /* Un'unica colonna di lettura, stretta e respirata. La larghezza ridotta
-       è intenzionale: tiene il ritmo lento. */
-    .wrap {
+    /* Tre livelli di container.
+       - .container (reading): testo lungo, FAQ, copy denso. Max 640.
+       - .container-wide (showcase): grid di card, preview phone, audience,
+         plans. Max 1080 → permette layout a 2-3-4 colonne su desktop.
+       - .container-full: niente max, padding orizzontale conservato.
+       Tutti partono mobile-first (100% width con 20px padding). */
+    .container,
+    .container-wide,
+    .container-full {
       width: 100%;
-      max-width: 720px;
       margin: 0 auto;
-      padding: 0 28px;
+      padding: 0 20px;
     }
-    .narrow { max-width: 600px; }
+    .container { max-width: 640px; }
+    .container-wide { max-width: 1080px; }
 
-    .serif {
+    .display {
       font-family: 'Fraunces', Georgia, serif;
-      font-weight: 500;
+      font-weight: 600;
       letter-spacing: -0.02em;
-      line-height: 1.12;
+      line-height: 1.1;
       color: #2c372c;
     }
-    .kicker {
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.22em;
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: #516A4C;
-      margin: 0 0 28px;
+      color: #516a4c;
     }
 
-    /* ===== Header — leggerissimo ===== */
-    header {
-      position: relative;
-      z-index: 10;
-    }
-    .header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 22px 28px;
-    }
-    .logo img { height: 52px; width: auto; }
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 22px;
-    }
-    .header-actions .login {
-      font-size: 14px;
-      color: #516A4C;
-      text-decoration: none;
-    }
-    .header-actions .login:hover { color: #2c372c; }
-
-    /* ===== Bottoni ===== */
+    /* ===== Buttons ===== */
     .btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
       font-family: inherit;
-      font-weight: 500;
-      font-size: 15px;
-      padding: 13px 24px;
-      border-radius: 999px;
+      font-weight: 600;
+      font-size: 16px;
+      padding: 15px 26px;
+      border-radius: 14px;
       border: 0;
       cursor: pointer;
       text-decoration: none;
-      transition: background 0.2s ease;
+      transition: background 0.18s ease, transform 0.12s ease;
       white-space: nowrap;
     }
-    .btn-primary { background: #516A4C; color: #fdfcf9; }
-    .btn-primary:hover { background: #41553e; }
-    .btn-quiet {
+    .btn-primary {
+      background: #688361;
+      color: #fdfcf9;
+    }
+    .btn-primary:hover { background: #516a4c; }
+    .btn-primary:active { transform: translateY(1px); }
+    .btn-link {
       background: transparent;
-      color: #2c372c;
-      border: 1px solid rgba(82, 106, 76, 0.35);
+      color: #41553e;
+      padding: 12px 14px;
+      font-size: 14px;
     }
-    .btn-quiet:hover { border-color: #516A4C; }
+    .btn-link:hover { color: #2c372c; }
 
-    /* ===== Ritmo verticale generoso ===== */
-    section { padding: clamp(72px, 13vw, 160px) 0; }
-
-    /* ===== Hero ===== */
-    .hero { padding: clamp(48px, 10vw, 130px) 0 clamp(64px, 11vw, 150px); }
-    .hero h1 {
-      font-size: clamp(38px, 7vw, 76px);
-      line-height: 1.04;
-      margin: 0 0 28px;
-      font-weight: 400;
+    /* ===== Header ===== */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(250, 248, 242, 0.92);
+      backdrop-filter: saturate(180%) blur(10px);
+      -webkit-backdrop-filter: saturate(180%) blur(10px);
+      border-bottom: 1px solid rgba(82, 106, 76, 0.08);
     }
-    .hero .sub {
-      font-size: clamp(18px, 2.4vw, 24px);
-      color: #5a6459;
-      max-width: 32ch;
-      margin: 0 0 44px;
-      line-height: 1.45;
-      font-family: 'Fraunces', Georgia, serif;
-      font-weight: 400;
-    }
-    .hero .actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .hero .meta { font-size: 13px; color: #8a948b; }
-
-    /* ===== Frammenti di riconoscimento ===== */
-    .fragments p {
-      font-family: 'Fraunces', Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(22px, 3.4vw, 32px);
-      line-height: 1.3;
-      color: #2c372c;
-      margin: 0 0 clamp(28px, 4vw, 44px);
-      max-width: 24ch;
-    }
-    .fragments p:nth-child(even) {
-      margin-left: auto;
-      text-align: right;
-      color: #516A4C;
-    }
-    .fragments p:last-child { margin-bottom: 0; }
-
-    /* ===== "QuitFresh non è" ===== */
-    .negativa ul {
-      list-style: none;
-      margin: 0 0 clamp(48px, 8vw, 88px);
-      padding: 0;
-    }
-    .negativa li {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: clamp(20px, 2.8vw, 28px);
-      color: #6b756a;
-      padding: 18px 0;
-      border-bottom: 1px solid rgba(82, 106, 76, 0.12);
-    }
-    .negativa li:first-child { border-top: 1px solid rgba(82, 106, 76, 0.12); }
-
-    /* ===== Banda d'impatto ===== */
-    .band {
-      background: #2c372c;
-      color: #f3f6f1;
-    }
-    .band .statement {
-      font-family: 'Fraunces', Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(26px, 4.4vw, 44px);
-      line-height: 1.25;
-      letter-spacing: -0.02em;
-      margin: 0;
-      max-width: 20ch;
-    }
-    .band .statement em {
-      font-style: normal;
-      color: #aec1aa;
-    }
-
-    /* ===== Progressione percettiva ===== */
-    .progression {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      max-width: 560px;
-    }
-    .progression li {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: clamp(20px, 2.8vw, 28px);
-      color: #2c372c;
-      line-height: 1.35;
-      padding: 0 0 clamp(26px, 4vw, 40px) 28px;
-      border-left: 1px solid rgba(82, 106, 76, 0.25);
-      position: relative;
-    }
-    .progression li::before {
-      content: '';
-      position: absolute;
-      left: -5px;
-      top: 12px;
-      width: 9px; height: 9px;
-      border-radius: 50%;
-      background: #516A4C;
-    }
-    .progression li:last-child { padding-bottom: 0; }
-
-    /* ===== Il percorso ===== */
-    .percorso .lede {
-      font-family: 'Fraunces', Georgia, serif;
-      font-size: clamp(24px, 3.6vw, 36px);
-      line-height: 1.25;
-      color: #2c372c;
-      margin: 0 0 36px;
-      max-width: 22ch;
-    }
-    .percorso .note {
-      font-size: clamp(16px, 1.8vw, 18px);
-      color: #5a6459;
-      max-width: 46ch;
-      margin: 0 0 18px;
-    }
-    .percorso .scarcity {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      gap: 10px;
-      max-width: 46ch;
-    }
-    .percorso .scarcity li {
-      font-size: 16px;
-      color: #6b756a;
-      padding-left: 20px;
-      position: relative;
-    }
-    .percorso .scarcity li::before {
-      content: '—';
-      position: absolute;
-      left: 0;
-      color: #516A4C;
-    }
-
-    /* ===== Manifesto ===== */
-    .manifesto { background: #fdfcf9; }
-    .manifesto .letter {
-      max-width: 560px;
+    /* Header: layout full-width, padding generoso. Niente cap stretto. */
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      gap: 16px;
+      max-width: 1440px;
       margin: 0 auto;
     }
-    .manifesto .letter p {
-      font-family: 'Fraunces', Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(20px, 2.8vw, 27px);
-      line-height: 1.5;
-      color: #2c372c;
-      margin: 0 0 1.4em;
+    .logo { display: inline-flex; align-items: center; text-decoration: none; flex-shrink: 0; }
+    .logo img, .logo picture img { height: 60px; width: auto; display: block; }
+    @media (min-width: 720px) {
+      .logo img, .logo picture img { height: 96px; }
     }
-    .manifesto .letter p:last-child { margin-bottom: 0; }
-    .manifesto .letter .soft { color: #6b756a; }
+    .header-nav {
+      display: none;            /* nascosto su mobile */
+      gap: 2px;
+      align-items: center;
+      flex: 1;
+      justify-content: center;  /* nav al centro tra logo e CTA */
+    }
+    .header-nav a {
+      font-size: 14px;
+      color: #41553e;
+      text-decoration: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      transition: background 0.15s ease, color 0.15s ease;
+      white-space: nowrap;       /* mai a capo */
+      line-height: 1.2;
+    }
+    .header-nav a:hover { background: rgba(82, 106, 76, 0.08); color: #2c372c; }
+    .header-nav .ig-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .header-nav .ig-link svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+    .ig-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .ig-icon:hover { background: rgba(214, 41, 118, 0.08); transform: translateY(-1px); }
+    .ig-icon svg { width: 22px; height: 22px; display: block; }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .header-cta {
+      font-size: 14px;
+      padding: 10px 18px;
+    }
 
-    /* ===== CTA di chiusura ===== */
-    .closing { text-align: center; }
-    .closing h2 {
-      font-family: 'Fraunces', Georgia, serif;
-      font-weight: 400;
-      font-size: clamp(30px, 5vw, 52px);
-      line-height: 1.1;
-      letter-spacing: -0.02em;
-      color: #2c372c;
-      margin: 0 0 32px;
+    /* ===== Hamburger mobile ===== */
+    .menu-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px; height: 40px;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      color: #41553e;
+      border-radius: 10px;
     }
-    .closing .meta { font-size: 13px; color: #8a948b; margin-top: 18px; }
+    .menu-btn:hover { background: rgba(82, 106, 76, 0.08); }
+    .menu-btn svg { width: 22px; height: 22px; }
+
+    /* Drawer mobile */
+    .mobile-menu {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      background: #faf8f2;
+      padding: 14px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: column;
+      transform: translateY(-100%);
+      transition: transform 0.28s ease;
+      visibility: hidden;
+    }
+    .mobile-menu.open {
+      transform: translateY(0);
+      visibility: visible;
+    }
+    .mobile-menu-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(82, 106, 76, 0.1);
+    }
+    .mobile-menu nav {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 18px 0 12px;
+      flex: 1;
+    }
+    .mobile-menu nav a {
+      display: block;
+      padding: 14px 4px;
+      font-size: 18px;
+      color: #2c372c;
+      text-decoration: none;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      border-bottom: 1px solid rgba(82, 106, 76, 0.08);
+    }
+    .mobile-menu nav a:last-child { border-bottom: 0; }
+    .mobile-menu .menu-cta {
+      width: 100%;
+      padding: 16px 24px;
+      font-size: 16px;
+    }
+    body.menu-open { overflow: hidden; }
+
+    /* ===== Sezioni ===== */
+    /* Padding verticale che cresce con la viewport: la pagina respira
+       su desktop largo senza sembrare densa su mobile. */
+    section { padding: clamp(56px, 9vw, 120px) 0; }
+    .section-head {
+      max-width: 620px;
+      margin: 0 auto clamp(28px, 4vw, 56px);
+    }
+    .section-head .eyebrow { margin-bottom: 12px; }
+    .section-head h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      font-size: clamp(28px, 5vw, 44px);
+      margin: 0 0 14px;
+      color: #2c372c;
+    }
+    .section-head p {
+      color: #5a6b62;
+      font-size: clamp(15.5px, 1.5vw, 17.5px);
+      margin: 0;
+      line-height: 1.55;
+    }
+    /* Sezioni con sfondo pieno (bande): titolo invertito gestito a mano */
+    .band-cream { background: #fdfcf9; }
+    .band-sage { background: #e9efe7; }
+    .band-dark { background: #2c372c; color: #f6f8f5; }
+    .band-dark .section-head h2 { color: #fdfcf9; }
+    .band-dark .section-head p { color: #c2cdbf; }
+
+    /* ===== Hero ===== */
+    .hero {
+      padding: clamp(36px, 6vw, 88px) 0 clamp(40px, 6vw, 80px);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 36px;
+      align-items: center;
+    }
+    .hero-text { max-width: 560px; }
+    .hero h1 {
+      font-size: clamp(34px, 6.5vw, 60px);
+      margin: 0 0 16px;
+      line-height: 1.05;
+    }
+    .hero p.lead {
+      font-size: clamp(16.5px, 1.6vw, 19px);
+      color: #4b5563;
+      margin: 0 0 24px;
+      max-width: 520px;
+      line-height: 1.5;
+    }
+    .hero-cta {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .hero-cta .btn-primary {
+      width: 100%;
+      max-width: 360px;
+      padding: 17px 28px;
+      font-size: 17px;
+    }
+    .hero-cta .meta { font-size: 13px; color: #6b7280; }
+
+    /* Trust chips sotto CTA. Visibili da subito, niente click attivi. */
+    .trust-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .trust-chips .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.14);
+      color: #41553e;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 7px 11px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .trust-chips .chip::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: #688361;
+      border-radius: 50%;
+    }
+
+    /* Mini-demo "Ho bisogno ORA" inline nell'hero.
+       Risponde alla domanda "ma in pratica cosa fa quando ho la voglia?" */
+    .demo-card {
+      margin-top: 28px;
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.14);
+      border-radius: 18px;
+      padding: 18px;
+      max-width: 460px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 22px rgba(15, 23, 42, 0.06);
+    }
+    .demo-card .demo-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      color: #a8654a;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .demo-card .demo-scene {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 17px;
+      color: #2c372c;
+      margin: 0 0 14px;
+      line-height: 1.35;
+    }
+    .demo-btn {
+      width: 100%;
+      background: #a8654a;
+      color: #fdfcf9;
+      border: 0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+    .demo-btn:hover { background: #92563f; }
+    .demo-btn:active { transform: translateY(1px); }
+    .demo-response {
+      margin-top: 14px;
+      padding: 14px 14px 12px;
+      background: #f3f7f1;
+      border-radius: 12px;
+      border-left: 3px solid #688361;
+      display: none;
+    }
+    .demo-response.show { display: block; animation: demoFade 0.4s ease; }
+    @keyframes demoFade {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .demo-response p {
+      margin: 0;
+      font-size: 14.5px;
+      color: #41553e;
+      line-height: 1.5;
+    }
+    .demo-response p + p { margin-top: 8px; }
+    .demo-response .demo-cta {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #41553e;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .demo-timer {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #5a6b62;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .demo-timer-bar {
+      flex: 1;
+      height: 4px;
+      background: #e9efe7;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .demo-timer-bar > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: #688361;
+      transition: width 1s linear;
+    }
+
+    /* Phone hero a destra solo su desktop (≥960). Su mobile e tablet
+       resta nascosto — l'utente vede subito copy + CTA. */
+    .hero-phone { display: none; }
+    .hero-phone a { display: block; text-decoration: none; }
+
+    /* ===== Sticky CTA mobile (solo mobile) ===== */
+    .sticky-cta {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 60;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+      background: rgba(250, 248, 242, 0.96);
+      backdrop-filter: saturate(180%) blur(10px);
+      -webkit-backdrop-filter: saturate(180%) blur(10px);
+      border-top: 1px solid rgba(82, 106, 76, 0.12);
+      transform: translateY(110%);
+      transition: transform 0.25s ease;
+    }
+    .sticky-cta.show { transform: translateY(0); }
+    .sticky-cta .btn { width: 100%; padding: 15px 24px; }
+    /* Padding aggiunto al body quando sticky e' visibile per non coprire footer */
+    body.has-sticky-cta { padding-bottom: 86px; }
+
+    /* ===== Card grigio-verde (per quote/osservazioni) ===== */
+    .quote {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.12);
+      border-left: 3px solid #688361;
+      border-radius: 12px;
+      padding: 16px 18px;
+      font-size: 15px;
+      color: #41553e;
+      margin: 24px 0;
+    }
+
+    /* ===== Steps "Come funziona" =====
+       Mobile: stack. Desktop (≥720): 3 colonne affiancate. */
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .step {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.1);
+      border-radius: 16px;
+      padding: 22px 20px;
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .step-num {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: #e9efe7;
+      color: #41553e;
+      display: grid; place-items: center;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 17px;
+    }
+    .step h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 18px;
+      margin: 4px 0 6px;
+      color: #2c372c;
+      letter-spacing: -0.01em;
+    }
+    .step p { margin: 0; color: #5a6b62; font-size: 15px; }
+
+    /* ===== Trigger / pattern (lista osservazioni) ===== */
+    .pattern-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .pattern-item {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.1);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .pattern-item .when {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #a8654a;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .pattern-item .what {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 17px;
+      color: #2c372c;
+      margin: 0 0 4px;
+    }
+    .pattern-item .why {
+      font-size: 14px;
+      color: #5a6b62;
+      margin: 0;
+    }
+
+    /* ===== Citisina box =====
+       Su mobile: card sage dentro al container. Da tablet+ diventa
+       contenuto interno di una band sage full-width (vedi .section.band-sage). */
+    .citisine {
+      background: #e9efe7;
+      border-radius: 18px;
+      padding: 28px 22px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .band-sage .citisine {
+      background: transparent;
+      padding: 0;
+    }
+    .citisine h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      margin: 0 0 10px;
+      color: #2c372c;
+    }
+    .citisine p { color: #41553e; margin: 0 0 14px; font-size: 15.5px; }
+    .citisine ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .citisine li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 15px;
+      color: #41553e;
+    }
+    .citisine li::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: #688361;
+      border-radius: 50%;
+      margin-top: 8px;
+      flex-shrink: 0;
+    }
+
+    /* ===== Timeline "Cosa succede ogni giorno" ===== */
+    .timeline {
+      display: grid;
+      gap: 0;
+      padding-left: 8px;
+      border-left: 2px solid rgba(82, 106, 76, 0.18);
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .timeline-item {
+      padding: 0 0 26px 22px;
+      position: relative;
+    }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -7px;
+      top: 4px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #688361;
+      border: 2px solid #faf8f2;
+    }
+    .timeline-item h4 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 17px;
+      margin: 0 0 6px;
+      color: #2c372c;
+    }
+    .timeline-item p {
+      margin: 0;
+      color: #5a6b62;
+      font-size: 15px;
+    }
+
+    /* ===== Tabella Free vs Premium =====
+       Mobile: stack. Tablet+ (≥720): side-by-side per confronto immediato. */
+    .plans {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      max-width: 880px;
+      margin: 0 auto;
+    }
+    .plan {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.12);
+      border-radius: 18px;
+      padding: 24px 22px;
+    }
+    .plan.premium {
+      border-color: #688361;
+      background: #f3f7f1;
+    }
+    .plan-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .plan-head h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 22px;
+      margin: 0;
+      color: #2c372c;
+      letter-spacing: -0.01em;
+    }
+    .plan-price {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 22px;
+      color: #41553e;
+    }
+    .plan .tag {
+      font-size: 12px;
+      color: #6b7280;
+      margin: 0 0 16px;
+    }
+    .plan ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .plan li {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 10px;
+      font-size: 15px;
+      color: #2c372c;
+      line-height: 1.5;
+    }
+    .plan li .mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px; height: 18px;
+      margin-top: 3px;
+      color: #688361;
+      font-weight: 700;
+    }
+    .plan li.muted { color: #8a948b; }
+    .plan li.muted .mark { color: #c2c8c1; }
+    .plan-foot {
+      margin-top: 18px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    /* ===== "Per chi è" ===== */
+    .audience {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .audience-item {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.1);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .audience-item .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #688361;
+      margin-top: 9px;
+      margin-left: 10px;
+    }
+    .audience-item h4 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 0 0 4px;
+      color: #2c372c;
+      letter-spacing: -0.01em;
+    }
+    .audience-item p {
+      margin: 0;
+      color: #5a6b62;
+      font-size: 14.5px;
+      line-height: 1.5;
+    }
+
+    /* ===== Community / Instagram ===== */
+    .community {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.12);
+      border-radius: 18px;
+      padding: 26px 22px;
+      text-align: left;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .community h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 20px;
+      margin: 0 0 8px;
+      color: #2c372c;
+      letter-spacing: -0.01em;
+    }
+    .community p {
+      margin: 0 0 18px;
+      color: #5a6b62;
+      font-size: 15px;
+    }
+    .ig-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      color: #41553e;
+      background: #e9efe7;
+      padding: 12px 18px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: background 0.18s ease;
+    }
+    .ig-btn:hover { background: #d2dccf; }
+    .ig-btn svg { width: 18px; height: 18px; }
+
+    /* ===== Preview / mockup phone =====
+       Mobile small (<420): 1 per riga, mockup grande e leggibile.
+       Mobile/tablet (≥420): 2 per riga.
+       Desktop (≥960): 4 per riga, layout showcase. */
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 22px;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+    .phone {
+      background: #2c372c;
+      border-radius: 28px;
+      padding: 8px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 10px 28px rgba(15, 23, 42, 0.10);
+    }
+    .phone-screen {
+      background: #fdfcf9;
+      border-radius: 22px;
+      overflow: hidden;
+      aspect-ratio: 9 / 18;
+    }
+    .phone-screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+    .preview-item .caption {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #5a6b62;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .preview-item .caption strong {
+      display: block;
+      color: #2c372c;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    /* ===== FAQ ===== */
+    .faq {
+      display: grid;
+      gap: 12px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .faq details {
+      background: #fdfcf9;
+      border: 1px solid rgba(82, 106, 76, 0.1);
+      border-radius: 14px;
+      padding: 16px 18px;
+      transition: background 0.15s ease;
+    }
+    .faq details[open] { background: #f6f8f5; }
+    .faq summary {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 17px;
+      color: #2c372c;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      letter-spacing: -0.01em;
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after {
+      content: '+';
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      font-size: 22px;
+      color: #688361;
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+    }
+    .faq details[open] summary::after { content: '–'; }
+    .faq p {
+      margin: 14px 0 0;
+      color: #4b5563;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ===== CTA finale =====
+       Diventa band scura full-width (vedi section.band-dark che la avvolge).
+       La card interna ora e' solo il contenuto centrato, niente fondo. */
+    .cta-final {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0;
+      text-align: center;
+    }
+    .cta-final h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: clamp(28px, 4.5vw, 44px);
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin: 0 0 14px;
+      color: #fdfcf9;
+    }
+    .cta-final p {
+      color: #c2cdbf;
+      margin: 0 0 26px;
+      font-size: clamp(15px, 1.4vw, 17px);
+    }
+    .cta-final .btn-primary {
+      background: #aec1aa;
+      color: #2c372c;
+    }
+    .cta-final .btn-primary:hover { background: #c2cdbf; }
 
     /* ===== Footer ===== */
     footer {
-      padding: 56px 0 48px;
-      border-top: 1px solid rgba(82, 106, 76, 0.12);
+      padding: 36px 0 28px;
+      border-top: 1px solid rgba(82, 106, 76, 0.1);
+      margin-top: 24px;
     }
     .footer-inner {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
       align-items: flex-start;
-    }
-    .footer-inner .logo img { height: 24px; }
-    .footer-disc {
-      font-size: 12.5px;
-      color: #8a948b;
-      max-width: 60ch;
-      line-height: 1.55;
     }
     .footer-links {
       display: flex;
       flex-wrap: wrap;
-      gap: 18px;
+      gap: 16px;
       font-size: 13px;
+      color: #5a6b62;
     }
-    .footer-links a { color: #516A4C; text-decoration: none; }
+    .footer-links a {
+      text-decoration: none;
+      color: #41553e;
+    }
     .footer-links a:hover { text-decoration: underline; }
-    .footer-copy { font-size: 12px; color: #a0a89e; }
+    .footer-copy {
+      font-size: 12px;
+      color: #8a948b;
+    }
+    .footer-disc {
+      font-size: 12px;
+      color: #8a948b;
+      max-width: 560px;
+      line-height: 1.5;
+    }
+
+    /* ===== Desktop bump (mobile-first, ma su schermi grandi
+            allarghiamo solo nav e qualche spaziatura) ===== */
+    /* ===== Breakpoint scale ===== */
+
+    /* Da 420px in su: 2 colonne preview phone */
+    @media (min-width: 420px) {
+      .preview-grid {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: none;
+      }
+    }
+
+    /* Da 720px (tablet/desktop small): nav, layout multi-colonna */
+    @media (min-width: 720px) {
+      .container, .container-wide, .container-full { padding: 0 28px; }
+      .header-row { padding: 16px 28px; }
+      .header-nav { display: flex; }
+      .menu-btn { display: none; }
+      .hero-cta { flex-direction: row; align-items: center; gap: 16px; }
+      .hero-cta .btn-primary { width: auto; max-width: none; }
+      .audience { grid-template-columns: repeat(2, 1fr); max-width: 880px; }
+      .plans { grid-template-columns: repeat(2, 1fr); align-items: start; }
+      .steps { grid-template-columns: repeat(3, 1fr); }
+      .pattern-list { grid-template-columns: repeat(2, 1fr); max-width: 880px; }
+    }
+
+    /* Da 960px (desktop): preview 4×1, hero con phone a destra */
+    @media (min-width: 960px) {
+      .preview-grid { grid-template-columns: repeat(4, 1fr); gap: 20px; }
+      .hero-grid {
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+        gap: 48px;
+      }
+      .hero-phone {
+        display: block;
+        max-width: 320px;
+        margin-left: auto;
+      }
+    }
+
+    /* Da 1200px: ulteriore respiro orizzontale */
+    @media (min-width: 1200px) {
+      .container, .container-wide, .container-full { padding: 0 40px; }
+      .header-row { padding: 18px 40px; }
+    }
   </style>
 </head>
 <body>
@@ -344,122 +1020,430 @@
 <header>
   <div class="header-row">
     <a href="/" class="logo" aria-label="QuitFresh">
-      <img src="./logo.png?v=2026-05-26" alt="QuitFresh" />
+      <img src="./logo.png?v=2026-05-22b" alt="QuitFresh" />
     </a>
+    <nav class="header-nav" aria-label="Sezioni">
+      <a href="#come-funziona">Come funziona</a>
+      <a href="#trigger">I tuoi trigger</a>
+      <a href="#percorso">Il percorso</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://quitfresh.it/login">Accedi</a>
+    </nav>
     <div class="header-actions">
-      <a href="https://quitfresh.it/login" class="login">Accedi</a>
-      <a href="https://quitfresh.it/register" class="btn btn-primary">Entra nel percorso</a>
+      <a href="https://www.instagram.com/quitfresh/" target="_blank" rel="noopener" class="ig-icon" aria-label="Instagram @quitfresh">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <defs>
+            <linearGradient id="igGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#feda75"/>
+              <stop offset="25%" stop-color="#fa7e1e"/>
+              <stop offset="50%" stop-color="#d62976"/>
+              <stop offset="75%" stop-color="#962fbf"/>
+              <stop offset="100%" stop-color="#4f5bd5"/>
+            </linearGradient>
+          </defs>
+          <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" ry="5.5" fill="none" stroke="url(#igGrad)" stroke-width="2"/>
+          <circle cx="12" cy="12" r="4" fill="none" stroke="url(#igGrad)" stroke-width="2"/>
+          <circle cx="17.5" cy="6.5" r="1.2" fill="url(#igGrad)"/>
+        </svg>
+      </a>
+      <a href="https://quitfresh.it/register" class="btn btn-primary header-cta">Inizia gratis</a>
+      <button class="menu-btn" id="menuOpen" aria-label="Apri menu" aria-expanded="false" aria-controls="mobileMenu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="4" y1="7" x2="20" y2="7"/>
+          <line x1="4" y1="12" x2="20" y2="12"/>
+          <line x1="4" y1="17" x2="20" y2="17"/>
+        </svg>
+      </button>
     </div>
   </div>
 </header>
 
+<!-- Mobile drawer (solo <720px, hamburger nascosto su desktop) -->
+<div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+  <div class="mobile-menu-head">
+    <a href="/" class="logo" aria-label="QuitFresh"><img src="./logo.png" alt="QuitFresh" /></a>
+    <button class="menu-btn" id="menuClose" aria-label="Chiudi menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"/>
+        <line x1="18" y1="6" x2="6" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <nav aria-label="Menu principale">
+    <a href="#come-funziona" data-close>Come funziona</a>
+    <a href="#trigger" data-close>I tuoi trigger</a>
+    <a href="#percorso" data-close>Il percorso</a>
+    <a href="#faq" data-close>FAQ</a>
+    <a href="https://www.instagram.com/quitfresh/" target="_blank" rel="noopener" data-close>Instagram</a>
+    <a href="https://quitfresh.it/login" data-close>Accedi</a>
+  </nav>
+  <a href="https://quitfresh.it/register" class="btn btn-primary menu-cta" data-close>Inizia gratis</a>
+</div>
+
 <main>
 
-  <!-- ===== 1. HERO ===== -->
+  <!-- ===== HERO =====
+       Dati Clarity 2026-05: <10% scrolla oltre il 50% della pagina e
+       l'hero raccoglie il 37,5% dei click (con alcuni "dead click").
+       Conseguenza: tutto il valore va trasmesso qui, sopra la piega,
+       e ogni elemento visibile deve essere o chiaramente cliccabile
+       o chiaramente informativo. -->
   <section class="hero">
-    <div class="wrap">
-      <h1 class="serif">Il problema non è solo smettere.</h1>
-      <p class="sub">È capire cosa succede nella tua testa prima di accendere.</p>
-      <div class="actions">
-        <a href="https://quitfresh.it/register" class="btn btn-primary">Entra nel percorso</a>
-        <span class="meta">Si comincia dal browser.</span>
+    <div class="container-wide">
+      <div class="hero-grid">
+        <div class="hero-text">
+          <span class="eyebrow" style="margin-bottom: 14px;">Dopo cena · In macchina · Pausa caffè</span>
+          <h1 class="display">Quando arriva la voglia, qualcuno che sa cosa fare è già lì.</h1>
+          <p class="lead">QuitFresh ti accompagna nei momenti difficili — dopo pranzo, in macchina, prima di dormire — e ti aiuta a smettere davvero. Anche con la citisina.</p>
+          <div class="hero-cta">
+            <a href="https://quitfresh.it/register" class="btn btn-primary">Provala gratis</a>
+            <span class="meta">Funziona dal browser · Setup in 1 minuto</span>
+          </div>
+          <div class="trust-chips" aria-hidden="true">
+            <span class="chip">Gratis</span>
+            <span class="chip">Niente carta</span>
+            <span class="chip">Da browser</span>
+            <span class="chip">Dati tuoi, privati</span>
+          </div>
+
+          <!-- Mini-demo: simula in poche righe come l'app reagisce in un
+               craving reale. Risponde a "ma in pratica cosa fa?" senza
+               costringere a registrarsi. -->
+          <div class="demo-card" id="demoCard">
+            <div class="demo-label">Provalo qui · 10 secondi</div>
+            <p class="demo-scene">Sono le 22, hai appena finito di cenare. La voglia arriva, come ogni sera.</p>
+            <button class="demo-btn" id="demoBtn" type="button">Ho bisogno ORA</button>
+
+            <div class="demo-response" id="demoResponse" aria-live="polite">
+              <p><strong>Respira. Bevi un bicchiere d'acqua.</strong> La voglia che senti ora dura 3 minuti, poi cala da sola. È sempre così.</p>
+              <p>Alzati, fai cinque passi, guarda fuori dalla finestra. Non devi resistere — devi solo lasciare passare.</p>
+              <div class="demo-timer">
+                <span id="demoTimerText">3 minuti</span>
+                <span class="demo-timer-bar"><span id="demoTimerFill"></span></span>
+              </div>
+              <a href="https://quitfresh.it/register" class="demo-cta">Voglio averla con me ogni sera →</a>
+            </div>
+          </div>
+        </div>
+        <div class="hero-phone">
+          <a href="https://quitfresh.it/register" aria-label="Provala gratis">
+            <div class="phone"><div class="phone-screen"><img src="./screens/1-home.jpg" alt="Schermata principale QuitFresh" /></div></div>
+          </a>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ===== 2. COSA SUCCEDE DAVVERO ===== -->
+  <!-- ===== PER CHI E' ===== -->
+  <section id="per-chi" style="padding-top: 24px;">
+    <div class="container-wide">
+      <div class="section-head" style="margin-bottom: 24px;">
+        <span class="eyebrow">Per chi è</span>
+        <h2>QuitFresh è pensata per te se…</h2>
+      </div>
+      <div class="audience">
+        <div class="audience-item">
+          <span class="dot"></span>
+          <div>
+            <h4>Hai deciso di smettere</h4>
+            <p>E vuoi farlo davvero, non per la sesta volta. Cerchi uno strumento che ti aiuti a capire come ci sei finito qui.</p>
+          </div>
+        </div>
+        <div class="audience-item">
+          <span class="dot"></span>
+          <div>
+            <h4>Stai usando la citisina</h4>
+            <p>Tabex, Desmoxan, Todacitan. L'app gestisce dosi e orari sui 25 giorni del protocollo, così non devi ricordarteli tu.</p>
+          </div>
+        </div>
+        <div class="audience-item">
+          <span class="dot"></span>
+          <div>
+            <h4>Vuoi ridurre prima di smettere</h4>
+            <p>Vai per gradi. Tracker, diario e SOS Craving sono lì da subito, anche senza terapia farmacologica.</p>
+          </div>
+        </div>
+        <div class="audience-item">
+          <span class="dot"></span>
+          <div>
+            <h4>Ricadi sempre negli stessi momenti</h4>
+            <p>Dopo pranzo. In macchina. La domenica sera. Se ti riconosci, QuitFresh è fatta per vedere quei momenti prima di te.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 1. COME FUNZIONA ===== -->
+  <section id="come-funziona" class="band-cream">
+    <div class="container-wide">
+      <div class="section-head">
+        <span class="eyebrow">Come funziona</span>
+        <h2>Tre passi, niente di più.</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <h3>Racconta come fumi oggi</h3>
+            <p>Quante sigarette, in che momenti, perché. Bastano cinque minuti di domande mirate, niente questionari infiniti.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <h3>Imposti il tuo percorso</h3>
+            <p>Citisina, riduzione graduale, o smettere di colpo. Se segui la citisina, l'app calcola dosi e orari sui 25 giorni del protocollo.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <h3>Inizi a osservarti</h3>
+            <p>Ogni craving che registri diventa un dato. Dopo qualche giorno vedi i pattern: <em>cedi sempre dopo pranzo, o quando guidi, o in pausa con i colleghi</em>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Anteprima app ===== -->
   <section>
-    <div class="wrap">
-      <p class="kicker">Cosa succede davvero</p>
-      <div class="fragments">
-        <p>Hai già la sigaretta in mano prima di aver deciso.</p>
-        <p>Il caffè, l'auto, la pausa: il gesto parte da solo.</p>
-        <p>«Solo una.» Suona sempre ragionevole.</p>
-        <p>Una voce negozia. Sembri tu — ma sta solo trattando.</p>
-        <p>A volte non è nicotina. È una pausa che stai cercando.</p>
-        <p>E i momenti che non avevi mai visto arrivare.</p>
+    <div class="container-wide">
+      <div class="section-head">
+        <span class="eyebrow">Anteprima</span>
+        <h2>Come si presenta.</h2>
+      </div>
+      <div class="preview-grid">
+        <div class="preview-item">
+          <div class="phone"><div class="phone-screen"><img src="./screens/1-home.jpg" alt="Schermata Home con contatore giorni" loading="lazy" /></div></div>
+          <p class="caption"><strong>Home</strong>Giorni, risparmio, fase citisina</p>
+        </div>
+        <div class="preview-item">
+          <div class="phone"><div class="phone-screen"><img src="./screens/2-sos.jpg" alt="SOS Craving" loading="lazy" /></div></div>
+          <p class="caption"><strong>Nel momento</strong>Ti accompagna 3 minuti, finché passa</p>
+        </div>
+        <div class="preview-item">
+          <div class="phone"><div class="phone-screen"><img src="./screens/3-chat.jpg" alt="Supporto QuitFresh" loading="lazy" /></div></div>
+          <p class="caption"><strong>Supporto</strong>Risponde sui tuoi momenti reali</p>
+        </div>
+        <div class="preview-item">
+          <div class="phone"><div class="phone-screen"><img src="./screens/4-stats.jpg" alt="Statistiche" loading="lazy" /></div></div>
+          <p class="caption"><strong>Statistiche</strong>Trend, pattern, traguardi salute</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ===== 3. QUITFRESH NON È ===== -->
-  <section class="negativa">
-    <div class="wrap">
-      <p class="kicker">QuitFresh non è</p>
-      <ul>
-        <li>un tracker compulsivo</li>
-        <li>una raccolta di frasi motivazionali</li>
-        <li>una dashboard piena di statistiche</li>
-        <li>un feed infinito da consumare</li>
+  <!-- ===== 2. I TUOI TRIGGER ===== -->
+  <section id="trigger">
+    <div class="container-wide">
+      <div class="section-head">
+        <span class="eyebrow">I tuoi pattern</span>
+        <h2>La sigaretta non arriva mai a caso.</h2>
+        <p>Quando smetti senza guardarti, combatti contro un nemico invisibile. Quando i pattern emergono, smettere diventa una scelta consapevole — non una battaglia di forza di volontà.</p>
+      </div>
+
+      <ul class="pattern-list">
+        <li class="pattern-item">
+          <div class="when">Mattina</div>
+          <p class="what">La sigaretta dopo il caffè.</p>
+          <p class="why">Quella che "non si tocca". Inizia automaticamente — ancora prima di accorgertene.</p>
+        </li>
+        <li class="pattern-item">
+          <div class="when">Spostamenti</div>
+          <p class="what">La pausa automatica appena sali in macchina.</p>
+          <p class="why">Mano destra alla chiave, sinistra al pacchetto. Stesso ordine ogni volta.</p>
+        </li>
+        <li class="pattern-item">
+          <div class="when">Lavoro</div>
+          <p class="what">Il gesto che arriva quando sei stressato.</p>
+          <p class="why">Email difficile, riunione tirata, scadenza. La sigaretta come "valvola" — ma è il momento, non la nicotina.</p>
+        </li>
+        <li class="pattern-item">
+          <div class="when">Sera</div>
+          <p class="what">Una sola sul balcone, dopo cena.</p>
+          <p class="why">Quella più difficile da togliere. Silenzio, calma, fine giornata. L'app ti aiuta a riconoscere il rituale.</p>
+        </li>
       </ul>
-    </div>
-  </section>
 
-  <!-- Banda d'impatto -->
-  <section class="band">
-    <div class="wrap">
-      <p class="statement">Il valore di QuitFresh non nasce dentro l'app. <em>Nasce nei momenti reali della tua giornata.</em></p>
-    </div>
-  </section>
-
-  <!-- ===== 4. COME FUNZIONA ===== -->
-  <section>
-    <div class="wrap">
-      <p class="kicker">Quello che cambia</p>
-      <ul class="progression">
-        <li>Inizi a vedere gli automatismi.</li>
-        <li>Riconosci i trigger.</li>
-        <li>Noti la voce che negozia.</li>
-        <li>Distingui il craving dal bisogno reale.</li>
-        <li>Il fumo smette di sembrare qualcosa di inevitabile.</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- ===== 5. IL PERCORSO ===== -->
-  <section class="percorso">
-    <div class="wrap">
-      <p class="kicker">Il percorso</p>
-      <p class="lede">Ventotto giorni. Un solo momento ciascuno.</p>
-      <p class="note">Pochi minuti, una volta al giorno. Poi chiudi l'app e torni alla tua vita — è lì che il momento lavora.</p>
-      <ul class="scarcity">
-        <li>niente da scorrere</li>
-        <li>niente da recuperare</li>
-        <li>niente serie da tenere viva</li>
-        <li>quello di oggi resta di oggi</li>
-      </ul>
-      <p class="note" style="margin-top: 26px;">Non è poco per caso. È poco di proposito: una cosa alla volta, guardata bene.</p>
-    </div>
-  </section>
-
-  <!-- ===== 6. MANIFESTO ===== -->
-  <section class="manifesto">
-    <div class="wrap narrow">
-      <div class="letter">
-        <p>Per molto tempo ho pensato fosse impossibile.</p>
-        <p>Poi ho capito una cosa: continuavo a combattere e subire il fumo, senza capire davvero cosa succedeva nella mia testa.</p>
-        <p>QuitFresh nasce da lì.</p>
-        <p class="soft">Non per motivare. Ma per aiutare a vedere meglio.</p>
+      <div class="quote">
+        QuitFresh non ti dice "ce la farai". Ti mostra che i tuoi craving hanno una forma, una geografia, un orario. Da lì in poi le decisioni le prendi tu.
       </div>
     </div>
   </section>
 
-  <!-- ===== CHIUSURA ===== -->
-  <section class="closing">
-    <div class="wrap">
-      <h2>Comincia a guardare.</h2>
-      <a href="https://quitfresh.it/register" class="btn btn-primary">Entra nel percorso</a>
-      <p class="meta">Dal browser. I primi sette giorni sono per tutti.</p>
+  <!-- ===== 3. CITISINA ===== -->
+  <section class="band-sage">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Citisina</span>
+        <h2>Promemoria dosi automatici, sui 25 giorni del protocollo.</h2>
+        <p>Se segui la terapia con citisina (Tabex, Desmoxan), il protocollo è preciso: dosi a scalare e orari precisi. Saltare un'assunzione abbassa l'efficacia. QuitFresh gestisce tutto per te.</p>
+      </div>
+
+      <div class="citisine">
+        <h3>Cosa fa l'app durante la terapia</h3>
+        <p>Imposti il tuo orario di prima dose. Il resto è automatico.</p>
+        <ul>
+          <li>Notifica push a ogni dose, calcolata sulla fase del protocollo</li>
+          <li>Promemoria ricorrente se non confermi che l'hai presa</li>
+          <li>Diario delle capsule e degli effetti collaterali</li>
+          <li>Banner al giorno 5, il punto chiave del protocollo Sopharma</li>
+          <li>Riconosce dove sei nelle 5 fasi e adatta i messaggi</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 4. PERCORSO ===== -->
+  <section id="percorso">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Il percorso</span>
+        <h2>Cosa succede ogni giorno.</h2>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <h4>Giorno 1–3</h4>
+          <p>Inizi la citisina, continui a fumare ridotto. L'app ti guida con promemoria delle dosi e ti chiede come va. Registri i primi craving.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>Giorno 5</h4>
+          <p>Il punto del protocollo Tabex: si smette completamente. L'app ti avvisa al mattino, ti spiega perché è il momento giusto.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>Settimana 1</h4>
+          <p>I primi pattern emergono. Inizi a vedere quali momenti sono i più critici. Il counter dei giorni senza fumo cresce, vedi i soldi risparmiati.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>Giorno 14</h4>
+          <p>L'app ha abbastanza dati per dirti dove cedi più spesso. Le notifiche anti-craving si adattano ai tuoi orari critici.</p>
+        </div>
+        <div class="timeline-item">
+          <h4>Giorno 25</h4>
+          <p>Protocollo citisina completato. Hai 25 giorni di osservazioni e dati. Da qui in poi è gestione del comportamento, non più della dipendenza chimica.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 5. PIANI ===== -->
+  <section class="band-cream">
+    <div class="container-wide">
+      <div class="section-head">
+        <span class="eyebrow">Quanto costa</span>
+        <h2>Puoi usare QuitFresh gratis.</h2>
+        <p>Se vuoi approfondire il percorso, puoi sbloccare le funzioni avanzate con un pagamento unico. Nessun abbonamento, nessun rinnovo, nessuna carta richiesta per iniziare.</p>
+      </div>
+
+      <div class="plans">
+        <div class="plan">
+          <div class="plan-head">
+            <h3>Free</h3>
+            <span class="plan-price">€0</span>
+          </div>
+          <p class="tag">Per sempre, senza scadenze.</p>
+          <ul>
+            <li><span class="mark">✓</span><span>Tracker giorni senza fumo, sigarette evitate, risparmio</span></li>
+            <li><span class="mark">✓</span><span>SOS Craving — azione guidata anti-craving, sempre disponibile</span></li>
+            <li><span class="mark">✓</span><span>Calendario citisina e diario capsule</span></li>
+            <li><span class="mark">✓</span><span>Supporto scritto: 10 messaggi a settimana</span></li>
+            <li><span class="mark">✓</span><span>Diario osservazioni: 7 giorni</span></li>
+            <li><span class="mark">✓</span><span>Promemoria citisina: primi 3 giorni del protocollo</span></li>
+          </ul>
+        </div>
+
+        <div class="plan premium">
+          <div class="plan-head">
+            <h3>Premium</h3>
+            <span class="plan-price">€4,99</span>
+          </div>
+          <p class="tag">Pagamento unico. Nessun abbonamento.</p>
+          <ul>
+            <li><span class="mark">✓</span><span><strong>Tutto del piano Free, senza limiti</strong></span></li>
+            <li><span class="mark">✓</span><span>Supporto scritto illimitato</span></li>
+            <li><span class="mark">✓</span><span>Diario osservazioni senza limite di giorni</span></li>
+            <li><span class="mark">✓</span><span>Promemoria citisina per tutti i 25 giorni</span></li>
+            <li><span class="mark">✓</span><span>Statistiche avanzate: trend, breakdown orario dei craving</span></li>
+            <li><span class="mark">✓</span><span>Analisi trigger personali sui tuoi dati</span></li>
+          </ul>
+          <p class="plan-foot">I dati che accumuli nel piano Free restano tuoi quando passi a Premium. Niente reset, niente perdita storico.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6. FAQ ===== -->
+  <section id="faq">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Domande</span>
+        <h2>Quello che ci chiedono più spesso.</h2>
+      </div>
+
+      <div class="faq">
+        <details>
+          <summary>Funziona senza citisina?</summary>
+          <p>Sì. La citisina è un percorso supportato bene, ma puoi usare QuitFresh anche con riduzione graduale, sostituti nicotinici, vareniclina, o smettendo di colpo. Il lavoro sui pattern e sui trigger vale per qualsiasi metodo.</p>
+        </details>
+        <details>
+          <summary>I dati che registro sono privati?</summary>
+          <p>Sì. I tuoi dati restano tuoi, non li vendiamo a terzi, non li usiamo per pubblicità. Puoi esportarli o cancellarli quando vuoi dal profilo. La chat usa OpenAI con l'opzione "non usare per addestramento" disattivata.</p>
+        </details>
+        <details>
+          <summary>Cosa succede se ricado?</summary>
+          <p>Si registra nel diario, il contatore riparte, e l'app non fa drammi. Ricadere è parte di smettere — quasi nessuno smette al primo tentativo. Il valore è nei dati che continui ad accumulare sui tuoi pattern.</p>
+        </details>
+        <details>
+          <summary>Devo installare qualcosa?</summary>
+          <p>No. QuitFresh è una web app: la usi dal browser come un sito qualsiasi, oppure la aggiungi alla schermata home in 10 secondi (istruzioni nell'app). Funziona offline e manda notifiche push come un'app nativa.</p>
+        </details>
+        <details>
+          <summary>Perché €4,99 e non un abbonamento?</summary>
+          <p>Perché smettere di fumare ha una fine, non è un servizio infinito. Paghi una volta, usi finché ti serve. Niente carte da disattivare, niente sorprese sul rinnovo.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Community Instagram ===== -->
+  <section style="padding: 36px 0;">
+    <div class="container">
+      <div class="community">
+        <h3>Segui il percorso su Instagram</h3>
+        <p>Storie reali di chi sta smettendo, osservazioni sui pattern più comuni, microcontenuti che fanno parte del percorso. Niente motivational, solo cose concrete.</p>
+        <a href="https://www.instagram.com/quitfresh/" target="_blank" rel="noopener" class="ig-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="5" ry="5"/>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+          </svg>
+          @quitfresh
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 7. CTA FINALE ===== -->
+  <section class="band-dark">
+    <div class="container">
+      <div class="cta-final">
+        <h2 class="display">La prossima voglia non sarai da solo.</h2>
+        <p>Setup in 1 minuto. Niente carta. Funziona dal browser.</p>
+        <a href="https://quitfresh.it/register" class="btn btn-primary">Provala gratis</a>
+      </div>
     </div>
   </section>
 
 </main>
 
 <footer>
-  <div class="wrap">
+  <div class="container">
     <div class="footer-inner">
       <a href="/" class="logo" aria-label="QuitFresh">
-        <img src="./logo.png" alt="QuitFresh" />
+        <img src="./logo.png" alt="QuitFresh" style="height: 26px;" />
       </a>
       <p class="footer-disc">
         QuitFresh è uno strumento di supporto, non un servizio medico. La terapia con citisina va sempre discussa con il proprio medico curante. Se hai pensieri di autolesionismo o sei in crisi, contatta il <strong>Telefono Amico 02 2327 2327</strong> o il <strong>112</strong>.
@@ -474,6 +1458,112 @@
     </div>
   </div>
 </footer>
+
+
+<!-- Sticky CTA solo su mobile (<720px gestito via JS).
+     Compare dopo aver scrollato oltre l'hero, si nasconde quando il
+     bottone "Inizia gratis" finale e' visibile per non duplicare. -->
+<div class="sticky-cta" id="stickyCta" aria-hidden="true">
+  <a href="https://quitfresh.it/register" class="btn btn-primary">Inizia gratis</a>
+</div>
+
+<script>
+  // ── Mobile menu drawer ──────────────────────────────────────
+  (function() {
+    var menu = document.getElementById('mobileMenu');
+    var openBtn = document.getElementById('menuOpen');
+    var closeBtn = document.getElementById('menuClose');
+    if (!menu || !openBtn) return;
+
+    function setOpen(open) {
+      menu.classList.toggle('open', open);
+      menu.setAttribute('aria-hidden', open ? 'false' : 'true');
+      openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('menu-open', open);
+    }
+    openBtn.addEventListener('click', function() { setOpen(true); });
+    closeBtn && closeBtn.addEventListener('click', function() { setOpen(false); });
+    // Chiudi quando si clicca un link interno
+    menu.querySelectorAll('[data-close]').forEach(function(a) {
+      a.addEventListener('click', function() { setOpen(false); });
+    });
+    // ESC chiude
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
+  })();
+
+  // ── Sticky CTA mobile ───────────────────────────────────────
+  (function() {
+    var sticky = document.getElementById('stickyCta');
+    if (!sticky) return;
+
+    function isMobile() { return window.matchMedia('(max-width: 719px)').matches; }
+
+    var hero = document.querySelector('.hero');
+    var ctaFinal = document.querySelector('.cta-final');
+
+    function update() {
+      if (!isMobile()) {
+        sticky.classList.remove('show');
+        document.body.classList.remove('has-sticky-cta');
+        return;
+      }
+      // Mostra dopo aver superato l'hero, nascondi quando CTA finale e' a schermo.
+      var heroBottom = hero ? hero.getBoundingClientRect().bottom : 0;
+      var passedHero = heroBottom < 0;
+      var ctaVisible = false;
+      if (ctaFinal) {
+        var r = ctaFinal.getBoundingClientRect();
+        ctaVisible = r.top < window.innerHeight - 60;
+      }
+      var show = passedHero && !ctaVisible;
+      sticky.classList.toggle('show', show);
+      document.body.classList.toggle('has-sticky-cta', show);
+    }
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+
+  // ── Mini-demo "Ho bisogno ORA" ──────────────────────────────
+  // Mostra la risposta dell'app e avvia una progress bar di 30s
+  // (compressione visiva dei 3 minuti reali) come prova tangibile
+  // di "cosa fa nel momento del craving". Una sola volta per sessione.
+  (function() {
+    var btn = document.getElementById('demoBtn');
+    var resp = document.getElementById('demoResponse');
+    var fill = document.getElementById('demoTimerFill');
+    var label = document.getElementById('demoTimerText');
+    if (!btn || !resp || !fill) return;
+    var started = false;
+    btn.addEventListener('click', function() {
+      if (started) return;
+      started = true;
+      btn.disabled = true;
+      btn.style.opacity = '0.55';
+      btn.textContent = 'È con te adesso';
+      resp.classList.add('show');
+      // Compressione: 30s reali = 3 minuti narrativi.
+      var total = 30;
+      var elapsed = 0;
+      requestAnimationFrame(function() { fill.style.width = '100%'; fill.style.transitionDuration = total + 's'; });
+      var iv = setInterval(function() {
+        elapsed++;
+        var remainingNarrative = Math.max(0, Math.ceil((total - elapsed) * 6));
+        if (label) label.textContent = remainingNarrative > 0 ? ('~' + remainingNarrative + ' secondi narrativi') : 'È passata.';
+        if (elapsed >= total) {
+          clearInterval(iv);
+          if (label) label.textContent = 'È passata. Sempre così.';
+        }
+      }, 1000);
+      // Telemetria leggera per Clarity/GA.
+      if (window.clarity) window.clarity('event', 'demo_craving_clicked');
+      if (window.gtag) window.gtag('event', 'demo_craving_clicked', { event_category: 'engagement' });
+    });
+  })();
+</script>
 
 </body>
 </html>
