@@ -101,12 +101,20 @@ export default function Admin() {
             </button>
             <h1 className="text-xl font-bold text-gray-900">Codici promo</h1>
           </div>
-          <button
-            onClick={() => navigate('/admin/analytics')}
-            className="text-xs font-semibold bg-sage-600 text-white px-3 py-2 rounded-lg active:scale-95 transition-transform"
-          >
-            📊 Analytics
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/admin/broadcast')}
+              className="text-xs font-semibold bg-white border border-sage-500 text-sage-700 px-3 py-2 rounded-lg active:scale-95 transition-transform"
+            >
+              🔔 Avvisa notifiche
+            </button>
+            <button
+              onClick={() => navigate('/admin/analytics')}
+              className="text-xs font-semibold bg-sage-600 text-white px-3 py-2 rounded-lg active:scale-95 transition-transform"
+            >
+              📊 Analytics
+            </button>
+          </div>
         </div>
 
         {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}

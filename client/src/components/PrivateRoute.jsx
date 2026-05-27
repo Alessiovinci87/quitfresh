@@ -19,6 +19,7 @@ const PAYWALL_EXEMPT = new Set([
   '/privacy',
   '/terms',
   '/admin/promo-codes',
+  '/admin/broadcast',
   '/craving',
   '/diary',
   '/stats',

@@ -147,6 +147,67 @@ function sendWelcomeEmail(to) {
   return send({ to, subject: 'Benvenuto in QuitFresh 🌱', html });
 }
 
+// Broadcast "attiva le notifiche": invitiamo gli iscritti che NON hanno
+// ancora una push subscription ad attivarle dal Profilo. Canale email perche'
+// la push, per definizione, non li raggiunge. CTA porta a /profile.
+//
+// opts.promo (opzionale): { code, discountPct, expiresAt } — se presente,
+// aggiunge un riquadro "regalo" con il codice sconto. Il codice resta un
+// bonus: titolo e bottone restano centrati sulle notifiche.
+function buildActivateNotificationsHtml(opts = {}) {
+  const link = (process.env.CLIENT_BASE_URL || 'https://quitfresh.it').replace(/\/$/, '') + '/profile';
+  const promo = opts.promo;
+
+  let promoBlock = '';
+  if (promo && promo.code) {
+    const expiry = promo.expiresAt
+      ? ` <span style="color:#9ca3af;">(scade il ${new Date(promo.expiresAt).toLocaleDateString('it-IT')})</span>`
+      : '';
+    promoBlock = `
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;background:#f0f5f1;border:1px dashed #84a98c;border-radius:14px;">
+            <tr><td style="padding:18px 20px;text-align:center;">
+              <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:#111827;">🎁 Un regalo per te</p>
+              <p style="margin:0 0 10px;font-size:14px;line-height:1.5;color:#4b5563;">Usa il codice qui sotto e ottieni il <strong>−${promo.discountPct}%</strong> su QuitFresh Premium${expiry}</p>
+              <p style="margin:0;font-size:22px;font-weight:700;letter-spacing:2px;font-family:'SF Mono',Menlo,monospace;color:#84a98c;">${promo.code}</p>
+            </td></tr>
+          </table>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f5f5f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px;">
+        <tr><td>
+          <p style="margin:0 0 8px;color:#84a98c;font-size:13px;font-weight:600;letter-spacing:0.5px;">QUITFRESH</p>
+          <h1 style="margin:0 0 16px;font-size:22px;color:#111827;">Attiva le notifiche per non mollare 🌱</h1>
+          <p style="margin:0 0 28px;font-size:15px;line-height:1.55;color:#4b5563;">
+            Le notifiche sono il cuore di QuitFresh: ti ricordiamo le capsule di citisina, ti diamo una spinta nei momenti critici della giornata e celebriamo i tuoi traguardi. Senza, ti perdi la parte che fa la differenza. Bastano pochi secondi.
+          </p>
+          ${promoBlock}
+          <p style="margin:0 0 28px;">
+            <a href="${link}" style="display:inline-block;background:#84a98c;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:600;font-size:15px;">Attiva le notifiche</a>
+          </p>
+          <p style="margin:0;font-size:13px;line-height:1.5;color:#6b7280;">
+            Vai su Profilo → Notifiche e concedi il permesso quando il telefono te lo chiede. Se le hai già attive, ignora pure questa email.
+          </p>
+        </td></tr>
+      </table>
+      <p style="margin:16px 0 0;font-size:11px;color:#9ca3af;">© QuitFresh — il tuo coach per smettere di fumare</p>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  return html;
+}
+
+function sendActivateNotificationsEmail(to, opts = {}) {
+  const html = buildActivateNotificationsHtml(opts);
+  return send({ to, subject: 'Attiva le notifiche di QuitFresh 🌱', html });
+}
+
 // Backup email: invia il dump .sql.gz come allegato a un indirizzo
 // admin. Subject con data ISO per filtraggio facile in Gmail.
 function sendBackupEmail(to, buffer, meta) {
@@ -447,4 +508,4 @@ function sendDailyReportEmail(reportData) {
   });
 }
 
-module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendBackupEmail, sendPromoUsedAdminEmail, sendNewUserAdminEmail, sendNewPaymentAdminEmail, sendDailyReportEmail, isEnabled };
+module.exports = { sendVerifyEmail, sendResetEmail, sendWelcomeEmail, sendActivateNotificationsEmail, buildActivateNotificationsHtml, sendBackupEmail, sendPromoUsedAdminEmail, sendNewUserAdminEmail, sendNewPaymentAdminEmail, sendDailyReportEmail, isEnabled };

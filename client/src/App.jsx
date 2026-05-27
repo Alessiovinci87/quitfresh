@@ -21,6 +21,7 @@ import PremiumSuccess from './pages/PremiumSuccess';
 import Paywall from './pages/Paywall';
 import Admin from './pages/Admin';
 import AdminAnalytics, { AdminUserDetail } from './pages/AdminAnalytics';
+import AdminBroadcast from './pages/AdminBroadcast';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import ForgotPassword from './pages/ForgotPassword';
@@ -228,6 +229,7 @@ function AppShell() {
           <Route path="/admin/promo-codes" element={<PrivateRoute><Admin /></PrivateRoute>} />
           <Route path="/admin/analytics" element={<PrivateRoute><AdminAnalytics /></PrivateRoute>} />
           <Route path="/admin/analytics/users/:id" element={<PrivateRoute><AdminUserDetail /></PrivateRoute>} />
+          <Route path="/admin/broadcast" element={<PrivateRoute><AdminBroadcast /></PrivateRoute>} />
           <Route path="/onboarding" element={<PrivateRoute><Onboarding /></PrivateRoute>} />
           <Route path="/welcome-flow" element={<PrivateRoute><WelcomeFlow /></PrivateRoute>} />
           <Route path="/percorso" element={<PrivateRoute><Percorso /></PrivateRoute>} />

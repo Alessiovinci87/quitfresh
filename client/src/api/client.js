@@ -150,5 +150,9 @@ export const api = {
     analyticsLive: (limit = 50) => request(`/api/admin/analytics/live?limit=${limit}`),
     analyticsUsers: () => request('/api/admin/analytics/users'),
     analyticsUser: (id) => request(`/api/admin/analytics/user/${id}`),
+    broadcastNotifiche: (body) => request('/api/admin/broadcast-notifiche', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   },
 };

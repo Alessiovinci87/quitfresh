@@ -4,6 +4,7 @@ const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
 const { runScheduledBackup } = require('../lib/backup');
+const { sendActivateNotificationsEmail, isEnabled: emailEnabled } = require('../lib/email');
 
 router.use(requireAuth, requireVerifiedEmail, requireAdmin);
 
@@ -140,6 +141,108 @@ router.post('/backup', (req, res) => {
     .catch((err) => {
       console.error('[admin] backup manuale fallito:', err.message);
     });
+});
+
+// Risolve i destinatari del broadcast a partire dal body.
+// - userIds: array → solo quegli utenti (devono avere un'email).
+// - altrimenti default: email verificata + nessuna push subscription.
+async function resolveBroadcastRecipients(body) {
+  const ids = Array.isArray(body?.userIds) ? body.userIds.filter(Boolean) : null;
+  if (ids && ids.length > 0) {
+    return prisma.user.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, email: true },
+    });
+  }
+  return prisma.user.findMany({
+    where: { emailVerified: true, pushSubscriptions: { none: {} } },
+    select: { id: true, email: true },
+  });
+}
+
+// Valida un codice promo per l'allegato in mail. Ritorna { code, discountPct,
+// expiresAt } se utilizzabile, altrimenti lancia con messaggio chiaro.
+async function resolvePromoForEmail(rawCode) {
+  const code = String(rawCode).trim().toUpperCase();
+  const promo = await prisma.promoCode.findUnique({ where: { code } });
+  if (!promo) throw new Error(`Codice "${code}" inesistente`);
+  if (statusOf(promo) !== 'available') {
+    throw new Error(`Codice "${code}" non utilizzabile (stato: ${statusOf(promo)})`);
+  }
+  return { code: promo.code, discountPct: promo.discountPct, expiresAt: promo.expiresAt };
+}
+
+// POST /api/admin/broadcast-notifiche
+// Invita gli utenti ad attivare le notifiche dal Profilo. Canale email (la
+// push non li raggiunge). Opzionalmente allega un codice sconto come bonus.
+//
+// Body:
+//   confirm:  true → invia davvero. Senza → dry-run (conta + anteprima, NON invia).
+//   userIds:  array opzionale di id utente. Se omesso/vuoto → default
+//             (verificati senza push subscription).
+//   promoCode: stringa opzionale. Se presente, validato e allegato in mail.
+//
+// L'invio reale risponde 202 e procede in background con un delay tra le mail
+// per rispettare i rate limit di Resend.
+router.post('/broadcast-notifiche', async (req, res) => {
+  const confirm = Boolean(req.body?.confirm);
+
+  // Risolvi promo (se richiesto) prima di tutto, così un codice errato blocca
+  // anche il dry-run con un messaggio chiaro.
+  let promo = null;
+  if (req.body?.promoCode) {
+    try {
+      promo = await resolvePromoForEmail(req.body.promoCode);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  const recipients = await resolveBroadcastRecipients(req.body);
+
+  if (!confirm) {
+    return res.json({
+      dryRun: true,
+      count: recipients.length,
+      emailEnabled: emailEnabled(),
+      promo,
+      sample: recipients.slice(0, 10).map((u) => u.email),
+      message: `Dry-run: ${recipients.length} destinatari${promo ? ` · codice ${promo.code} (−${promo.discountPct}%)` : ''}. Rilancia con confirm:true per inviare.`,
+    });
+  }
+
+  if (!emailEnabled()) {
+    return res.status(503).json({ error: 'Resend non configurato (RESEND_API_KEY / RESEND_FROM_EMAIL mancanti)' });
+  }
+  if (recipients.length === 0) {
+    return res.status(400).json({ error: 'Nessun destinatario selezionato' });
+  }
+
+  res.status(202).json({
+    ok: true,
+    count: recipients.length,
+    promo,
+    message: `Invio avviato verso ${recipients.length} destinatari. Procede in background.`,
+  });
+
+  // Invio sequenziale con delay per non sforare i rate limit di Resend.
+  (async () => {
+    let sent = 0;
+    let failed = 0;
+    for (const u of recipients) {
+      if (!u.email) { failed++; continue; }
+      try {
+        const result = await sendActivateNotificationsEmail(u.email, { promo });
+        if (result?.error) failed++;
+        else sent++;
+      } catch (err) {
+        failed++;
+        console.error(`[admin] broadcast-notifiche errore → ${u.email}:`, err.message);
+      }
+      await new Promise((r) => setTimeout(r, 600));
+    }
+    console.log(`[admin] broadcast-notifiche completato: ${sent} inviate, ${failed} fallite su ${recipients.length}`);
+  })();
 });
 
 module.exports = router;
