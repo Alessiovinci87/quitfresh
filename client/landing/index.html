@@ -484,6 +484,37 @@
     /* Padding aggiunto al body quando sticky e' visibile per non coprire footer */
     body.has-sticky-cta { padding-bottom: 86px; }
 
+    /* ===== Real-moment card (hero) =====
+       Deve sembrare un momento reale, non una feature card: serif,
+       crema, molto spazio bianco, nessuna label maiuscola. */
+    .moment-card {
+      margin: 24px 0 18px;
+      background: #fbf9f3;
+      border: 1px solid rgba(82, 106, 76, 0.12);
+      border-radius: 20px;
+      padding: 30px 28px;
+      max-width: 480px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 10px 30px rgba(15, 23, 42, 0.05);
+    }
+    .moment-card .moment-quote {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 1.42;
+      color: #2c372c;
+      margin: 0 0 16px;
+    }
+    .moment-card .moment-sub {
+      font-size: 15px;
+      line-height: 1.55;
+      color: #5a6b62;
+      margin: 0 0 24px;
+    }
+    .moment-card .btn { width: 100%; }
+    @media (min-width: 520px) {
+      .moment-card .btn { width: auto; }
+    }
+
     /* ===== Card grigio-verde (per quote/osservazioni) ===== */
     .quote {
       background: #fdfcf9;
@@ -1093,22 +1124,26 @@
       <div class="hero-grid">
         <div class="hero-text">
           <span class="eyebrow" style="margin-bottom: 14px;">Dopo cena · In macchina · Pausa caffè</span>
-          <h1 class="display">Quando arriva la voglia, qualcuno che sa cosa fare è già lì.</h1>
-          <p class="lead">QuitFresh ti accompagna nei momenti difficili — dopo pranzo, in macchina, prima di dormire — e ti aiuta a smettere davvero. Anche con la citisina.</p>
-          <div class="hero-cta">
-            <a href="https://quitfresh.it/register" class="btn btn-primary">Provala gratis</a>
-            <span class="meta">Funziona dal browser · Setup in 1 minuto</span>
+          <h1 class="display">Il problema non è solo smettere.</h1>
+          <p class="lead">È capire cosa succede nella tua testa prima di accendere. QuitFresh non prova a motivarti: ti aiuta a vedere il meccanismo — e a riconoscerlo nei momenti reali della giornata.</p>
+
+          <!-- Real-moment card: riconoscimento emotivo immediato (above the
+               fold). Non è una feature card: è un momento reale. -->
+          <div class="moment-card">
+            <p class="moment-quote">“Oggi non avevo voglia di fumare.<br>Eppure il pensiero è arrivato lo stesso.”</p>
+            <p class="moment-sub">Non era fame di nicotina.<br>Era un automatismo.</p>
+            <a href="https://quitfresh.it/register" class="btn btn-primary">Entra nel percorso</a>
           </div>
+          <span class="meta" style="display:block; margin-bottom: 18px;">Dal browser. I primi sette giorni sono per tutti.</span>
+
           <div class="trust-chips" aria-hidden="true">
-            <span class="chip">Gratis</span>
+            <span class="chip">Dal browser</span>
             <span class="chip">Niente carta</span>
-            <span class="chip">Da browser</span>
             <span class="chip">Dati tuoi, privati</span>
           </div>
 
-          <!-- Mini-demo: simula in poche righe come l'app reagisce in un
-               craving reale. Risponde a "ma in pratica cosa fa?" senza
-               costringere a registrarsi. -->
+          <!-- Mini-demo: prova tangibile di "cosa fa l'app" in un craving
+               reale. Risponde a "ma in pratica cosa ricevo?" senza registrarsi. -->
           <div class="demo-card" id="demoCard">
             <div class="demo-label">Provalo qui · 10 secondi</div>
             <p class="demo-scene">Sono le 22, hai appena finito di cenare. La voglia arriva, come ogni sera.</p>
@@ -1239,9 +1274,9 @@
   <section id="trigger">
     <div class="container-wide">
       <div class="section-head">
-        <span class="eyebrow">I tuoi pattern</span>
-        <h2>La sigaretta non arriva mai a caso.</h2>
-        <p>Quando smetti senza guardarti, combatti contro un nemico invisibile. Quando i pattern emergono, smettere diventa una scelta consapevole — non una battaglia di forza di volontà.</p>
+        <span class="eyebrow">Cosa fa davvero</span>
+        <h2>QuitFresh non vuole convincerti a smettere.</h2>
+        <p>Ti aiuta a capire perché accendi, e a riconoscere gli automatismi prima che decidano al posto tuo. Perché la sigaretta non arriva mai a caso: dopo il caffè, dopo mangiato, quando sei stressato, quando sei in automatico.</p>
       </div>
 
       <ul class="pattern-list">
@@ -1302,6 +1337,12 @@
       <div class="section-head">
         <span class="eyebrow">Il percorso</span>
         <h2>Cosa succede ogni giorno.</h2>
+        <p>Ogni giorno ricevi un piccolo momento di osservazione, costruito sui meccanismi reali della dipendenza. Non un consiglio motivazionale: un modo per vedere cosa succede nella tua testa, mentre succede.</p>
+      </div>
+
+      <div class="quote" style="max-width: 580px; margin: 0 auto 28px;">
+        <p style="margin: 0 0 8px; font-family: 'Fraunces', Georgia, serif; font-size: 17px; color: #2c372c; line-height: 1.4;">“Ho appena finito di mangiare. La sigaretta è arrivata in mente da sola.”</p>
+        <p style="margin: 0; color: #5a6b62;">↓&nbsp; QuitFresh ti aiuta a capire perché succede — e a vederlo arrivare la prossima volta.</p>
       </div>
 
       <div class="timeline">
