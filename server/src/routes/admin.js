@@ -4,7 +4,7 @@ const prisma = require('../lib/prisma');
 const { requireAuth, requireVerifiedEmail } = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/admin');
 const { runScheduledBackup } = require('../lib/backup');
-const { sendActivateNotificationsEmail, isEnabled: emailEnabled } = require('../lib/email');
+const { sendActivateNotificationsEmail, sendVerifyEmail, isEnabled: emailEnabled } = require('../lib/email');
 
 router.use(requireAuth, requireVerifiedEmail, requireAdmin);
 
@@ -242,6 +242,82 @@ router.post('/broadcast-notifiche', async (req, res) => {
       await new Promise((r) => setTimeout(r, 600));
     }
     console.log(`[admin] broadcast-notifiche completato: ${sent} inviate, ${failed} fallite su ${recipients.length}`);
+  })();
+});
+
+// Costruisce il link di verifica email (stessa logica di auth.js).
+function buildVerifyLink(token) {
+  const base = (process.env.CLIENT_BASE_URL || 'http://localhost:5173').replace(/\/$/, '');
+  return `${base}/verify-email?token=${token}`;
+}
+
+// POST /api/admin/broadcast-verify
+// Ricorda agli utenti con email NON verificata di completare la verifica.
+// Riusa la mail di verifica esistente, rigenerando il link per ciascuno.
+//
+// Body:
+//   confirm: true → invia davvero. Senza → dry-run (conta + anteprima).
+//   userIds: array opzionale. Se omesso/vuoto → default (tutti i non verificati).
+//
+// Per sicurezza salta chi risulta gia' verificato anche se passato in userIds.
+router.post('/broadcast-verify', async (req, res) => {
+  const confirm = Boolean(req.body?.confirm);
+  const ids = Array.isArray(req.body?.userIds) ? req.body.userIds.filter(Boolean) : null;
+
+  const where = { emailVerified: false };
+  if (ids && ids.length > 0) where.id = { in: ids };
+
+  const recipients = await prisma.user.findMany({
+    where,
+    select: { id: true, email: true, verifyToken: true },
+  });
+
+  if (!confirm) {
+    return res.json({
+      dryRun: true,
+      count: recipients.length,
+      emailEnabled: emailEnabled(),
+      sample: recipients.slice(0, 10).map((u) => u.email),
+      message: `Dry-run: ${recipients.length} utenti non verificati. Rilancia con confirm:true per inviare.`,
+    });
+  }
+
+  if (!emailEnabled()) {
+    return res.status(503).json({ error: 'Resend non configurato (RESEND_API_KEY / RESEND_FROM_EMAIL mancanti)' });
+  }
+  if (recipients.length === 0) {
+    return res.status(400).json({ error: 'Nessun destinatario non verificato selezionato' });
+  }
+
+  res.status(202).json({
+    ok: true,
+    count: recipients.length,
+    message: `Invio promemoria verifica avviato verso ${recipients.length} utenti. Procede in background.`,
+  });
+
+  (async () => {
+    let sent = 0;
+    let failed = 0;
+    for (const u of recipients) {
+      if (!u.email) { failed++; continue; }
+      try {
+        // Garantisci un token valido: se mancante (improbabile per i non
+        // verificati) ne generiamo uno nuovo e lo persistiamo.
+        let token = u.verifyToken;
+        if (!token) {
+          token = crypto.randomUUID();
+          await prisma.user.update({ where: { id: u.id }, data: { verifyToken: token } });
+        }
+        const result = await sendVerifyEmail(u.email, buildVerifyLink(token));
+        if (result?.error) failed++;
+        else sent++;
+      } catch (err) {
+        failed++;
+        console.error(`[admin] broadcast-verify errore → ${u.email}:`, err.message);
+      }
+      await new Promise((r) => setTimeout(r, 600));
+    }
+    console.log(`[admin] broadcast-verify completato: ${sent} inviate, ${failed} fallite su ${recipients.length}`);
   })();
 });
 

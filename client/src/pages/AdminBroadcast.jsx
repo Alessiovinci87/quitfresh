@@ -3,17 +3,20 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
-// Pagina admin: invio email "attiva le notifiche" a una selezione di utenti,
-// con codice sconto opzionale allegato come bonus. Flusso sicuro a due fasi:
-// 1) dry-run automatico (mostra conteggio + anteprima), 2) invio con conferma.
+// Pagina admin: invio email broadcast a una selezione di utenti.
+// Due campagne:
+//   - 'notifiche': invito ad attivare le notifiche (+ codice sconto opzionale)
+//   - 'verify':    promemoria a chi non ha verificato l'email
+// Flusso sicuro a due fasi: 1) dry-run (conteggio + anteprima), 2) invio confermato.
 export default function AdminBroadcast() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [users, setUsers] = useState([]);
   const [promos, setPromos] = useState([]);
+  const [campaign, setCampaign] = useState('notifiche'); // 'notifiche' | 'verify'
   const [selected, setSelected] = useState(() => new Set());
-  const [onlyNoPush, setOnlyNoPush] = useState(true);
+  const [onlyTargets, setOnlyTargets] = useState(true);
   const [promoCode, setPromoCode] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -24,8 +27,27 @@ export default function AdminBroadcast() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Cambio campagna → ripristina la preselezione "naturale" dei destinatari.
+  useEffect(() => {
+    if (users.length === 0) return;
+    presetSelection(campaign, users);
+    setResult(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaign, users]);
+
   if (!user) return <Navigate to="/login" replace />;
   if (!user.isAdmin) return <Navigate to="/home" replace />;
+
+  function isTarget(u, c) {
+    return c === 'verify'
+      ? !u.emailVerified
+      : (u.emailVerified && u._count.pushSubscriptions === 0);
+  }
+
+  function presetSelection(c, list) {
+    const preset = list.filter((x) => isTarget(x, c));
+    setSelected(new Set(preset.map((x) => x.id)));
+  }
 
   async function refresh() {
     try {
@@ -36,20 +58,17 @@ export default function AdminBroadcast() {
       const list = u.users || [];
       setUsers(list);
       setPromos((p || []).filter((c) => c.status === 'available'));
-      // Pre-seleziona i candidati naturali: verificati senza push.
-      const preset = list.filter((x) => x.emailVerified && x._count.pushSubscriptions === 0);
-      setSelected(new Set(preset.map((x) => x.id)));
       setError('');
     } catch (err) {
       setError(err.message);
     }
   }
 
-  // Lista visibile in base al filtro "solo senza notifiche attive".
+  // Lista visibile in base al filtro "solo i destinatari naturali".
   const visible = useMemo(() => {
-    if (!onlyNoPush) return users;
-    return users.filter((u) => u._count.pushSubscriptions === 0);
-  }, [users, onlyNoPush]);
+    if (!onlyTargets) return users;
+    return users.filter((u) => isTarget(u, campaign));
+  }, [users, onlyTargets, campaign]);
 
   function toggle(id) {
     setSelected((prev) => {
@@ -70,14 +89,20 @@ export default function AdminBroadcast() {
     setResult(null);
   }
 
+  function callApi(body) {
+    return campaign === 'verify'
+      ? api.admin.broadcastVerify(body)
+      : api.admin.broadcastNotifiche(body);
+  }
+
   async function preview() {
     setError('');
     setResult(null);
     setSending(true);
     try {
       const body = { userIds: [...selected] };
-      if (promoCode) body.promoCode = promoCode;
-      const r = await api.admin.broadcastNotifiche(body); // dry-run (no confirm)
+      if (campaign === 'notifiche' && promoCode) body.promoCode = promoCode;
+      const r = await callApi(body); // dry-run (no confirm)
       setResult(r);
     } catch (err) {
       setError(err.message);
@@ -87,13 +112,14 @@ export default function AdminBroadcast() {
   }
 
   async function sendForReal() {
-    if (!confirm(`Inviare l'email a ${selected.size} utenti${promoCode ? ` con codice ${promoCode}` : ''}? Questa azione invia email reali.`)) return;
+    const label = campaign === 'verify' ? 'promemoria di verifica email' : 'avviso notifiche';
+    if (!confirm(`Inviare il ${label} a ${selected.size} utenti? Questa azione invia email reali.`)) return;
     setError('');
     setSending(true);
     try {
       const body = { userIds: [...selected], confirm: true };
-      if (promoCode) body.promoCode = promoCode;
-      const r = await api.admin.broadcastNotifiche(body);
+      if (campaign === 'notifiche' && promoCode) body.promoCode = promoCode;
+      const r = await callApi(body);
       setResult(r);
     } catch (err) {
       setError(err.message);
@@ -102,7 +128,19 @@ export default function AdminBroadcast() {
     }
   }
 
-  const selectedVerifiedCount = users.filter((u) => selected.has(u.id) && !u.emailVerified).length;
+  // Avviso: selezionati non idonei alla campagna corrente.
+  const offTargetCount = users.filter((u) => selected.has(u.id) && !isTarget(u, campaign)).length;
+
+  const TabBtn = ({ value, children }) => (
+    <button
+      onClick={() => setCampaign(value)}
+      className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+        campaign === value ? 'bg-sage-500 text-white' : 'bg-white text-gray-600 border border-gray-200'
+      }`}
+    >
+      {children}
+    </button>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
@@ -117,41 +155,51 @@ export default function AdminBroadcast() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-xl font-bold text-gray-900">Avviso "attiva le notifiche"</h1>
+          <h1 className="text-xl font-bold text-gray-900">Invio email broadcast</h1>
         </div>
 
         {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2 mb-4">{error}</p>}
+
+        {/* Selettore campagna */}
+        <div className="flex gap-2 mb-4">
+          <TabBtn value="notifiche">🔔 Attiva notifiche</TabBtn>
+          <TabBtn value="verify">✉️ Verifica email</TabBtn>
+        </div>
 
         {/* Opzioni */}
         <div className="bg-white rounded-2xl p-5 shadow-sm mb-4 space-y-4">
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
               type="checkbox"
-              checked={onlyNoPush}
-              onChange={(e) => setOnlyNoPush(e.target.checked)}
+              checked={onlyTargets}
+              onChange={(e) => setOnlyTargets(e.target.checked)}
               className="accent-sage-500 w-4 h-4"
             />
-            Mostra solo chi <strong>non</strong> ha le notifiche attive
+            {campaign === 'verify'
+              ? <>Mostra solo chi <strong>non</strong> ha verificato l'email</>
+              : <>Mostra solo chi <strong>non</strong> ha le notifiche attive</>}
           </label>
 
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">Codice sconto da allegare (opzionale)</label>
-            <select
-              value={promoCode}
-              onChange={(e) => { setPromoCode(e.target.value); setResult(null); }}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
-            >
-              <option value="">— Nessun codice —</option>
-              {promos.map((c) => (
-                <option key={c.id} value={c.code}>
-                  {c.code} (−{c.discountPct}%{c.expiresAt ? `, scade ${new Date(c.expiresAt).toLocaleDateString('it-IT')}` : ''})
-                </option>
-              ))}
-            </select>
-            {promos.length === 0 && (
-              <p className="text-xs text-gray-400 mt-1">Nessun codice disponibile. Creane uno dalla pagina Codici promo.</p>
-            )}
-          </div>
+          {campaign === 'notifiche' && (
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Codice sconto da allegare (opzionale)</label>
+              <select
+                value={promoCode}
+                onChange={(e) => { setPromoCode(e.target.value); setResult(null); }}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sage-400"
+              >
+                <option value="">— Nessun codice —</option>
+                {promos.map((c) => (
+                  <option key={c.id} value={c.code}>
+                    {c.code} (−{c.discountPct}%{c.expiresAt ? `, scade ${new Date(c.expiresAt).toLocaleDateString('it-IT')}` : ''})
+                  </option>
+                ))}
+              </select>
+              {promos.length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">Nessun codice disponibile. Creane uno dalla pagina Codici promo.</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Selezione utenti */}
@@ -183,9 +231,11 @@ export default function AdminBroadcast() {
           </div>
         </div>
 
-        {selectedVerifiedCount > 0 && (
+        {offTargetCount > 0 && (
           <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mb-4">
-            ⚠️ {selectedVerifiedCount} dei selezionati ha l'email non verificata: potrebbe non ricevere la mail o finire in spam.
+            {campaign === 'verify'
+              ? `⚠️ ${offTargetCount} dei selezionati ha già l'email verificata: verrà saltato automaticamente.`
+              : `⚠️ ${offTargetCount} dei selezionati ha l'email non verificata: potrebbe non ricevere la mail o finire in spam.`}
           </p>
         )}
 

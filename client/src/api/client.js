@@ -154,5 +154,9 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+    broadcastVerify: (body) => request('/api/admin/broadcast-verify', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   },
 };
