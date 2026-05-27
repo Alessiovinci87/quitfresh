@@ -8,13 +8,7 @@ import {
   DEFAULT_SCHEDULE, getActivePhase, getDoseTimes,
   formatInterval, phaseDayRange, totalDays,
 } from '../lib/cytisine';
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const raw = window.atob(base64);
-  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
-}
+import { enablePush, registerPushSubscription, pushSupported } from '../lib/push';
 
 const CRITICAL_MOMENTS_OPTIONS = [
   'Caffè', 'Stress', 'Pausa lavoro', 'Dopo i pasti', 'Guida',
@@ -770,43 +764,23 @@ function NotificationsSubPage({ user, updateUser, onClose }) {
   const [encouragementSaving, setEncouragementSaving] = useState(false);
 
   useEffect(() => {
-    const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+    const supported = pushSupported();
     setNotifSupported(supported);
-    const granted = Notification.permission === 'granted';
+    const granted = supported && Notification.permission === 'granted';
     setNotifEnabled(granted);
-    if (supported && granted) registerSubscription();
+    if (granted) {
+      registerPushSubscription()
+        .then((ok) => setNotifRegistered(ok))
+        .catch((err) => console.error('Push register error:', err));
+    }
   }, []);
 
-  async function registerSubscription() {
-    try {
-      const { enabled, publicKey } = await api.notifications.vapidKey();
-      if (!enabled || !publicKey) return;
-      const reg = await navigator.serviceWorker.ready;
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        });
-      }
-      await api.notifications.subscribe({
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')))),
-          auth: btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')))),
-        },
-      });
-      setNotifRegistered(true);
-    } catch (err) {
-      console.error('Push register error:', err);
-    }
-  }
-
   async function enableNotifications() {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
-    setNotifEnabled(true);
-    await registerSubscription();
+    const result = await enablePush();
+    if (result === 'granted') {
+      setNotifEnabled(true);
+      setNotifRegistered(true);
+    }
   }
 
   async function sendTestNotification() {

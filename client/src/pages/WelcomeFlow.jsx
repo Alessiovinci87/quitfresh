@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { track } from '../lib/tracker';
+import { enablePush, pushSupported } from '../lib/push';
 
 // Welcome Flow — micro-esperienza di attivazione post-onboarding (60-90s).
 // NON è un tutorial: è un mini-scenario reale che fa SENTIRE cosa è QuitFresh
@@ -74,7 +75,8 @@ export default function WelcomeFlow() {
         {step === 3 && <ScreenScenario onAdvance={() => go(4)} />}
         {step === 4 && <ScreenPhrases onAdvance={() => go(5)} />}
         {step === 5 && <ScreenChatBubble onAdvance={() => go(6)} />}
-        {step === 6 && <ScreenClosing onFinish={finish} />}
+        {step === 6 && <ScreenClosing onAdvance={() => go(7)} />}
+        {step === 7 && <ScreenNotifications onFinish={finish} />}
       </div>
     </div>
   );
@@ -247,7 +249,7 @@ function ScreenChatBubble({ onAdvance }) {
 }
 
 // ── Schermata 6 — Chiusura ──────────────────────────────────────────────────
-function ScreenClosing({ onFinish }) {
+function ScreenClosing({ onAdvance }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center py-10">
       <p className="font-display text-[26px] leading-relaxed text-sage-900 text-center animate-fade-in flex-1 flex items-center">
@@ -257,10 +259,71 @@ function ScreenClosing({ onFinish }) {
       </p>
       <div className="w-full pb-10">
         <button
-          onClick={onFinish}
+          onClick={onAdvance}
           className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all"
         >
-          Inizio il mio percorso
+          Avanti
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Schermata 7 — Attivazione notifiche ─────────────────────────────────────
+// Si aggancia al tema della chiusura ("una voce nel momento in cui serve"):
+// quella voce arriva tramite le push. Non bloccante — "Più tardi" prosegue.
+// Su device non supportato (es. iOS non installato) niente bottone morto:
+// si spiega come riceverle e si lascia proseguire.
+function ScreenNotifications({ onFinish }) {
+  const [supported] = useState(() => pushSupported());
+  const [busy, setBusy] = useState(false);
+
+  async function activate() {
+    setBusy(true);
+    const result = await enablePush();
+    track('welcome_notifications_result', { result });
+    setBusy(false);
+    onFinish();
+  }
+
+  function later() {
+    track('welcome_notifications_skipped');
+    onFinish();
+  }
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center py-10">
+      <div className="flex-1 flex flex-col justify-center animate-fade-in">
+        <div className="text-5xl text-center mb-6">🔔</div>
+        <p className="font-display text-[26px] leading-relaxed text-sage-900 text-center">
+          Ma quel momento arriva
+          <br />
+          quando meno te lo aspetti.
+        </p>
+        <p className="text-sage-700/80 text-[15px] leading-relaxed text-center mt-4 px-2">
+          {supported
+            ? 'Attiva le notifiche e lascia che ti raggiunga: un promemoria nei tuoi orari critici, e — se la usi — l’avviso per ogni capsula di citisina.'
+            : 'Per ricevere i promemoria nei tuoi momenti critici, installa QuitFresh sulla schermata Home: da lì potrai attivare le notifiche.'}
+        </p>
+      </div>
+
+      <div className="w-full pb-10 space-y-3">
+        {supported && (
+          <button
+            onClick={activate}
+            disabled={busy}
+            className="w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all disabled:opacity-60"
+          >
+            {busy ? 'Attivazione…' : 'Attiva le notifiche'}
+          </button>
+        )}
+        <button
+          onClick={supported ? later : onFinish}
+          className={supported
+            ? 'w-full py-2 text-sm text-sage-500/80 hover:text-sage-700 transition-colors'
+            : 'w-full py-3.5 bg-gradient-to-br from-sage-500 to-sage-700 text-white rounded-xl-soft font-semibold text-sm shadow-sage active:scale-[0.98] transition-all'}
+        >
+          {supported ? 'Più tardi' : 'Inizio il mio percorso'}
         </button>
       </div>
     </div>
