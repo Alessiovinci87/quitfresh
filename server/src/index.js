@@ -163,6 +163,19 @@ app.use('/api', (req, res) => res.status(404).json({ error: 'Endpoint non trovat
 // risolve sempre a /app/client/dist. In dev locale __dirname punta
 // a <repo>/server/src e ../../client/dist a <repo>/client/dist.
 const clientDist = path.join(__dirname, '../../client/dist');
+
+// ─── Digital Asset Links per la TWA Android (Google Play) ───────────
+// Collega l'app Android pubblicata su Play al dominio quitfresh.it.
+// DEVE essere servito come JSON reale su questo path esatto: express.static
+// sotto ignora le directory dotfile (.well-known) e il catch-all SPA
+// risponderebbe index.html (HTML), facendo fallire la verifica di Google.
+// Letto da client/public/ (sempre presente nel deploy) e NON da client/dist/,
+// perche' Vite non garantisce la copia delle directory dotfile nella build.
+app.get('/.well-known/assetlinks.json', (_req, res) => {
+  res.type('application/json');
+  res.sendFile(path.join(__dirname, '../../client/public/.well-known/assetlinks.json'));
+});
+
 app.use(express.static(clientDist));
 app.get('*', (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
