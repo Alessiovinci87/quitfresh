@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "it.quitfresh.app",
+      "sha256_cert_fingerprints": [
+        "B3:FF:8F:15:7B:A2:BE:D4:45:B9:9F:88:5E:9D:4F:AF:AA:98:DB:69:79:E1:C0:FB:7E:A5:70:43:7F:34:F0:A0"
+      ]
+    }
+  }
+]
